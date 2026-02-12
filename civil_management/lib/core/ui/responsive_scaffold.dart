@@ -35,9 +35,7 @@ class ResponsiveScaffold extends StatelessWidget {
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: builder(context, r),
-                ),
+                child: builder(context, r),
               ),
             ),
           ),

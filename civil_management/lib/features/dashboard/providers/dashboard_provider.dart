@@ -5,6 +5,34 @@ import '../../../core/services/local_database_service.dart';
 import '../data/models/dashboard_models.dart';
 import '../data/repositories/dashboard_repository.dart';
 
+class OperationsLiveCounts {
+  final int vendors;
+  final int machinery;
+  final int siteManagers;
+  final int workers;
+
+  const OperationsLiveCounts({
+    this.vendors = 0,
+    this.machinery = 0,
+    this.siteManagers = 0,
+    this.workers = 0,
+  });
+
+  OperationsLiveCounts copyWith({
+    int? vendors,
+    int? machinery,
+    int? siteManagers,
+    int? workers,
+  }) {
+    return OperationsLiveCounts(
+      vendors: vendors ?? this.vendors,
+      machinery: machinery ?? this.machinery,
+      siteManagers: siteManagers ?? this.siteManagers,
+      workers: workers ?? this.workers,
+    );
+  }
+}
+
 /// Dashboard repository provider
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   return DashboardRepository(supabase);
@@ -125,7 +153,6 @@ class RecentActivityState {
     this.error,
   });
 
-
   RecentActivityState copyWith({
     List<OperationLog>? activities,
     bool? isLoading,
@@ -182,15 +209,13 @@ class RecentActivityNotifier extends StateNotifier<RecentActivityState> {
     _subscription = _repository.subscribeToActivity().listen(
       (log) {
         // Prepend new log to the list
-        state = state.copyWith(
-          activities: [log, ...state.activities],
-        );
-        
+        state = state.copyWith(activities: [log, ...state.activities]);
+
         // Update cache
         if (state.activities.isNotEmpty) {
-           LocalDatabaseService.instance.saveRecentActivity(
-             state.activities.take(20).map((e) => e.toJson()).toList()
-           );
+          LocalDatabaseService.instance.saveRecentActivity(
+            state.activities.take(20).map((e) => e.toJson()).toList(),
+          );
         }
       },
       onError: (e) {
@@ -198,7 +223,6 @@ class RecentActivityNotifier extends StateNotifier<RecentActivityState> {
       },
     );
   }
-
 
   /// Fetch initial activity
   Future<void> fetchActivity() async {
@@ -330,4 +354,68 @@ final recentActivitiesProvider = Provider<List<OperationLog>>((ref) {
 
 final activeProjectsListProvider = Provider<List<ProjectSummary>>((ref) {
   return ref.watch(activeProjectsProvider).projects;
+});
+
+/// Realtime counts for admin operations cards.
+/// Keeps vendors, machinery, site managers and workers in sync with backend.
+final operationsLiveCountsProvider = StreamProvider<OperationsLiveCounts>((
+  ref,
+) {
+  final controller = StreamController<OperationsLiveCounts>();
+
+  var counts = const OperationsLiveCounts();
+  var hasVendors = false;
+  var hasMachinery = false;
+  var hasManagers = false;
+  var hasWorkers = false;
+
+  void emitIfReady() {
+    if (hasVendors && hasMachinery && hasManagers && hasWorkers) {
+      controller.add(counts);
+    }
+  }
+
+  final subscriptions = <StreamSubscription<dynamic>>[
+    supabase
+        .from('suppliers')
+        .stream(primaryKey: ['id'])
+        .eq('is_active', true)
+        .listen((rows) {
+          counts = counts.copyWith(vendors: rows.length);
+          hasVendors = true;
+          emitIfReady();
+        }),
+    supabase.from('machinery').stream(primaryKey: ['id']).listen((rows) {
+      counts = counts.copyWith(machinery: rows.length);
+      hasMachinery = true;
+      emitIfReady();
+    }),
+    supabase
+        .from('user_profiles')
+        .stream(primaryKey: ['id'])
+        .eq('role', 'site_manager')
+        .listen((rows) {
+          counts = counts.copyWith(siteManagers: rows.length);
+          hasManagers = true;
+          emitIfReady();
+        }),
+    supabase
+        .from('labour')
+        .stream(primaryKey: ['id'])
+        .eq('status', 'active')
+        .listen((rows) {
+          counts = counts.copyWith(workers: rows.length);
+          hasWorkers = true;
+          emitIfReady();
+        }),
+  ];
+
+  ref.onDispose(() async {
+    for (final subscription in subscriptions) {
+      await subscription.cancel();
+    }
+    await controller.close();
+  });
+
+  return controller.stream;
 });

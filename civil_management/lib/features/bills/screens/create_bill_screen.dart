@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +8,6 @@ import '../../../../core/widgets/file_upload_widget.dart';
 import '../data/models/bill_model.dart';
 import '../providers/bill_provider.dart';
 import '../../projects/providers/project_provider.dart';
-import '../../auth/providers/auth_provider.dart';
 
 class CreateBillScreen extends ConsumerStatefulWidget {
   const CreateBillScreen({super.key});
@@ -30,6 +27,8 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
   String? _vendorName;
   DateTime _billDate = DateTime.now();
   BillType _type = BillType.expense;
+  PaymentType _paymentType = PaymentType.cash;
+  PaymentStatus _paymentStatus = PaymentStatus.needToPay;
   List<int>? _receiptBytes;
   String? _receiptName;
 
@@ -68,8 +67,11 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
           billType: _type.value,
           description: _description,
           vendorName: _vendorName,
+          paymentType: _paymentType.value,
+          paymentStatus: _paymentStatus.value,
           receiptBytes: _receiptBytes,
           receiptName: _receiptName,
+          billDate: _billDate,
         );
 
     if (mounted) {
@@ -89,7 +91,7 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
     final createBillState = ref.watch(billControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Bill/Expense')),
+      appBar: AppBar(title: const Text('Bill Request')),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -103,7 +105,7 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                   children: [
               // Project Dropdown
               DropdownButtonFormField<String>(
-                value: _selectedProjectId,
+                initialValue: _selectedProjectId,
                 decoration: const InputDecoration(
                   labelText: 'Project',
                   prefixIcon: Icon(Icons.business),
@@ -121,7 +123,7 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
               
               // Bill Type
               DropdownButtonFormField<BillType>(
-                value: _type,
+                initialValue: _type,
                 decoration: const InputDecoration(
                   labelText: 'Type',
                   prefixIcon: Icon(Icons.category),
@@ -194,6 +196,46 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                 ),
                 onSaved: (val) => _vendorName = val,
               ),
+              const SizedBox(height: 16),
+
+              DropdownButtonFormField<PaymentStatus>(
+                initialValue: _paymentStatus,
+                decoration: const InputDecoration(
+                  labelText: 'Status',
+                  prefixIcon: Icon(Icons.pending_actions_outlined),
+                ),
+                items: PaymentStatus.values.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status.label),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _paymentStatus = value);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
+              DropdownButtonFormField<PaymentType>(
+                initialValue: _paymentType,
+                decoration: const InputDecoration(
+                  labelText: 'Payment Type',
+                  prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                ),
+                items: PaymentType.values.map((paymentType) {
+                  return DropdownMenuItem(
+                    value: paymentType,
+                    child: Text(paymentType.label),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _paymentType = value);
+                  }
+                },
+              ),
               const SizedBox(height: 24),
 
               // Receipt Upload
@@ -256,7 +298,7 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                 ),
                 child: _isSubmitting || createBillState.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('CREATE BILL'),
+                    : const Text('ADD BILL'),
               ),
                   ],
                 ),

@@ -13,7 +13,6 @@ import '../../features/auth/providers/auth_provider.dart';
 import '../../features/projects/screens/project_list_screen.dart';
 import '../../features/projects/screens/create_project_screen.dart';
 import '../../features/projects/screens/project_detail_screen.dart';
-import '../../features/blueprints/screens/blueprints_folders_screen.dart';
 import '../../features/blueprints/screens/blueprint_files_screen.dart';
 import '../../features/blueprints/screens/blueprint_viewer_screen.dart';
 import '../../features/blueprints/data/models/blueprint_model.dart';
@@ -27,6 +26,7 @@ import '../../features/inventory/screens/supplier_list_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/bills/screens/bills_screen.dart';
 import '../../features/bills/screens/create_bill_screen.dart';
+import '../../features/bills/screens/admin_approval_queue_screen.dart';
 import '../../features/materials/screens/materials_tab_screen.dart';
 import '../../features/machinery/screens/machinery_tab_screen.dart';
 import '../../features/machinery/screens/machinery_log_screen.dart';
@@ -176,6 +176,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'create',
             name: 'create-bill',
             builder: (context, state) => const CreateBillScreen(),
+          ),
+          GoRoute(
+            path: 'approval-queue',
+            name: 'admin-approval-queue',
+            builder: (context, state) => const AdminApprovalQueueScreen(),
           ),
         ],
       ),
@@ -429,7 +434,7 @@ String _getRoleBasedRoute(UserRole role) {
 /// Auth state listener for router refresh
 class _AuthStateNotifier extends ChangeNotifier {
   _AuthStateNotifier(this._ref) {
-    _ref.listen(authProvider, (_, __) {
+    _ref.listen(authProvider, (_, _) {
       notifyListeners();
     });
   }

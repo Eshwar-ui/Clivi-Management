@@ -347,14 +347,27 @@ class SiteManagerDashboard extends ConsumerWidget {
       ),
     ];
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      alignment: WrapAlignment.spaceBetween,
-      children: tiles
-          .map((t) => _buildOperationItem(context,
-              icon: t.icon, label: t.label, onTap: t.onTap))
-          .toList(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+        final spacing = 12.0;
+        final totalSpacing = spacing * (crossAxisCount - 1);
+        final itemWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: tiles
+              .map((t) => _buildOperationItem(
+                    context,
+                    icon: t.icon,
+                    label: t.label,
+                    onTap: t.onTap,
+                    width: itemWidth,
+                  ))
+              .toList(),
+        );
+      },
     );
   }
 
@@ -369,12 +382,13 @@ class SiteManagerDashboard extends ConsumerWidget {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    required double width,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 150,
+        width: width,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white,

@@ -19,7 +19,7 @@ class MachineryTabScreen extends ConsumerWidget {
     final logsAsync = ref.watch(machineryLogsProvider(projectId));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF4F6FA),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogMachinerySheet(context, projectId),
         backgroundColor: const Color(0xFF1E293B), // Dark Navy from design

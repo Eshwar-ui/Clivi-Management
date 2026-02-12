@@ -40,7 +40,6 @@ class ReportRepository {
   /// Material receipts grouped by vendor and project (inward only).
   Future<List<MaterialVendorReportRow>> getMaterialVendorReport({
     String? projectId,
-    String? vendorId,
     int limit = 100,
   }) async {
     try {
@@ -50,7 +49,6 @@ class ReportRepository {
             quantity,
             logged_at,
             project_id,
-            supplier_id,
             stock_items!material_logs_item_id_fkey(name, unit),
             suppliers(name),
             projects(name)
@@ -59,9 +57,6 @@ class ReportRepository {
 
       if (projectId != null) {
         baseQuery = baseQuery.eq('project_id', projectId);
-      }
-      if (vendorId != null) {
-        baseQuery = baseQuery.eq('supplier_id', vendorId);
       }
 
       final rows = await baseQuery.order('logged_at', ascending: false).limit(limit);
@@ -142,6 +137,8 @@ class ReportRepository {
         final machineType = row['machinery']?['type'] as String? ?? '';
         final projId = row['project_id'] as String;
         final projName = row['projects']?['name'] as String? ?? 'Project';
+        final hrs = (row['hours_used'] as num?)?.toDouble() ?? 0;
+        final hrs = (row['hours_used'] as num?)?.toDouble() ?? 0;
         final hrs = (row['hours_used'] as num?)?.toDouble() ?? 0;
         final dateStr = row['log_date'] as String?;
         final loggedAt = dateStr != null ? DateTime.parse(dateStr) : null;

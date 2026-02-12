@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_client.dart';
 import '../../../../core/errors/app_exceptions.dart';
@@ -11,21 +8,19 @@ import '../../../../core/utils/upload_helper.dart';
 
 class BillRepository {
   final SupabaseClient _client;
+  static const String _billSelectQuery = '''
+    *,
+    creator:user_profiles!bills_created_by_fkey(id, full_name, email),
+    approver:user_profiles!bills_approved_by_fkey(id, full_name, email),
+    project:projects!bills_project_id_fkey(id, name)
+  ''';
 
   BillRepository({SupabaseClient? client}) : _client = client ?? supabase;
 
   /// Get bills for a specific project (NOT all bills)
   Future<List<BillModel>> getBillsByProject(String projectId, {String? status}) async {
     try {
-      var query = _client
-          .from('bills')
-          .select('''
-            *,
-            creator:user_profiles!bills_created_by_fkey(id, full_name, email),
-            approver:user_profiles!bills_approved_by_fkey(id, full_name, email),
-            project:projects!bills_project_id_fkey(id, name)
-          ''')
-          .eq('project_id', projectId);
+      var query = _client.from('bills').select(_billSelectQuery).eq('project_id', projectId);
 
       if (status != null) {
         query = query.eq('status', status);
@@ -50,12 +45,7 @@ class BillRepository {
     try {
       final response = await _client
           .from('bills')
-          .select('''
-            *,
-            creator:user_profiles!bills_created_by_fkey(id, full_name, email),
-            approver:user_profiles!bills_approved_by_fkey(id, full_name, email),
-            project:projects!bills_project_id_fkey(id, name)
-          ''')
+          .select(_billSelectQuery)
           .eq('project_id', projectId)
           .eq('status', 'pending')
           .order('created_at', ascending: false)
@@ -94,7 +84,9 @@ class BillRepository {
         try {
           final fileExt = receiptName.contains('.') ? receiptName.split('.').last : 'pdf';
           final contentType = 'application/$fileExt';
-          final filePath = UploadHelper.generateUniquePath('receipts', receiptName);
+          // bills bucket RLS expects first path segment to be project UUID.
+          final relativePath = UploadHelper.generateUniquePath('receipts', receiptName);
+          final filePath = '$projectId/$relativePath';
 
           receiptUrl = await UploadHelper.uploadWithRetry(
             bucket: AppConstants.bucketBills,
@@ -114,12 +106,14 @@ class BillRepository {
         'amount': amount,
         'bill_type': billType,
         'description': description,
-        'vendor_name': vendorName,
         'payment_type': paymentType,
         'payment_status': paymentStatus ?? 'need_to_pay',
         'status': 'pending',
         'created_by': userId,
-        'receipt_url': receiptUrl,
+        'uploaded_by': userId,
+        'raised_by': userId,
+        'image_url': receiptUrl ?? '',
+        'image_path': receiptUrl ?? '',
         'bill_date': (billDate ?? DateTime.now()).toIso8601String().split('T').first,
       };
 
@@ -162,6 +156,48 @@ class BillRepository {
     return getBillsByProject(projectId, status: status);
   }
 
+  /// Get role-based bills across accessible projects.
+  /// If [onlyRaisedByCurrentUser] is true, returns only current user's raised bills.
+  Future<List<BillModel>> getBillsForDashboard({
+    String? status,
+    bool onlyRaisedByCurrentUser = false,
+  }) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (onlyRaisedByCurrentUser && userId == null) {
+        return [];
+      }
+
+      var query = _client.from('bills').select(_billSelectQuery);
+      if (status != null) {
+        query = query.eq('status', status);
+      }
+
+      final response = await query.order('created_at', ascending: false);
+      final items = (response as List).map((json) => BillModel.fromJson(json)).toList();
+      if (!onlyRaisedByCurrentUser || userId == null) {
+        return items;
+      }
+      return items
+          .where((bill) => bill.raisedBy == userId || bill.createdBy == userId)
+          .toList();
+    } on PostgrestException catch (e) {
+      throw DatabaseException.fromPostgrest(e);
+    } catch (e) {
+      throw Exception('Failed to fetch dashboard bills: $e');
+    }
+  }
+
+  Future<List<BillModel>> fetchBillsForDashboard({
+    String? status,
+    bool onlyRaisedByCurrentUser = false,
+  }) {
+    return getBillsForDashboard(
+      status: status,
+      onlyRaisedByCurrentUser: onlyRaisedByCurrentUser,
+    );
+  }
+
   /// Update a bill (only pending bills can be updated by site managers)
   Future<BillModel> updateBill(String billId, Map<String, dynamic> updates) async {
     updates['updated_at'] = DateTime.now().toIso8601String();
@@ -174,7 +210,8 @@ class BillRepository {
           .select('''
             *,
             creator:user_profiles!bills_created_by_fkey(id, full_name, email),
-            approver:user_profiles!bills_approved_by_fkey(id, full_name, email)
+            approver:user_profiles!bills_approved_by_fkey(id, full_name, email),
+            project:projects!bills_project_id_fkey(id, name)
           ''')
           .single();
 
@@ -183,6 +220,58 @@ class BillRepository {
       throw DatabaseException.fromPostgrest(e);
     } catch (e) {
       throw Exception('Failed to update bill: $e');
+    }
+  }
+
+  /// Admin approval workflow update:
+  /// - payment status: pending / will pay / paid
+  /// - mark completed toggles bill completion
+  Future<BillModel> updateBillApproval({
+    required String billId,
+    required PaymentStatus paymentStatus,
+    required bool markCompleted,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    final now = DateTime.now().toIso8601String();
+
+    try {
+      final response = await _client
+          .from('bills')
+          .update({
+            'payment_status': paymentStatus.value,
+            'status': markCompleted ? 'paid' : 'pending',
+            'approved_by': userId,
+            'approved_at': now,
+            'updated_at': now,
+          })
+          .eq('id', billId)
+          .select(_billSelectQuery)
+          .single();
+
+      final bill = BillModel.fromJson(response);
+
+      try {
+        await _client.rpc(
+          'log_operation',
+          params: {
+            'p_operation_type': 'update',
+            'p_entity_type': 'bill',
+            'p_entity_id': bill.id,
+            'p_title': '[BILL] ${bill.title} updated',
+            'p_description':
+                'Payment: ${bill.paymentStatus.label}, Completion: ${markCompleted ? 'Completed' : 'Pending'}',
+            'p_project_id': bill.projectId,
+          },
+        );
+      } catch (e) {
+        debugPrint('log_operation failed for bill update: $e');
+      }
+
+      return bill;
+    } on PostgrestException catch (e) {
+      throw DatabaseException.fromPostgrest(e);
+    } catch (e) {
+      throw Exception('Failed to update bill approval: $e');
     }
   }
 
@@ -260,5 +349,28 @@ class BillRepository {
         .eq('project_id', projectId)
         .order('created_at', ascending: false)
         .map((data) => data.map((json) => BillModel.fromJson(json)).toList());
+  }
+
+  Stream<List<BillModel>> streamBillsForDashboard({
+    bool onlyRaisedByCurrentUser = false,
+  }) {
+    final userId = _client.auth.currentUser?.id;
+    if (onlyRaisedByCurrentUser && userId == null) {
+      return Stream.value([]);
+    }
+
+    return _client
+        .from('bills')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((data) => data.map((json) => BillModel.fromJson(json)).toList())
+        .map((items) {
+          if (!onlyRaisedByCurrentUser || userId == null) {
+            return items;
+          }
+          return items
+              .where((bill) => bill.raisedBy == userId || bill.createdBy == userId)
+              .toList();
+        });
   }
 }

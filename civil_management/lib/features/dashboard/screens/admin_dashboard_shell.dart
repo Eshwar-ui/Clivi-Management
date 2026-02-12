@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:civil_management/features/profile/screens/profile_screen.dart';
 import 'package:civil_management/features/projects/screens/project_list_screen.dart';
 import 'package:civil_management/features/bills/screens/bills_screen.dart';
-import 'package:civil_management/features/reports/screens/reports_screen.dart';
 import 'package:civil_management/features/dashboard/screens/admin_dashboard.dart';
 import 'package:civil_management/features/dashboard/screens/site_manager_dashboard.dart';
 import 'package:civil_management/core/theme/app_colors.dart';
 import 'package:civil_management/features/auth/providers/auth_provider.dart';
+import 'package:civil_management/features/vendors/screens/vendor_analytics_dashboard.dart';
 
 class DashboardShell extends ConsumerStatefulWidget {
   final int initialIndex;
@@ -46,7 +46,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
       homeScreen,
       const ProjectListScreen(),
       const BillsScreen(),
-      const ReportsScreen(),
+      const VendorAnalyticsDashboard(),
       const ProfileScreen(),
     ];
 
@@ -67,7 +67,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),

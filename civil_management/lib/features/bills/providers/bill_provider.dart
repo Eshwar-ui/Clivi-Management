@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/errors/app_exceptions.dart';
 import '../data/models/bill_model.dart';
 import '../data/repositories/bill_repository.dart';
 
@@ -40,11 +38,56 @@ final billsCombinedProvider = Provider.family<AsyncValue<List<BillModel>>, Strin
           // Merge by id (upsert) using streamed as latest
           final byId = {for (var b in fetched) b.id: b};
           for (final b in streamed) {
-            byId[b.id] = b;
+            final existing = byId[b.id];
+            byId[b.id] = existing == null ? b : _mergeBillSnapshot(existing, b);
           }
           return AsyncValue.data(byId.values.toList()
             ..sort((a, b) => (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
                 .compareTo(a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))));
+        },
+        loading: () => AsyncValue.data(fetched),
+        error: (e, st) => AsyncValue.error(e, st),
+      );
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
+});
+
+/// Real-time stream of bills for dashboard (all accessible or only current user's raised bills)
+final dashboardBillsStreamProvider = StreamProvider.family<List<BillModel>, bool>((ref, onlyRaisedByCurrentUser) {
+  final repository = ref.watch(billRepositoryProvider);
+  return repository.streamBillsForDashboard(
+    onlyRaisedByCurrentUser: onlyRaisedByCurrentUser,
+  );
+});
+
+/// Baseline fetch for dashboard bills
+final dashboardBillsProvider = FutureProvider.family<List<BillModel>, bool>((ref, onlyRaisedByCurrentUser) {
+  final repository = ref.watch(billRepositoryProvider);
+  return repository.fetchBillsForDashboard(
+    onlyRaisedByCurrentUser: onlyRaisedByCurrentUser,
+  );
+});
+
+/// Combined provider for dashboard bills
+final dashboardBillsCombinedProvider = Provider.family<AsyncValue<List<BillModel>>, bool>((ref, onlyRaisedByCurrentUser) {
+  final fetchAsync = ref.watch(dashboardBillsProvider(onlyRaisedByCurrentUser));
+  final streamAsync = ref.watch(dashboardBillsStreamProvider(onlyRaisedByCurrentUser));
+
+  return fetchAsync.when(
+    data: (fetched) {
+      return streamAsync.when(
+        data: (streamed) {
+          final byId = {for (var b in fetched) b.id: b};
+          for (final b in streamed) {
+            final existing = byId[b.id];
+            byId[b.id] = existing == null ? b : _mergeBillSnapshot(existing, b);
+          }
+          final items = byId.values.toList()
+            ..sort((a, b) => (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+                .compareTo(a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
+          return AsyncValue.data(items);
         },
         loading: () => AsyncValue.data(fetched),
         error: (e, st) => AsyncValue.error(e, st),
@@ -85,6 +128,7 @@ class BillController extends StateNotifier<AsyncValue<void>> {
     String? paymentStatus,
     List<int>? receiptBytes,
     String? receiptName,
+    DateTime? billDate,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -99,6 +143,7 @@ class BillController extends StateNotifier<AsyncValue<void>> {
         paymentStatus: paymentStatus,
         receiptBytes: receiptBytes,
         receiptName: receiptName,
+        billDate: billDate,
       );
       state = const AsyncValue.data(null);
       return true;
@@ -128,13 +173,50 @@ class BillController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> deleteBill(String billId) async {
+  Future<bool> deleteBill(String billId) async {
     state = const AsyncValue.loading();
     try {
       await _repository.deleteBill(billId);
       state = const AsyncValue.data(null);
+      return true;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+
+  Future<bool> updateBill({
+    required String billId,
+    required Map<String, dynamic> updates,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.updateBill(billId, updates);
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+
+  Future<bool> updateBillApproval({
+    required String billId,
+    required PaymentStatus paymentStatus,
+    required bool markCompleted,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.updateBillApproval(
+        billId: billId,
+        paymentStatus: paymentStatus,
+        markCompleted: markCompleted,
+      );
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
     }
   }
 }
@@ -143,3 +225,11 @@ class BillController extends StateNotifier<AsyncValue<void>> {
 final billControllerProvider = StateNotifierProvider<BillController, AsyncValue<void>>((ref) {
   return BillController(ref.watch(billRepositoryProvider));
 });
+
+BillModel _mergeBillSnapshot(BillModel fetched, BillModel streamed) {
+  return streamed.copyWith(
+    projectName: streamed.projectName ?? fetched.projectName,
+    createdByName: streamed.createdByName ?? fetched.createdByName,
+    approvedByName: streamed.approvedByName ?? fetched.approvedByName,
+  );
+}

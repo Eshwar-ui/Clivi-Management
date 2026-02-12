@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
+import '../../inventory/providers/inventory_provider.dart';
+import '../../inventory/data/models/supplier_model.dart';
 import '../../vendors/screens/vendor_analytics_dashboard.dart';
 import '../data/models/report_models.dart';
 import '../providers/report_provider.dart';
@@ -32,6 +34,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(reportProvider);
     final notifier = ref.read(reportProvider.notifier);
+    final suppliersAsync = ref.watch(suppliersProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,16 +52,40 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => notifier.refresh(),
+        onRefresh: () => notifier.refresh(projectId: widget.projectId),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              suppliersAsync.when(
+                data: (suppliers) => _VendorFilter(
+                  suppliers: suppliers,
+                  selectedVendorId: state.selectedVendorId,
+                  onChanged: (vendorId) => notifier.setVendor(
+                    vendorId,
+                    projectId: widget.projectId,
+                  ),
+                ),
+                loading: () => const Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 12),
+
               // Time Period Tabs
               _TimeFilterTabs(
                 selectedPeriod: state.selectedPeriod,
-                onSelect: (period) => notifier.setPeriod(period, projectId: widget.projectId),
+                onSelect: (period) => notifier.setPeriod(
+                  period,
+                  projectId: widget.projectId,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -80,6 +107,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   _VendorAnalyticsSection(),
                   const SizedBox(height: 24),
                 ],
+
+                // Operations mini-reports
+                _OperationsReports(
+                  materialRows: state.materialVendors,
+                  machineryRows: state.machineryProjects,
+                  labourRows: state.labourProjects,
+                  isLoading: state.isLoading,
+                ),
+                const SizedBox(height: 24),
 
                 // Insights Tip
                 if (state.stats.growthPercentage != 0)
@@ -602,6 +638,258 @@ class _VendorAnalyticsSection extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VendorFilter extends StatelessWidget {
+  final List<SupplierModel> suppliers;
+  final String? selectedVendorId;
+  final ValueChanged<String?> onChanged;
+
+  const _VendorFilter({
+    required this.suppliers,
+    required this.selectedVendorId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String?>(
+      value: selectedVendorId,
+      decoration: InputDecoration(
+        labelText: 'Vendor',
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+      items: [
+        const DropdownMenuItem<String?>(
+          value: null,
+          child: Text('All vendors'),
+        ),
+        ...suppliers.map(
+          (s) => DropdownMenuItem<String?>(
+            value: s.id,
+            child: Text(s.name),
+          ),
+        ),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _OperationsReports extends StatelessWidget {
+  final List<MaterialVendorReportRow> materialRows;
+  final List<MachineryProjectReportRow> machineryRows;
+  final List<LabourProjectReportRow> labourRows;
+  final bool isLoading;
+
+  const _OperationsReports({
+    required this.materialRows,
+    required this.machineryRows,
+    required this.labourRows,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Operations Reports',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        _ReportCard(
+          title: 'Material by Vendor & Project',
+          isLoading: isLoading,
+          child: materialRows.isEmpty
+              ? const _EmptyRow(message: 'No material receipts yet')
+              : Column(
+                  children: materialRows.take(6).map((row) {
+                    return _TwoLineTile(
+                      title: '${row.materialName} • ${row.vendorName}',
+                      subtitle:
+                          '${row.projectName} • ${row.totalReceived.toStringAsFixed(1)} ${row.unit}',
+                      trailing: row.lastReceivedAt != null
+                          ? _dateLabel(row.lastReceivedAt!)
+                          : '',
+                    );
+                  }).toList(),
+                ),
+        ),
+        const SizedBox(height: 12),
+        _ReportCard(
+          title: 'Machinery by Project',
+          isLoading: isLoading,
+          child: machineryRows.isEmpty
+              ? const _EmptyRow(message: 'No machinery logs yet')
+              : Column(
+                  children: machineryRows.take(6).map((row) {
+                    return _TwoLineTile(
+                      title: '${row.machineryName}${row.machineryType.isNotEmpty ? ' (${row.machineryType})' : ''}',
+                      subtitle:
+                          '${row.projectName} • ${row.totalHours.toStringAsFixed(1)} hrs',
+                      trailing:
+                          row.lastWorkedAt != null ? _dateLabel(row.lastWorkedAt!) : '',
+                    );
+                  }).toList(),
+                ),
+        ),
+        const SizedBox(height: 12),
+        _ReportCard(
+          title: 'Labour by Project',
+          isLoading: isLoading,
+          child: labourRows.isEmpty
+              ? const _EmptyRow(message: 'No active labour found')
+              : Column(
+                  children: labourRows.take(6).map((row) {
+                    final wage = row.dailyWage > 0
+                        ? '₹${row.dailyWage.toStringAsFixed(0)} /day'
+                        : '';
+                    return _TwoLineTile(
+                      title: '${row.labourName}${row.skillType.isNotEmpty ? ' • ${row.skillType}' : ''}',
+                      subtitle: '${row.projectName}${wage.isNotEmpty ? ' • $wage' : ''}',
+                    );
+                  }).toList(),
+                ),
+        ),
+      ],
+    );
+  }
+
+  String _dateLabel(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _ReportCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final bool isLoading;
+
+  const _ReportCard({
+    required this.title,
+    required this.child,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (isLoading)
+                const SizedBox(
+                  height: 14,
+                  width: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _TwoLineTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String? trailing;
+
+  const _TwoLineTile({
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null && trailing!.isNotEmpty)
+            Text(
+              trailing!,
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyRow extends StatelessWidget {
+  final String message;
+  const _EmptyRow({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        message,
+        style: TextStyle(
+          fontSize: 12,
+          color: AppColors.textSecondary,
         ),
       ),
     );

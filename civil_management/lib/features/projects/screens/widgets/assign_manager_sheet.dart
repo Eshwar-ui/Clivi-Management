@@ -75,42 +75,56 @@ class _AssignManagerSheetState extends ConsumerState<AssignManagerSheet> {
                   horizontal: 20,
                   vertical: 8,
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        '${state.selectedIds.length} selected',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            '${state.selectedIds.length} selected',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
+                        const Spacer(),
+                        if (state.selectedIds.isNotEmpty)
+                          TextButton(
+                            onPressed: () {
+                              // Clear all selections
+                              for (final id in state.selectedIds.toList()) {
+                                ref
+                                    .read(
+                                      siteManagerSelectionProvider(
+                                        widget.projectId,
+                                      ).notifier,
+                                    )
+                                    .toggleManager(id);
+                              }
+                            },
+                            child: const Text('Clear All'),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'You can assign multiple site managers to this project.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
                       ),
                     ),
-                    const Spacer(),
-                    if (state.selectedIds.isNotEmpty)
-                      TextButton(
-                        onPressed: () {
-                          // Clear all selections
-                          for (final id in state.selectedIds.toList()) {
-                            ref
-                                .read(
-                                  siteManagerSelectionProvider(
-                                    widget.projectId,
-                                  ).notifier,
-                                )
-                                .toggleManager(id);
-                          }
-                        },
-                        child: const Text('Clear All'),
-                      ),
                   ],
                 ),
               ),
@@ -150,7 +164,7 @@ class _AssignManagerSheetState extends ConsumerState<AssignManagerSheet> {
                   color: AppColors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.shadow.withOpacity(0.1),
+                      color: AppColors.shadow.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, -4),
                     ),
@@ -275,7 +289,7 @@ class _ManagerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: isSelected ? AppColors.primary.withOpacity(0.05) : null,
+      color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -294,7 +308,7 @@ class _ManagerTile extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: isSelected
                     ? AppColors.primary
-                    : AppColors.siteManager.withOpacity(0.1),
+                    : AppColors.siteManager.withValues(alpha: 0.1),
                 child: isSelected
                     ? const Icon(Icons.check, color: Colors.white)
                     : Text(

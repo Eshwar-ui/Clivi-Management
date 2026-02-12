@@ -17,6 +17,7 @@ class AdminDashboard extends ConsumerWidget {
     final statsState = ref.watch(dashboardStatsProvider);
     final activityState = ref.watch(recentActivityProvider);
     final projectsState = ref.watch(activeProjectsProvider);
+    final operationsCounts = ref.watch(operationsLiveCountsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
@@ -48,7 +49,7 @@ class AdminDashboard extends ConsumerWidget {
                 _buildHeader(context, profile?.fullName ?? 'Admin'),
                 _buildStatsRow(context, statsState),
                 const SizedBox(height: 20),
-                        _buildOperationsSection(context, projectsState),
+                _buildOperationsSection(context, operationsCounts),
                 const SizedBox(height: 18),
                 _buildActiveProjectsSection(context, projectsState),
                 const SizedBox(height: 18),
@@ -63,6 +64,7 @@ class AdminDashboard extends ConsumerWidget {
   }
 
   Future<void> _refreshAll(WidgetRef ref) async {
+    ref.invalidate(operationsLiveCountsProvider);
     await Future.wait([
       ref.read(dashboardStatsProvider.notifier).refresh(),
       ref.read(recentActivityProvider.notifier).refresh(),
@@ -82,6 +84,15 @@ class AdminDashboard extends ConsumerWidget {
                 icon: const Icon(Icons.notifications_outlined),
                 onPressed: () {},
               ),
+              TextButton.icon(
+                onPressed: () => context.push('/admin/site-managers/add'),
+                icon: const Icon(Icons.person_add_alt_1, size: 18),
+                label: const Text('Add Site Manager'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
               const Spacer(),
               CircleAvatar(
                 radius: 22,
@@ -94,16 +105,16 @@ class AdminDashboard extends ConsumerWidget {
           Text(
             'Welcome back,',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w400,
+            ),
           ),
           Text(
             name.isNotEmpty ? name : 'Admin',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -181,16 +192,19 @@ class AdminDashboard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (textColor ?? AppColors.textPrimary)
-                      .withValues(alpha: 0.12),
+                  color: (textColor ?? AppColors.textPrimary).withValues(
+                    alpha: 0.12,
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: textColor ?? AppColors.textPrimary),
               ),
               if (badgeText != null)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeColor,
                     borderRadius: BorderRadius.circular(12),
@@ -228,8 +242,9 @@ class AdminDashboard extends ConsumerWidget {
           Text(
             label,
             style: TextStyle(
-              color: (textColor ?? AppColors.textPrimary)
-                  .withValues(alpha: 0.8),
+              color: (textColor ?? AppColors.textPrimary).withValues(
+                alpha: 0.8,
+              ),
             ),
           ),
         ],
@@ -237,6 +252,7 @@ class AdminDashboard extends ConsumerWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _buildStatItem(
     BuildContext context, {
     required IconData icon,
@@ -287,30 +303,66 @@ class AdminDashboard extends ConsumerWidget {
 
   Widget _buildOperationsSection(
     BuildContext context,
-    ActiveProjectsState projectsState,
+    AsyncValue<OperationsLiveCounts> operationsCounts,
   ) {
-    final projectId = projectsState.projects.isNotEmpty
-        ? projectsState.projects.first.id
-        : null;
+    String subtitleFor({
+      required int count,
+      required String singular,
+      required String plural,
+    }) {
+      return '$count ${count == 1 ? singular : plural}';
+    }
 
+    final liveCounts = operationsCounts.valueOrNull;
     final operations = [
       _OperationTile(
         label: 'Materials',
-        subtitle: 'Vendors & stock',
+        subtitle: liveCounts == null
+            ? 'Loading...'
+            : subtitleFor(
+                count: liveCounts.vendors,
+                singular: 'Vendor',
+                plural: 'Vendors',
+              ),
         icon: Icons.inventory_2_outlined,
         bg: Colors.blue[50],
         onTap: () => context.push('/master/vendors'),
       ),
       _OperationTile(
         label: 'Machinery',
-        subtitle: '12 Units',
+        subtitle: liveCounts == null
+            ? 'Loading...'
+            : subtitleFor(
+                count: liveCounts.machinery,
+                singular: 'Machine',
+                plural: 'Machines',
+              ),
         icon: Icons.build_outlined,
         bg: Colors.orange[50],
         onTap: () => context.push('/master/machinery'),
       ),
       _OperationTile(
+        label: 'Managers',
+        subtitle: liveCounts == null
+            ? 'Loading...'
+            : subtitleFor(
+                count: liveCounts.siteManagers,
+                singular: 'Manager',
+                plural: 'Managers',
+              ),
+        icon: Icons.manage_accounts_outlined,
+        bg: Colors.indigo[50],
+        onTap: () => context.push('/admin/site-managers'),
+      ),
+      _OperationTile(
         label: 'Labor',
-        subtitle: '142 Workers',
+        subtitle: liveCounts == null
+            ? 'Loading...'
+            : subtitleFor(
+                count: liveCounts.workers,
+                singular: 'Worker',
+                plural: 'Workers',
+              ),
         icon: Icons.people_alt_outlined,
         bg: Colors.green[50],
         onTap: () {
@@ -326,64 +378,74 @@ class AdminDashboard extends ConsumerWidget {
         children: [
           Text(
             'Operations',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: operations.map((op) {
-              final isFirst = operations.indexOf(op) == 0;
-              return Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
-                  onTap: op.onTap,
-                  child: Container(
-                    margin: EdgeInsets.only(right: isFirst ? 10 : 0, left: !isFirst ? 10 : 0),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: operations.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              mainAxisExtent: 140,
+            ),
+            itemBuilder: (context, index) {
+              final op = operations[index];
+              return InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: op.onTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: op.bg,
+                          shape: BoxShape.circle,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: op.bg,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(op.icon, color: AppColors.primary),
+                        child: Icon(op.icon, color: AppColors.primary),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        op.label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          op.label,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        op.subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
-                        Text(
-                          op.subtitle,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               );
-            }).toList(),
+            },
           ),
         ],
       ),
@@ -404,30 +466,36 @@ class AdminDashboard extends ConsumerWidget {
             children: [
               Text(
                 'Active Projects',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () => context.push('/projects'),
-                child: Text('View All', style: TextStyle(color: AppColors.primary)),
+                child: Text(
+                  'View All',
+                  style: TextStyle(color: AppColors.primary),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          if (state.isLoading) _buildProjectsLoading()
+          if (state.isLoading)
+            _buildProjectsLoading()
           else if (state.projects.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text('No active projects',
-                  style: TextStyle(color: AppColors.textSecondary)),
+              child: Text(
+                'No active projects',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             )
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: state.projects.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) =>
                   _buildProjectCard(context, state.projects[index]),
             ),
@@ -447,9 +515,9 @@ class AdminDashboard extends ConsumerWidget {
         children: [
           Text(
             'Recent Operations',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           _buildRecentOperations(context, state),
@@ -687,8 +755,9 @@ class AdminDashboard extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: _getOperationColor(activity.operationType)
-                  .withValues(alpha: 0.1),
+              color: _getOperationColor(
+                activity.operationType,
+              ).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -704,10 +773,9 @@ class AdminDashboard extends ConsumerWidget {
               children: [
                 Text(
                   activity.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

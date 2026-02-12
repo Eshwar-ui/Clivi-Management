@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../core/ui/responsive.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive_scaffold.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
@@ -67,7 +67,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           if (isAdmin)
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _confirmDelete(context),
+              onPressed: _confirmDelete,
               tooltip: 'Delete project',
             ),
         ],
@@ -111,7 +111,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
+  Future<void> _confirmDelete() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -141,7 +141,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     final success = await notifier.deleteProject();
 
     if (!mounted) return;
-
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Project deleted')),
@@ -176,6 +175,7 @@ class _HeroSection extends StatelessWidget {
     final dateFormat = DateFormat('MMM yyyy');
     final width = MediaQuery.of(context).size.width;
     final isWide = width > 720;
+    final assignedManagers = project.assignments ?? const <ProjectAssignmentModel>[];
 
     return Container(
       decoration: BoxDecoration(
@@ -198,7 +198,7 @@ class _HeroSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'ASSIGNED ENGINEER',
+                'ASSIGNED SITE MANAGERS',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -216,29 +216,44 @@ class _HeroSection extends StatelessWidget {
                        color: Colors.grey[100],
                        borderRadius: BorderRadius.circular(8),
                      ),
-                     child: const Icon(Icons.person_add_alt_1, size: 16, color: Colors.black),
+                    child: const Icon(Icons.person_add_alt_1, size: 16, color: Colors.black),
                    ),
                  ),
             ],
           ),
           const SizedBox(height: 8),
-          // Engineer Name
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  project.managerName,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1C1E),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          Text(
+            assignedManagers.isEmpty ? 'Not Assigned' : '${assignedManagers.length} Assigned',
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1A1C1E),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+          const SizedBox(height: 12),
+          if (assignedManagers.isEmpty)
+            Text(
+              'No site manager assigned yet',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: assignedManagers
+                  .map(
+                    (assignment) => _AssignedManagerChip(
+                      name: assignment.userName ?? 'Unknown',
+                      phone: assignment.userPhone,
+                    ),
+                  )
+                  .toList(),
+            ),
           const SizedBox(height: 20),
           
           // Phase/Status & Date & Edit Project
@@ -320,6 +335,43 @@ class _StatusChip extends StatelessWidget {
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+}
+
+class _AssignedManagerChip extends StatelessWidget {
+  final String name;
+  final String? phone;
+
+  const _AssignedManagerChip({
+    required this.name,
+    this.phone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F6FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFDDE4FF)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.person, size: 14, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Text(
+            phone == null || phone!.isEmpty ? name : '$name • $phone',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1C1E),
+            ),
+          ),
+        ],
       ),
     );
   }

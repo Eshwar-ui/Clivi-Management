@@ -110,7 +110,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.siteManager.withOpacity(0.1),
+                    color: AppColors.siteManager.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -118,7 +118,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.siteManager.withOpacity(0.2),
+                          color: AppColors.siteManager.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -285,7 +285,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withOpacity(0.1),
+                    color: AppColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(

@@ -6,6 +6,7 @@ enum BillStatus {
   pending('pending'),
   approved('approved'),
   paid('paid'),
+  completed('completed'),
   rejected('rejected');
 
   final String value;
@@ -26,6 +27,8 @@ enum BillStatus {
         return 'Approved';
       case BillStatus.paid:
         return 'Paid';
+      case BillStatus.completed:
+        return 'Completed';
       case BillStatus.rejected:
         return 'Rejected';
     }
@@ -39,10 +42,14 @@ enum BillStatus {
         return AppColors.info;
       case BillStatus.paid:
         return AppColors.success;
+      case BillStatus.completed:
+        return AppColors.success;
       case BillStatus.rejected:
         return AppColors.error;
     }
   }
+
+  bool get isCompleted => this == BillStatus.paid || this == BillStatus.completed;
 }
 
 enum BillType {
@@ -100,6 +107,19 @@ enum PaymentType {
       orElse: () => PaymentType.cash,
     );
   }
+
+  String get label {
+    switch (this) {
+      case PaymentType.cash:
+        return 'Cash';
+      case PaymentType.upi:
+        return 'UPI';
+      case PaymentType.bankTransfer:
+        return 'Bank Transfer';
+      case PaymentType.cheque:
+        return 'Cheque';
+    }
+  }
 }
 
 enum PaymentStatus {
@@ -112,10 +132,28 @@ enum PaymentStatus {
   const PaymentStatus(this.value);
 
   static PaymentStatus fromString(String? status) {
+    if (status == null) return PaymentStatus.needToPay;
+    if (status == 'pending') return PaymentStatus.needToPay;
+    if (status == 'will_pay') return PaymentStatus.advance;
+    if (status == 'paid') return PaymentStatus.fullPaid;
+
     return PaymentStatus.values.firstWhere(
-      (e) => e.value == status,
+      (e) => e.value == status.toLowerCase(),
       orElse: () => PaymentStatus.needToPay,
     );
+  }
+
+  String get label {
+    switch (this) {
+      case PaymentStatus.needToPay:
+        return 'Pending';
+      case PaymentStatus.advance:
+        return 'Will Pay';
+      case PaymentStatus.halfPaid:
+        return 'Half Paid';
+      case PaymentStatus.fullPaid:
+        return 'Paid';
+    }
   }
 }
 
@@ -180,7 +218,7 @@ class BillModel {
       billDate: DateTime.parse(json['bill_date'] as String),
       dueDate: json['due_date'] != null ? DateTime.parse(json['due_date'] as String) : null,
       vendorName: json['vendor_name'] as String?,
-      receiptUrl: json['receipt_url'] as String?,
+      receiptUrl: (json['receipt_url'] ?? json['image_url']) as String?,
       createdBy: json['created_by'] as String?,
       raisedBy: json['raised_by'] as String?,
       approvedBy: json['approved_by'] as String?,
@@ -238,8 +276,13 @@ class BillModel {
     String? createdBy,
     String? raisedBy,
     String? approvedBy,
+    DateTime? createdAt,
+    DateTime? approvedAt,
     PaymentType? paymentType,
     PaymentStatus? paymentStatus,
+    String? projectName,
+    String? createdByName,
+    String? approvedByName,
   }) {
     return BillModel(
       id: id ?? this.id,
@@ -256,13 +299,13 @@ class BillModel {
       createdBy: createdBy ?? this.createdBy,
       raisedBy: raisedBy ?? this.raisedBy,
       approvedBy: approvedBy ?? this.approvedBy,
-      createdAt: createdAt,
-      approvedAt: approvedAt,
+      createdAt: createdAt ?? this.createdAt,
+      approvedAt: approvedAt ?? this.approvedAt,
       paymentType: paymentType ?? this.paymentType,
       paymentStatus: paymentStatus ?? this.paymentStatus,
-      projectName: projectName,
-      createdByName: createdByName,
-      approvedByName: approvedByName,
+      projectName: projectName ?? this.projectName,
+      createdByName: createdByName ?? this.createdByName,
+      approvedByName: approvedByName ?? this.approvedByName,
     );
   }
 }

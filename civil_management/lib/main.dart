@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/env.dart';
 import 'core/config/supabase_client.dart';
+import 'core/providers/global_realtime_sync_provider.dart';
 import 'core/services/local_database_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
@@ -50,6 +51,7 @@ class CivilManagementApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    ref.watch(globalRealtimeSyncProvider);
 
     ref.listen<AsyncValue<AppLifecycleState?>>(appLifecycleProvider, (previous, next) {
       next.whenData((state) {

@@ -58,6 +58,66 @@ class ChartDataPoint {
   }
 }
 
+/// Material movement summary for admin reporting.
+/// Represents one material supplied by one vendor to one project.
+class MaterialVendorReportRow {
+  final String materialName;
+  final String vendorName;
+  final String projectId;
+  final String projectName;
+  final double totalReceived;
+  final String unit;
+  final DateTime? lastReceivedAt;
+
+  const MaterialVendorReportRow({
+    required this.materialName,
+    required this.vendorName,
+    required this.projectId,
+    required this.projectName,
+    required this.totalReceived,
+    required this.unit,
+    this.lastReceivedAt,
+  });
+}
+
+/// Machinery usage summary for admin reporting.
+/// Represents one machine used in one project.
+class MachineryProjectReportRow {
+  final String machineryName;
+  final String machineryType;
+  final String projectId;
+  final String projectName;
+  final double totalHours;
+  final DateTime? lastWorkedAt;
+
+  const MachineryProjectReportRow({
+    required this.machineryName,
+    required this.machineryType,
+    required this.projectId,
+    required this.projectName,
+    required this.totalHours,
+    required this.lastWorkedAt,
+  });
+}
+
+/// Labour allocation summary for admin reporting.
+/// Represents one labour worker mapped to one project.
+class LabourProjectReportRow {
+  final String labourName;
+  final String skillType;
+  final String projectId;
+  final String projectName;
+  final double dailyWage;
+
+  const LabourProjectReportRow({
+    required this.labourName,
+    required this.skillType,
+    required this.projectId,
+    required this.projectName,
+    required this.dailyWage,
+  });
+}
+
 /// Time Period Filter Enum
 enum TimePeriod {
   monthly('Monthly', 'monthly'),

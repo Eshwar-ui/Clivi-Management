@@ -79,11 +79,8 @@ final realtimeProjectsProvider = StreamProvider<RealtimeProjectEvent>((ref) {
         status == RealtimeSubscribeStatus.timedOut ||
         status == RealtimeSubscribeStatus.closed) {
       logger.w(
-        'Realtime channel issue ($status): ${error?.message ?? 'no details'}',
+        'Realtime channel issue ($status): ${error?.toString() ?? 'no details'}',
       );
-      // Attempt a lightweight reconnect
-      supabase.realtime.connect();
-      // If reconnect still fails, rebuild provider on next listen
     }
   });
 
