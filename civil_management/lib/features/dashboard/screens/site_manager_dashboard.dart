@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/widgets/custom_app_bar.dart';
+import '../../auth/data/models/user_profile_model.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../data/models/dashboard_models.dart';
 
@@ -17,9 +19,11 @@ class SiteManagerDashboard extends ConsumerWidget {
     final statsState = ref.watch(dashboardStatsProvider);
     final activityState = ref.watch(recentActivityProvider);
     final projectsState = ref.watch(activeProjectsProvider);
+    final operationsCounts = ref.watch(operationsLiveCountsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
+      appBar: _buildAppBar(context, profile),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => _refreshAll(ref),
@@ -32,30 +36,13 @@ class SiteManagerDashboard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header with welcome message
-                      _buildHeader(context, profile?.fullName ?? 'Project Manager'),
-
                       // Gradient stats card
                       _buildStatsCard(context, statsState),
 
                       const SizedBox(height: 20),
 
                       // Operations section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Operations',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildOperationsGrid(context, projectsState),
-                          ],
-                        ),
-                      ),
+                      _buildOperationsSection(context, operationsCounts),
 
                       const SizedBox(height: 20),
 
@@ -90,9 +77,8 @@ class SiteManagerDashboard extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
                           'Recent Operations',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -111,6 +97,7 @@ class SiteManagerDashboard extends ConsumerWidget {
   }
 
   Future<void> _refreshAll(WidgetRef ref) async {
+    ref.invalidate(operationsLiveCountsProvider);
     await Future.wait([
       ref.read(dashboardStatsProvider.notifier).refresh(),
       ref.read(recentActivityProvider.notifier).refresh(),
@@ -118,44 +105,57 @@ class SiteManagerDashboard extends ConsumerWidget {
     ]);
   }
 
-  Widget _buildHeader(BuildContext context, String name) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    UserProfileModel? profile,
+  ) {
+    return CustomAppBar(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome back,',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Project Manager',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          Text(
+            'Welcome back,',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 4),
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            backgroundImage: null, // Could add profile image here
-            child: Icon(Icons.person, color: AppColors.primary),
+          const SizedBox(height: 2),
+          Text(
+            (profile?.fullName ?? '').isNotEmpty
+                ? profile!.fullName!
+                : 'Project Manager',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
+      showBackButton: false,
+      actions: [
+        Container(
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.notifications_outlined, size: 20),
+            color: AppColors.textPrimary,
+            onPressed: () {},
+            padding: EdgeInsets.zero,
+          ),
+        ),
+        const SizedBox(width: 12),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          child: const Icon(Icons.person, color: AppColors.primary, size: 20),
+        ),
+      ],
     );
   }
 
@@ -185,7 +185,8 @@ class SiteManagerDashboard extends ConsumerWidget {
               value: stats.activeProjects.toString().padLeft(2, '0'),
               label: 'Active Projects',
               isLoading: state.isLoading,
-              growth: '${stats.growthPercentage > 0 ? '+' : ''}${stats.growthPercentage}%',
+              growth:
+                  '${stats.growthPercentage > 0 ? '+' : ''}${stats.growthPercentage}%',
             ),
           ),
           Container(
@@ -263,11 +264,7 @@ class SiteManagerDashboard extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.trending_up,
-                  size: 14,
-                  color: Colors.white,
-                ),
+                Icon(Icons.trending_up, size: 14, color: Colors.white),
                 const SizedBox(width: 4),
                 Text(
                   growth,
@@ -285,145 +282,134 @@ class SiteManagerDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildOperationsGrid(
+  Widget _buildOperationsSection(
     BuildContext context,
-    ActiveProjectsState projectsState,
+    AsyncValue<OperationsLiveCounts> operationsCounts,
   ) {
-    final projectId = projectsState.projects.isNotEmpty
-        ? projectsState.projects.first.id
-        : null;
+    String subtitleFor({
+      required int count,
+      required String singular,
+      required String plural,
+    }) {
+      return '$count ${count == 1 ? singular : plural}';
+    }
 
-    final tiles = [
-      _OpData(
-        icon: Icons.inventory_2_outlined,
+    final liveCounts = operationsCounts.valueOrNull;
+    final operations = [
+      _OperationTile(
         label: 'Materials',
-        onTap: () {
-          if (projectId != null) {
-            context.push('/projects/$projectId/stock');
-          } else {
-            _showNoProjectMessage(context);
-          }
-        },
+        subtitle: liveCounts == null
+            ? 'Loading...'
+            : subtitleFor(
+                count: liveCounts.vendors,
+                singular: 'Vendor',
+                plural: 'Vendors',
+              ),
+        icon: Icons.inventory_2_outlined,
+        bg: Colors.blue[50],
+        onTap: () => context.push('/master/vendors'),
       ),
-      _OpData(
-        icon: Icons.construction,
-        label: 'Machinery Logs',
-        onTap: () {
-          if (projectId != null) {
-            context.push('/projects/$projectId/operations/machinery');
-          } else {
-            _showNoProjectMessage(context);
-          }
-        },
+      _OperationTile(
+        label: 'Machinery',
+        subtitle: liveCounts == null
+            ? 'Loading...'
+            : subtitleFor(
+                count: liveCounts.machinery,
+                singular: 'Machine',
+                plural: 'Machines',
+              ),
+        icon: Icons.build_outlined,
+        bg: Colors.orange[50],
+        onTap: () => context.push('/master/machinery'),
       ),
-      _OpData(
-        icon: Icons.add_circle_outline,
-        label: 'Add Machinery',
+      _OperationTile(
+        label: 'Material Master List',
+        subtitle: 'Manage Materials',
+        icon: Icons.list_alt,
+        bg: Colors.green[50],
         onTap: () {
-          context.push('/machinery');
-        },
-      ),
-      _OpData(
-        icon: Icons.people_outline,
-        label: 'Labor',
-        onTap: () {
-          if (projectId != null) {
-            context.push('/projects/$projectId/operations/labour');
-          } else {
-            _showNoProjectMessage(context);
-          }
-        },
-      ),
-      _OpData(
-        icon: Icons.receipt_long_outlined,
-        label: 'Reports',
-        onTap: () {
-          if (projectId != null) {
-            context.push('/projects/$projectId/reports');
-          } else {
-            _showNoProjectMessage(context);
-          }
+          context.push('/master/materials');
         },
       ),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
-        final spacing = 12.0;
-        final totalSpacing = spacing * (crossAxisCount - 1);
-        final itemWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: tiles
-              .map((t) => _buildOperationItem(
-                    context,
-                    icon: t.icon,
-                    label: t.label,
-                    onTap: t.onTap,
-                    width: itemWidth,
-                  ))
-              .toList(),
-        );
-      },
-    );
-  }
-
-  void _showNoProjectMessage(BuildContext context) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('No project assigned')));
-  }
-
-  Widget _buildOperationItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required double width,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: width,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Operations',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 14),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: operations.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              mainAxisExtent: 140,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-          ],
-        ),
+            itemBuilder: (context, index) {
+              final op = operations[index];
+              return InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: op.onTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: op.bg,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(op.icon, color: AppColors.primary),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        op.label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        op.subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -799,9 +785,18 @@ class SiteManagerDashboard extends ConsumerWidget {
   }
 }
 
-class _OpData {
-  final IconData icon;
+class _OperationTile {
   final String label;
+  final String subtitle;
+  final IconData icon;
+  final Color? bg;
   final VoidCallback onTap;
-  const _OpData({required this.icon, required this.label, required this.onTap});
+
+  const _OperationTile({
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    this.bg,
+    required this.onTap,
+  });
 }

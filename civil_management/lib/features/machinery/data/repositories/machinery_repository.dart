@@ -15,20 +15,21 @@ class MachineryRepository {
           *,
           machinery (id, name, type, registration_no)
         ''')
-        .eq('project_id', projectId)  // 👈 FILTER BY PROJECT
+        .eq('project_id', projectId) // 👈 FILTER BY PROJECT
         .order('logged_at', ascending: false);
-    
-    return (response as List).map((json) => MachineryLog.fromJson(json)).toList();
+
+    return (response as List)
+        .map((json) => MachineryLog.fromJson(json))
+        .toList();
   }
 
   /// Get ALL machinery (to select for logging)
   Future<List<MachineryModel>> getAllMachinery() async {
-    final response = await _client
-        .from('machinery')
-        .select('*')
-        .order('name');
-    
-    return (response as List).map((json) => MachineryModel.fromJson(json)).toList();
+    final response = await _client.from('machinery').select('*').order('name');
+
+    return (response as List)
+        .map((json) => MachineryModel.fromJson(json))
+        .toList();
   }
 
   /// Create new machinery (Master)
@@ -90,10 +91,10 @@ class MachineryRepository {
     });
 
     // Update machinery total hours
-    await _client.rpc('increment_machinery_hours', params: {
-      'p_machinery_id': machineryId,
-      'p_hours': totalHours,
-    });
+    await _client.rpc(
+      'increment_machinery_hours',
+      params: {'p_machinery_id': machineryId, 'p_hours': totalHours},
+    );
   }
 
   /// Log machinery usage (Legacy / Reading Based)
@@ -101,6 +102,7 @@ class MachineryRepository {
     required String projectId,
     required String machineryId,
     required String workActivity,
+    required DateTime logDate,
     required double startReading,
     required double endReading,
     String? notes,
@@ -113,6 +115,7 @@ class MachineryRepository {
       'project_id': projectId,
       'machinery_id': machineryId,
       'work_activity': workActivity,
+      'log_date': logDate.toIso8601String().split('T')[0],
       'start_reading': startReading,
       'end_reading': endReading,
       'hours_used': executionHours, // Calculated hours
@@ -122,10 +125,10 @@ class MachineryRepository {
     });
 
     // Update total hours via RPC; skip direct column updates to avoid schema-cache issues
-    await _client.rpc('increment_machinery_hours', params: {
-      'p_machinery_id': machineryId,
-      'p_hours': executionHours,
-    });
+    await _client.rpc(
+      'increment_machinery_hours',
+      params: {'p_machinery_id': machineryId, 'p_hours': executionHours},
+    );
   }
 
   Stream<List<MachineryLog>> streamMachineryLogsByProject(String projectId) {
@@ -155,13 +158,16 @@ class MachineryRepository {
     String? note,
   }) async {
     await _client.from('machinery_logs').delete().eq('id', logId);
-    await _client.rpc('log_operation', params: {
-      'p_operation_type': 'delete',
-      'p_entity_type': 'machinery',
-      'p_entity_id': logId,
-      'p_title': '[DELETE] Machinery log',
-      'p_description': note ?? '',
-      'p_project_id': projectId,
-    });
+    await _client.rpc(
+      'log_operation',
+      params: {
+        'p_operation_type': 'delete',
+        'p_entity_type': 'machinery',
+        'p_entity_id': logId,
+        'p_title': '[DELETE] Machinery log',
+        'p_description': note ?? '',
+        'p_project_id': projectId,
+      },
+    );
   }
 }

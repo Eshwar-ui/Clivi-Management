@@ -15,10 +15,7 @@ import 'blueprint_upload_screen.dart';
 class BlueprintFilesScreen extends ConsumerStatefulWidget {
   final String projectId;
 
-  const BlueprintFilesScreen({
-    super.key,
-    required this.projectId,
-  });
+  const BlueprintFilesScreen({super.key, required this.projectId});
 
   @override
   ConsumerState<BlueprintFilesScreen> createState() =>
@@ -45,9 +42,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
         ),
         child: FractionallySizedBox(
           heightFactor: 0.75,
-          child: BlueprintUploadScreen(
-            projectId: widget.projectId,
-          ),
+          child: BlueprintUploadScreen(projectId: widget.projectId),
         ),
       ),
     );
@@ -69,9 +64,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
@@ -81,12 +74,17 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
     if (confirmed != true) return;
 
     try {
-      await ref
-          .read(blueprintRepositoryProvider)
-          .deleteBlueprint(blueprint.id);
+      await ref.read(blueprintRepositoryProvider).deleteBlueprint(blueprint.id);
 
       // Invalidate provider to refresh the list
       ref.invalidate(allBlueprintsProvider(widget.projectId));
+      ref.invalidate(blueprintFoldersProvider(widget.projectId));
+      ref.invalidate(
+        blueprintFilesProvider(
+          projectId: widget.projectId,
+          folderName: blueprint.folderName,
+        ),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,9 +110,9 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
   Widget build(BuildContext context) {
     final projectAsync = ref.watch(projectDetailProvider(widget.projectId));
     final projectName = projectAsync.project?.name ?? 'Unknown Project';
-    
+
     final filesAsync = ref.watch(allBlueprintsProvider(widget.projectId));
-    
+
     final authState = ref.watch(authProvider);
     final isAdmin = authState.isAtLeast(UserRole.admin);
 
@@ -136,27 +134,13 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
             fontSize: 18,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
-            onPressed: () {
-              // TODO: Implement filter functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filter coming soon')),
-              );
-            },
-          ),
-        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Breadcrumb
-          BlueprintBreadcrumb(
-            projectName: projectName,
-            folderName: null,
-          ),
-          
+          BlueprintBreadcrumb(projectName: projectName, folderName: null),
+
           // Search bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -183,28 +167,27 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
               },
             ),
           ),
-          
+
           // Files list
           Expanded(
             child: filesAsync.when(
               loading: () => const LoadingWidget(),
               error: (err, stack) => AppErrorWidget(
                 message: err.toString(),
-                onRetry: () => ref.invalidate(
-                  allBlueprintsProvider(widget.projectId),
-                ),
+                onRetry: () =>
+                    ref.invalidate(allBlueprintsProvider(widget.projectId)),
               ),
               data: (files) {
                 // Filter files based on search query
                 final filteredFiles = _searchQuery.isEmpty
                     ? files
                     : files.where((file) {
-                        return file.fileName
-                            .toLowerCase()
-                            .contains(_searchQuery) ||
-                            file.folderName
-                            .toLowerCase()
-                            .contains(_searchQuery);
+                        return file.fileName.toLowerCase().contains(
+                              _searchQuery,
+                            ) ||
+                            file.folderName.toLowerCase().contains(
+                              _searchQuery,
+                            );
                       }).toList();
 
                 if (filteredFiles.isEmpty) {
@@ -239,8 +222,12 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                 }
 
                 // Group files by admin/general
-                final adminFiles = filteredFiles.where((f) => f.isAdminOnly).toList();
-                final generalFiles = filteredFiles.where((f) => !f.isAdminOnly).toList();
+                final adminFiles = filteredFiles
+                    .where((f) => f.isAdminOnly)
+                    .toList();
+                final generalFiles = filteredFiles
+                    .where((f) => !f.isAdminOnly)
+                    .toList();
 
                 return ListView(
                   padding: const EdgeInsets.all(16),
@@ -282,19 +269,23 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      ...adminFiles.map((file) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: BlueprintCard(
-                          blueprint: file,
-                          onTap: () {
-                            context.push(
-                              '/projects/${widget.projectId}/blueprints/view/${file.id}',
-                              extra: file,
-                            );
-                          },
-                          onDelete: isAdmin ? () => _deleteBlueprint(file) : null,
+                      ...adminFiles.map(
+                        (file) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: BlueprintCard(
+                            blueprint: file,
+                            onTap: () {
+                              context.push(
+                                '/projects/${widget.projectId}/blueprints/view/${file.id}',
+                                extra: file,
+                              );
+                            },
+                            onDelete: isAdmin
+                                ? () => _deleteBlueprint(file)
+                                : null,
+                          ),
                         ),
-                      )),
+                      ),
                       const SizedBox(height: 16),
                     ],
 
@@ -315,19 +306,23 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      ...generalFiles.map((file) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: BlueprintCard(
-                          blueprint: file,
-                          onTap: () {
-                            context.push(
-                              '/projects/${widget.projectId}/blueprints/view/${file.id}',
-                              extra: file,
-                            );
-                          },
-                          onDelete: isAdmin ? () => _deleteBlueprint(file) : null,
+                      ...generalFiles.map(
+                        (file) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: BlueprintCard(
+                            blueprint: file,
+                            onTap: () {
+                              context.push(
+                                '/projects/${widget.projectId}/blueprints/view/${file.id}',
+                                extra: file,
+                              );
+                            },
+                            onDelete: isAdmin
+                                ? () => _deleteBlueprint(file)
+                                : null,
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ],
                 );

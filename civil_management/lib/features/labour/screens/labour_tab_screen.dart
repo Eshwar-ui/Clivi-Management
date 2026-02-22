@@ -5,6 +5,7 @@ import '../providers/labour_provider.dart';
 import '../data/models/daily_labour_log.dart';
 import '../data/models/labour_model.dart';
 import '../../common/widgets/searchable_dropdown_with_create.dart';
+import '../../projects/screens/project_operations_screen.dart';
 
 class LabourTabScreen extends ConsumerWidget {
   final String projectId;
@@ -14,22 +15,23 @@ class LabourTabScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final logsAsync = ref.watch(dailyLabourLogsProvider(projectId));
-    
+    final dateRange = ref.watch(projectDateRangeProvider);
+
     // Calculate Stats for Header (Today's snapshot)
     final logs = logsAsync.valueOrNull ?? [];
     int totalWorkers = 0;
     int skilled = 0;
     int unskilled = 0;
-    
+
     final now = DateTime.now();
     for (var log in logs) {
-       if (log.logDate.year == now.year && 
-           log.logDate.month == now.month && 
-           log.logDate.day == now.day) {
-          totalWorkers += (log.skilledCount + log.unskilledCount);
-          skilled += log.skilledCount;
-          unskilled += log.unskilledCount;
-       }
+      if (log.logDate.year == now.year &&
+          log.logDate.month == now.month &&
+          log.logDate.day == now.day) {
+        totalWorkers += (log.skilledCount + log.unskilledCount);
+        skilled += log.skilledCount;
+        unskilled += log.unskilledCount;
+      }
     }
 
     return Scaffold(
@@ -43,79 +45,170 @@ class LabourTabScreen extends ConsumerWidget {
         child: Column(
           children: [
             // Header / Actions
-             Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Labor History',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Labor History',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    side: BorderSide(color: Colors.grey.shade300),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final dateRange = ref.watch(projectDateRangeProvider);
+                      final isFiltered = dateRange != null;
+                      return OutlinedButton.icon(
+                        onPressed: () async {
+                          if (isFiltered) {
+                            ref.read(projectDateRangeProvider.notifier).state =
+                                null;
+                          } else {
+                            final picked = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
+                              initialDateRange: dateRange,
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: const Color(
+                                        0xFF1E293B,
+                                      ), // Match dark theme tone
+                                      onPrimary: Colors.white,
+                                      onSurface: Colors.black,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              ref
+                                      .read(projectDateRangeProvider.notifier)
+                                      .state =
+                                  picked;
+                            }
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          side: BorderSide(
+                            color: isFiltered
+                                ? const Color(0xFF1E293B)
+                                : Colors.grey.shade300,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 0,
+                          ),
+                          backgroundColor: isFiltered
+                              ? const Color(0xFF1E293B).withOpacity(0.05)
+                              : Colors.transparent,
+                        ),
+                        icon: Icon(
+                          isFiltered ? Icons.clear : Icons.date_range,
+                          size: 16,
+                          color: isFiltered
+                              ? const Color(0xFF1E293B)
+                              : Colors.black,
+                        ),
+                        label: Text(
+                          isFiltered ? 'Clear Filter' : 'Select Date',
+                          style: TextStyle(
+                            color: isFiltered
+                                ? const Color(0xFF1E293B)
+                                : Colors.black,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  child: const Text('Select', style: TextStyle(color: Colors.black)),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          // Stats Card (Optional based on image, but good to keep? 
-          // Image shows just history list. I'll Keep the cool gradient stats card because it's valuable 
-          // and "Labor History" title is above the list. Wait, Image doesn't show stats card.
-          // Image shows list of cards directly below title.
-          // I will REMOVE the stats card to strictly follow "match image exactly".
-          // But I'll verify if that removes functionality. The user said "Update UI to match image exactly".
-          // The image has NO stats card at top. Just "Labor History" and list.
-          // I will stick to image.
-          
-          const SizedBox(height: 12),
 
-          // List
-          Expanded(
-            child: logsAsync.when(
-              data: (logs) {
-                if (logs.isEmpty) {
-                  return const Center(child: Text('No labor logs recorded'));
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-                  itemCount: logs.length,
-                  itemBuilder: (context, index) {
-                    final log = logs[index];
-                    final total = log.skilledCount + log.unskilledCount;
-                    final phone = _extractPhone(log.notes);
-                    
-                    return _LaborHistoryCard(
-                      name: log.contractorName,
-                      phone: phone,
-                      workers: total,
-                      skilled: log.skilledCount,
-                      unskilled: log.unskilledCount,
-                      initials: _getInitials(log.contractorName),
-                      color: _getColor(index),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+            // Stats Card (Optional based on image, but good to keep?
+            // Image shows just history list. I'll Keep the cool gradient stats card because it's valuable
+            // and "Labor History" title is above the list. Wait, Image doesn't show stats card.
+            // Image shows list of cards directly below title.
+            // I will REMOVE the stats card to strictly follow "match image exactly".
+            // But I'll verify if that removes functionality. The user said "Update UI to match image exactly".
+            // The image has NO stats card at top. Just "Labor History" and list.
+            // I will stick to image.
+            const SizedBox(height: 12),
+
+            // List
+            Expanded(
+              child: logsAsync.when(
+                data: (logs) {
+                  var displayLogs = logs;
+                  if (dateRange != null) {
+                    displayLogs = logs.where((log) {
+                      final logDate = DateTime(
+                        log.logDate.year,
+                        log.logDate.month,
+                        log.logDate.day,
+                      );
+                      final start = DateTime(
+                        dateRange.start.year,
+                        dateRange.start.month,
+                        dateRange.start.day,
+                      );
+                      final end = DateTime(
+                        dateRange.end.year,
+                        dateRange.end.month,
+                        dateRange.end.day,
+                      );
+                      return (logDate.isAtSameMomentAs(start) ||
+                              logDate.isAfter(start)) &&
+                          (logDate.isAtSameMomentAs(end) ||
+                              logDate.isBefore(end));
+                    }).toList();
+                  }
+
+                  if (displayLogs.isEmpty) {
+                    return const Center(child: Text('No labor logs recorded'));
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                    itemCount: displayLogs.length,
+                    itemBuilder: (context, index) {
+                      final log = displayLogs[index];
+                      final total = log.skilledCount + log.unskilledCount;
+                      final phone = _extractPhone(log.notes);
+
+                      return _LaborHistoryCard(
+                        name: log.contractorName,
+                        phone: phone,
+                        workers: total,
+                        skilled: log.skilledCount,
+                        unskilled: log.unskilledCount,
+                        initials: _getInitials(log.contractorName),
+                        color: _getColor(index),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('Error: $err')),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
-  
+
   void _showLogLaborSheet(BuildContext context, String projectId) {
     showModalBottomSheet(
       context: context,
@@ -140,7 +233,7 @@ class LabourTabScreen extends ConsumerWidget {
     }
     return trimmed.isNotEmpty ? trimmed : null;
   }
-  
+
   Color _getColor(int index) {
     final colors = [
       Colors.blue,
@@ -209,7 +302,7 @@ class _LaborHistoryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Info
           Expanded(
             child: Column(
@@ -217,13 +310,20 @@ class _LaborHistoryCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 if (phone != null)
                   Text(
                     phone!,
-                    style: const TextStyle(color: Colors.blueAccent, fontSize: 12, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      color: Colors.blueAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
               ],
             ),
@@ -232,14 +332,61 @@ class _LaborHistoryCard extends StatelessWidget {
           // Counts
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 '$workers',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
               const Text(
-                'Workers',
+                'Total Workers',
                 style: TextStyle(color: Colors.grey, fontSize: 10),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Skilled: $skilled',
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Unskilled: $unskilled',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -268,6 +415,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
   final _unskilledController = TextEditingController(text: '0');
   bool _isLoading = false;
   LabourModel? _selectedLabour;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
@@ -276,13 +424,15 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
       padding: EdgeInsets.fromLTRB(
-        24, 
-        24, 
-        24, 
-        MediaQuery.of(context).viewInsets.bottom + 24
+        24,
+        24,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: Form(
         key: _formKey,
@@ -291,8 +441,8 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               // Header
-               Row(
+              // Header
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
@@ -300,7 +450,10 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                     children: [
                       const Text(
                         'Log Labor',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -324,7 +477,14 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
               ),
               const SizedBox(height: 24),
 
-              const Text('HEAD / CONTRACTOR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const Text(
+                'HEAD / CONTRACTOR',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
               const SizedBox(height: 8),
               masterLabourAsync.when(
                 loading: () => const LinearProgressIndicator(),
@@ -363,14 +523,73 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                   },
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              const Text(
+                'LOG DATE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: Color(0xFF1E293B),
+                            onPrimary: Colors.white,
+                            onSurface: Colors.black,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() => _selectedDate = picked);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(_selectedDate),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const Icon(
+                        Icons.date_range,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Name *',
                   prefixIcon: Icon(Icons.engineering),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -381,9 +600,9 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                 ),
                 keyboardType: TextInputType.phone,
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Counts
               Container(
                 padding: const EdgeInsets.all(16),
@@ -393,13 +612,23 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                 ),
                 child: Column(
                   children: [
-                    _buildCounterRow('Skilled', 'workers', _skilledController, Icon(Icons.engineering, color: Colors.orange[300])),
+                    _buildCounterRow(
+                      'Skilled',
+                      'workers',
+                      _skilledController,
+                      Icon(Icons.engineering, color: Colors.orange[300]),
+                    ),
                     const Divider(height: 24),
-                    _buildCounterRow('Unskilled', 'workers', _unskilledController, Icon(Icons.group, color: Colors.grey[400])),
+                    _buildCounterRow(
+                      'Unskilled',
+                      'workers',
+                      _unskilledController,
+                      Icon(Icons.group, color: Colors.grey[400]),
+                    ),
                   ],
                 ),
               ),
-    
+
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -408,11 +637,16 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E293B),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Confirm & Save Log', style: TextStyle(color: Colors.white, fontSize: 16)),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Confirm & Save Log',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
             ],
@@ -422,21 +656,32 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
     );
   }
 
-  Widget _buildCounterRow(String label, String sub, TextEditingController controller, Widget icon) {
+  Widget _buildCounterRow(
+    String label,
+    String sub,
+    TextEditingController controller,
+    Widget icon,
+  ) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: icon,
         ),
         const SizedBox(width: 12),
         Column(
-           crossAxisAlignment: CrossAxisAlignment.start,
-           children: [
-             Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-             // Text(sub, style: TextStyle(color: Colors.grey, fontSize: 10)),
-           ],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            // Text(sub, style: TextStyle(color: Colors.grey, fontSize: 10)),
+          ],
         ),
         const Spacer(),
         // Simple Counter Buttons or just Text Field?
@@ -452,7 +697,10 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey.shade200),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -460,42 +708,48 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
     );
   }
 
-
   Future<void> _submit() async {
     if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter contractor name')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter contractor name')));
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       final log = DailyLabourLog(
-         id: '',
-         projectId: widget.projectId,
-         contractorName: _nameController.text.trim(),
-         skilledCount: int.tryParse(_skilledController.text) ?? 0,
-         unskilledCount: int.tryParse(_unskilledController.text) ?? 0,
-         logDate: DateTime.now(),
-         notes: _phoneController.text.trim().isEmpty
-             ? null
-             : 'Phone: ${_phoneController.text.trim()}',
-         labourId: _selectedLabour?.id,
+        id: '',
+        projectId: widget.projectId,
+        contractorName: _nameController.text.trim(),
+        skilledCount: int.tryParse(_skilledController.text) ?? 0,
+        unskilledCount: int.tryParse(_unskilledController.text) ?? 0,
+        logDate: _selectedDate,
+        notes: _phoneController.text.trim().isEmpty
+            ? null
+            : 'Phone: ${_phoneController.text.trim()}',
+        labourId: _selectedLabour?.id,
       );
       await ref.read(labourRepositoryProvider).createDailyLog(log);
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log saved'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Log saved'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e, stackTrace) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

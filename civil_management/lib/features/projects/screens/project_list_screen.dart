@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -50,13 +51,33 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final isAdmin = role == UserRole.admin || role == UserRole.superAdmin;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Projects'),
+      appBar: CustomAppBar(
+        title: Text(
+          'Projects',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        showBackButton: false,
         actions: [
           if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () => _showFilterSheet(context),
+            Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.filter_list, size: 20),
+                color: AppColors.textPrimary,
+                padding: EdgeInsets.zero,
+                onPressed: () => _showFilterSheet(context),
+              ),
             ),
         ],
       ),
@@ -111,10 +132,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         ],
       ),
       floatingActionButton: isAdmin
-          ? FloatingActionButton.extended(
+          ? FloatingActionButton(
+              tooltip: 'Add Project',
               onPressed: () => context.push('/projects/create'),
-              icon: const Icon(Icons.add),
-              label: const Text('New Project'),
+              child: const Icon(Icons.add),
             )
           : null,
     );
@@ -206,16 +227,16 @@ class _ProjectCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Type and Location Header
-               Row(
+              Row(
                 children: [
                   if (project.projectType != null) ...[
                     Text(
                       project.projectType!.value.toUpperCase(),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: project.projectType!.color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
+                        color: project.projectType!.color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
                     ),
                     if (project.location != null) ...[
                       const SizedBox(width: 8),
@@ -232,8 +253,8 @@ class _ProjectCard extends StatelessWidget {
                       child: Text(
                         project.location!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                          color: AppColors.textSecondary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -245,9 +266,9 @@ class _ProjectCard extends StatelessWidget {
               Text(
                 project.name,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -304,7 +325,7 @@ class _ProjectCard extends StatelessWidget {
 
               // Progress Bar (Financial/Completion)
               const SizedBox(height: 12),
-               Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -312,9 +333,9 @@ class _ProjectCard extends StatelessWidget {
                     children: [
                       Text(
                         'Completion',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       Text(
                         '${project.progress}%',
@@ -400,8 +421,6 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
-
-
 
 /// Filter bottom sheet
 class _FilterSheet extends StatelessWidget {

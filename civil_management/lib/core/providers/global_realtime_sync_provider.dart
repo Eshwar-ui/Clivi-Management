@@ -8,8 +8,10 @@ import '../../features/auth/providers/auth_repository_provider.dart';
 import '../../features/bills/providers/bill_provider.dart' as bills;
 import '../../features/blueprints/providers/blueprints_provider.dart'
     as blueprints;
-import '../../features/dashboard/providers/dashboard_provider.dart' as dashboard;
-import '../../features/inventory/providers/inventory_provider.dart' as inventory;
+import '../../features/dashboard/providers/dashboard_provider.dart'
+    as dashboard;
+import '../../features/inventory/providers/inventory_provider.dart'
+    as inventory;
 import '../../features/labour/providers/labour_provider.dart' as labour;
 import '../../features/machinery/providers/machinery_provider.dart'
     as machinery;
@@ -17,7 +19,8 @@ import '../../features/materials/providers/master_data_provider.dart'
     as material_master;
 import '../../features/materials/providers/repository_providers.dart';
 import '../../features/materials/providers/receipts_provider.dart' as receipts;
-import '../../features/materials/providers/stock_provider.dart' as materials_stock;
+import '../../features/materials/providers/stock_provider.dart'
+    as materials_stock;
 import '../../features/projects/providers/project_provider.dart' as projects;
 import '../../features/reports/providers/report_provider.dart' as reports;
 import '../../features/vendors/providers/vendor_analytics_provider.dart'
@@ -41,9 +44,7 @@ final globalRealtimeSyncProvider = Provider<void>((ref) {
 
     _invalidateForTables(ref, tables);
 
-    logger.i(
-      'Realtime sync refresh triggered for: ${tables.toList()..sort()}',
-    );
+    logger.i('Realtime sync refresh triggered for: ${tables.toList()..sort()}');
   }
 
   void scheduleRefresh(String table) {
@@ -94,8 +95,6 @@ const Set<String> _watchedTables = {
   'stock_items',
   'material_logs',
   'suppliers',
-  'material_receipts',
-  'material_receipt_items',
   'material_master',
   'material_grades',
   'material_issues',
@@ -130,7 +129,11 @@ const Set<String> _materialTables = {
   'project_inventory_summary',
 };
 const Set<String> _machineryTables = {'machinery', 'machinery_logs'};
-const Set<String> _labourTables = {'labour', 'labour_attendance', 'daily_labour_logs'};
+const Set<String> _labourTables = {
+  'labour',
+  'labour_attendance',
+  'daily_labour_logs',
+};
 const Set<String> _blueprintTables = {'blueprints'};
 const Set<String> _activityTables = {'operation_logs'};
 const Set<String> _userTables = {'user_profiles'};

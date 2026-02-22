@@ -227,7 +227,7 @@ class LocalDatabaseService {
     try {
       final json = _metadataBox.get('recent_activity');
       if (json == null) return null;
-      
+
       if (json is List) {
         return json.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }

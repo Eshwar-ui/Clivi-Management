@@ -64,6 +64,6 @@ final todayAttendanceSummaryProvider =
 /// Daily Labour Logs (Force Reports) Stream
 final dailyLabourLogsProvider =
     StreamProvider.family<List<DailyLabourLog>, String>((ref, projectId) {
-  final repo = ref.watch(labourRepositoryProvider);
-  return repo.streamDailyLogs(projectId);
-});
+      final repo = ref.watch(labourRepositoryProvider);
+      return repo.streamDailyLogs(projectId);
+    });

@@ -48,7 +48,7 @@ class DailyLabourLog {
       'created_by': createdBy,
     };
   }
-  
+
   Map<String, dynamic> toInsertJson() {
     return {
       'project_id': projectId,

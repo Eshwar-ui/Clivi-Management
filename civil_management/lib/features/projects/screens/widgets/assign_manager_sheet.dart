@@ -121,8 +121,8 @@ class _AssignManagerSheetState extends ConsumerState<AssignManagerSheet> {
                       child: Text(
                         'You can assign multiple site managers to this project.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],

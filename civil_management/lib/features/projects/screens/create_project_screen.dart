@@ -39,7 +39,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   ProjectStatus _selectedStatus = ProjectStatus.planning;
   DateTime? _startDate = DateTime.now();
   DateTime? _endDate = DateTime.now().add(const Duration(days: 90));
-  
+
   // Set of selected manager IDs
   Set<String> _selectedManagerIds = {};
   // List of selected manager models for display (fetched on load)
@@ -67,31 +67,35 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final state = ref.read(projectDetailProvider(widget.projectId!));
       final project = state.project;
-      
+
       if (project != null) {
         _nameController.text = project.name;
         _clientNameController.text = project.clientName ?? '';
         _descriptionController.text = project.description ?? '';
         _locationController.text = project.location ?? '';
         _budgetController.text = project.budget?.toStringAsFixed(0) ?? '';
-        
+
         // Initialize selected managers from project assignments
         if (project.assignments != null) {
-           _selectedManagerIds = project.assignments!
+          _selectedManagerIds = project.assignments!
               .map((a) => a.userId)
               .toSet();
-           
-           // We need to fetch the actual manager models to display names
-           // This is a bit of a workaround since assignments have user profiles nested
-           // but mapped to ProjectAssignmentModel. We can reconstruct display models.
-           setState(() {
-             _displayManagers = project.assignments!.map((a) => SiteManagerModel(
-               id: a.userId,
-               fullName: a.userName,
-               phone: a.userPhone,
-               isAssigned: true,
-             )).toList();
-           });
+
+          // We need to fetch the actual manager models to display names
+          // This is a bit of a workaround since assignments have user profiles nested
+          // but mapped to ProjectAssignmentModel. We can reconstruct display models.
+          setState(() {
+            _displayManagers = project.assignments!
+                .map(
+                  (a) => SiteManagerModel(
+                    id: a.userId,
+                    fullName: a.userName,
+                    phone: a.userPhone,
+                    isAssigned: true,
+                  ),
+                )
+                .toList();
+          });
         }
 
         setState(() {
@@ -99,12 +103,14 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           _startDate = project.startDate;
           _endDate = project.endDate;
           if (_startDate != null) {
-            _startDateController.text =
-                DateFormat('dd-MM-yyyy').format(_startDate!);
+            _startDateController.text = DateFormat(
+              'dd-MM-yyyy',
+            ).format(_startDate!);
           }
           if (_endDate != null) {
-            _endDateController.text =
-                DateFormat('dd-MM-yyyy').format(_endDate!);
+            _endDateController.text = DateFormat(
+              'dd-MM-yyyy',
+            ).format(_endDate!);
           }
         });
       }
@@ -122,16 +128,15 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     _endDateController.dispose();
     super.dispose();
   }
-  
+
   // Show bottom sheet to select managers
   Future<void> _showManagerSelection() async {
     final result = await showModalBottomSheet<Set<String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => SiteManagerSelectionSheet(
-        initialSelectedIds: _selectedManagerIds,
-      ),
+      builder: (context) =>
+          SiteManagerSelectionSheet(initialSelectedIds: _selectedManagerIds),
     );
 
     if (result != null) {
@@ -146,13 +151,15 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   Future<void> _refreshDisplayManagers() async {
     // If we have IDs but no display models (or mismatch), fetch all managers to get details
     // Only needed if we selected new ones that weren't already in _displayManagers
-    final allManagers = await ref.read(projectRepositoryProvider).getSiteManagers();
-    
+    final allManagers = await ref
+        .read(projectRepositoryProvider)
+        .getSiteManagers();
+
     if (mounted) {
       setState(() {
-         _displayManagers = allManagers
-             .where((m) => _selectedManagerIds.contains(m.id))
-             .toList();
+        _displayManagers = allManagers
+            .where((m) => _selectedManagerIds.contains(m.id))
+            .toList();
       });
     }
   }
@@ -169,8 +176,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       final project = ProjectModel(
         id: widget.projectId ?? '',
         name: _nameController.text.trim(),
-        clientName: _clientNameController.text.trim().isEmpty 
-            ? null 
+        clientName: _clientNameController.text.trim().isEmpty
+            ? null
             : _clientNameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
@@ -187,27 +194,26 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       );
 
       String? resultProjectId;
-      
+
       if (widget.isEditing) {
         // Update existing project
         resultProjectId = widget.projectId;
         final success = await ref
             .read(projectDetailProvider(widget.projectId!).notifier)
             .updateProject(project.toJson());
-            
+
         if (!success) throw Exception('Failed to update project details');
-            
       } else {
         // Create new project
         final createdProject = await ref
             .read(createProjectProvider.notifier)
             .createProject(project);
-            
-         if (createdProject != null) {
-           resultProjectId = createdProject.id;
-         } else {
-           throw Exception('Failed to create project');
-         }
+
+        if (createdProject != null) {
+          resultProjectId = createdProject.id;
+        } else {
+          throw Exception('Failed to create project');
+        }
       }
 
       // Handle Manager Assignments
@@ -215,26 +221,29 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       if (resultProjectId != null) {
         final currentUser = ref.read(currentUserProvider);
         if (currentUser != null) {
-            await ref.read(projectRepositoryProvider).updateAssignments(
-              projectId: resultProjectId,
-              assignedUserIds: _selectedManagerIds.toList(),
-              assignedBy: currentUser.id,
-            );
+          await ref
+              .read(projectRepositoryProvider)
+              .updateAssignments(
+                projectId: resultProjectId,
+                assignedUserIds: _selectedManagerIds.toList(),
+                assignedBy: currentUser.id,
+              );
         }
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(widget.isEditing
-                ? 'Project updated successfully!'
-                : 'Project created successfully!'),
+            content: Text(
+              widget.isEditing
+                  ? 'Project updated successfully!'
+                  : 'Project created successfully!',
+            ),
             backgroundColor: AppColors.success,
           ),
         );
         context.pop();
       }
-      
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -299,7 +308,9 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(widget.isEditing ? 'Edit Project Details' : 'Add New Project'),
+        title: Text(
+          widget.isEditing ? 'Edit Project Details' : 'Add New Project',
+        ),
         centerTitle: true,
       ),
       builder: (context, r) {
@@ -320,7 +331,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       InlineErrorWidget(message: _errorMessage!),
                       const SizedBox(height: 16),
                     ],
-                    
+
                     _buildLabel('Project Name'),
                     _buildTextField(
                       controller: _nameController,
@@ -333,18 +344,18 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildLabel('Client Name'),
                     _buildTextField(
                       controller: _clientNameController,
                       hintText: 'Mr.Narashima', // Example from design
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildLabel('Date'),
                     // Date field takes full width in design, usually start date
                     _buildDateField(_startDateController, _selectStartDate),
-                     const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
                     _buildLabel('Site Place'),
                     _buildTextField(
@@ -352,16 +363,16 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       hintText: 'Hyd, Telangana',
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildLabel('Budget (optional)'),
                     _buildTextField(
-                        controller: _budgetController,
-                        hintText: 'Rs. 3,00,000',
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      controller: _budgetController,
+                      hintText: 'Rs. 3,00,000',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Site Manager Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -369,7 +380,11 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                         _buildLabel('Site Manager', padding: EdgeInsets.zero),
                         TextButton.icon(
                           onPressed: _showManagerSelection,
-                          icon: const Icon(Icons.add, size: 16, color: AppColors.primary),
+                          icon: const Icon(
+                            Icons.add,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
                           label: const Text(
                             'Add Manager',
                             style: TextStyle(
@@ -386,56 +401,66 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    
+
                     if (_displayManagers.isEmpty)
-                       Container(
-                         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                         decoration: BoxDecoration(
-                           color: Colors.white,
-                           borderRadius: BorderRadius.circular(12),
-                           border: Border.all(color: Colors.grey.shade200),
-                         ),
-                         child: Text(
-                           'No managers assigned', 
-                           style: TextStyle(color: Colors.grey[400]),
-                         ),
-                       )
-                    else 
-                       ..._displayManagers.map((manager) => Padding(
-                         padding: const EdgeInsets.only(bottom: 8.0),
-                         child: _buildManagerTile(manager),
-                       )),
-                    
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Text(
+                          'No managers assigned',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                      )
+                    else
+                      ..._displayManagers.map(
+                        (manager) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: _buildManagerTile(manager),
+                        ),
+                      ),
+
                     const SizedBox(height: 16),
 
                     _buildLabel('Description'),
-                     TextFormField(
-                       controller: _descriptionController,
-                       decoration: InputDecoration(
-                         hintText: 'Tell About the Project ...',
-                         filled: true,
-                         fillColor: Colors.white,
-                         border: OutlineInputBorder(
-                           borderRadius: BorderRadius.circular(12),
-                           borderSide: BorderSide.none,
-                         ),
-                         enabledBorder: OutlineInputBorder(
-                           borderRadius: BorderRadius.circular(12),
-                           borderSide: BorderSide.none,
-                         ),
-                         focusedBorder: OutlineInputBorder(
-                           borderRadius: BorderRadius.circular(12),
-                           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                         ),
-                         contentPadding: const EdgeInsets.all(16),
-                       ),
-                       maxLines: 4,
-                       textCapitalization: TextCapitalization.sentences,
-                     ),
-                    
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        hintText: 'Tell About the Project ...',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                      maxLines: 4,
+                      textCapitalization: TextCapitalization.sentences,
+                    ),
+
                     const SizedBox(height: 32),
                     AppButton(
-                      text: widget.isEditing ? 'Update Project Details' : 'Create Project',
+                      text: widget.isEditing
+                          ? 'Update Project Details'
+                          : 'Create Project',
                       onPressed: _handleSubmit,
                       isLoading: _isLoading,
                     ),
@@ -449,7 +474,10 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     );
   }
 
-  Widget _buildLabel(String text, {EdgeInsets padding = const EdgeInsets.only(bottom: 8, left: 4)}) {
+  Widget _buildLabel(
+    String text, {
+    EdgeInsets padding = const EdgeInsets.only(bottom: 8, left: 4),
+  }) {
     return Padding(
       padding: padding,
       child: Text(
@@ -481,14 +509,17 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-           borderRadius: BorderRadius.circular(12),
-           borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-           borderRadius: BorderRadius.circular(12),
-           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
       validator: validator,
       keyboardType: keyboardType,
@@ -496,37 +527,43 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       textCapitalization: TextCapitalization.words,
     );
   }
-  
+
   Widget _buildDateField(TextEditingController controller, VoidCallback onTap) {
-      return GestureDetector(
-        onTap: onTap,
-        child: AbsorbPointer(
-          child: TextFormField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: 'dd-MM-yyyy',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                 borderRadius: BorderRadius.circular(12),
-                 borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                 borderRadius: BorderRadius.circular(12),
-                 borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return GestureDetector(
+      onTap: onTap,
+      child: AbsorbPointer(
+        child: TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: 'dd-MM-yyyy',
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
-            readOnly: true,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
+          readOnly: true,
         ),
-      );
+      ),
+    );
   }
-  
+
   Widget _buildManagerTile(SiteManagerModel manager) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -549,17 +586,17 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           ),
           InkWell(
             onTap: () {
-               setState(() {
-                 _selectedManagerIds.remove(manager.id);
-                 _displayManagers.removeWhere((m) => m.id == manager.id);
-               });
+              setState(() {
+                _selectedManagerIds.remove(manager.id);
+                _displayManagers.removeWhere((m) => m.id == manager.id);
+              });
             },
             child: const Padding(
               padding: EdgeInsets.all(4.0),
               child: Icon(
-                Icons.delete_outline, 
-                color: Colors.redAccent, 
-                size: 20
+                Icons.delete_outline,
+                color: Colors.redAccent,
+                size: 20,
               ),
             ),
           ),
@@ -568,4 +605,3 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     );
   }
 }
-

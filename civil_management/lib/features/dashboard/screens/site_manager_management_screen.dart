@@ -6,6 +6,8 @@ import '../../../features/auth/data/models/user_profile_model.dart';
 import '../../../features/auth/providers/auth_repository_provider.dart';
 import '../../../features/projects/data/models/project_model.dart';
 import '../../../features/projects/providers/project_provider.dart';
+import 'add_site_manager_screen.dart';
+import 'edit_site_manager_screen.dart';
 
 class SiteManagerWithProjects {
   final UserProfileModel manager;
@@ -25,6 +27,8 @@ final siteManagersProvider = FutureProvider<List<SiteManagerWithProjects>>((
   final projectRepository = ref.watch(projectRepositoryProvider);
 
   final managersFuture = authRepository.getUsersByRole('site_manager');
+  // We fetch projects to check assignments, though the new UI doesn't explicitly list them in the card
+  // It might still be useful for filtering or "View Projects" later.
   final projectsFuture = projectRepository.getProjects(
     page: 0,
     pageSize: 1000,
@@ -74,444 +78,427 @@ class SiteManagerManagementScreen extends ConsumerWidget {
     final siteManagersAsync = ref.watch(siteManagersProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Site Managers'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1C1E)),
           onPressed: () => context.pop(),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/admin/site-managers/add'),
-        tooltip: 'Add Site Manager',
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add),
+        title: const Text(
+          'Site managers',
+          style: TextStyle(
+            color: Color(0xFF1A1C1E),
+            fontWeight: FontWeight.w800,
+            fontSize: 24,
+          ),
+        ),
       ),
       body: siteManagersAsync.when(
         data: (siteManagers) {
-          if (siteManagers.isEmpty) {
-            return _EmptyState(
-              onAddManager: () => context.push('/admin/site-managers/add'),
-            );
-          }
-
-          final assignedManagers = siteManagers
-              .where((manager) => manager.assignedProjects.isNotEmpty)
-              .length;
-          final totalAssignedProjects = siteManagers.fold<int>(
-            0,
-            (sum, manager) => sum + manager.assignedProjects.length,
-          );
-
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(siteManagersProvider);
             },
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
+            child: Column(
               children: [
-                _SummaryCard(
-                  totalManagers: siteManagers.length,
-                  assignedManagers: assignedManagers,
-                  totalAssignedProjects: totalAssignedProjects,
+                // Search Bar and Filter
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 16.0,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF6F7FB),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextField(
+                            decoration: const InputDecoration(
+                              hintText: 'Search Manager...',
+                              hintStyle: TextStyle(
+                                color: Color(0xFF9CA3AF),
+                                fontSize: 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              // TODO: Implement local search filtering
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        height: 48,
+                        width: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF6F7FB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.filter_list,
+                            color: Color(0xFF4B5563),
+                          ),
+                          onPressed: () {
+                            // TODO: Show filter options
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 14),
-                ...siteManagers.map(
-                  (entry) => _ManagerAssignmentCard(entry: entry),
+
+                // Total Staff Count and Add Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Staff ${siteManagers.length}',
+                        style: const TextStyle(
+                          color: Color(0xFF1A1C1E),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const AddSiteManagerScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.add,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Add Staff',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Staff List
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 8.0,
+                    ),
+                    itemCount: siteManagers.length,
+                    itemBuilder: (context, index) {
+                      final item = siteManagers[index];
+                      return _StaffCard(
+                        data: item,
+                        onEditTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  EditSiteManagerScreen(manager: item.manager),
+                            ),
+                          );
+                        },
+                        onDeleteTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text(
+                                'Delete Manager',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              content: const Text(
+                                'Are you sure you want to delete this manager? This action cannot be undone.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  child: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm != true) return;
+
+                          try {
+                            await ref
+                                .read(authRepositoryProvider)
+                                .deleteUser(item.manager.id);
+                            ref.invalidate(siteManagersProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Manager deleted successfully!',
+                                  ),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to delete manager: ${e.toString()}',
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: AppColors.error,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Failed to load site managers',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(siteManagersProvider),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
     );
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  final int totalManagers;
-  final int assignedManagers;
-  final int totalAssignedProjects;
+class _StaffCard extends StatelessWidget {
+  final SiteManagerWithProjects data;
+  final VoidCallback onEditTap;
+  final VoidCallback onDeleteTap;
 
-  const _SummaryCard({
-    required this.totalManagers,
-    required this.assignedManagers,
-    required this.totalAssignedProjects,
+  const _StaffCard({
+    required this.data,
+    required this.onEditTap,
+    required this.onDeleteTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _SummaryMetric(
-              label: 'Managers',
-              value: totalManagers.toString(),
-            ),
-          ),
-          Expanded(
-            child: _SummaryMetric(
-              label: 'Assigned',
-              value: assignedManagers.toString(),
-            ),
-          ),
-          Expanded(
-            child: _SummaryMetric(
-              label: 'Projects',
-              value: totalAssignedProjects.toString(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryMetric extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _SummaryMetric({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ManagerAssignmentCard extends StatelessWidget {
-  final SiteManagerWithProjects entry;
-
-  const _ManagerAssignmentCard({required this.entry});
-
-  @override
-  Widget build(BuildContext context) {
-    final manager = entry.manager;
-    final assignedProjects = entry.assignedProjects;
+    final manager = data.manager;
+    final projects = data.assignedProjects;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-        leading: CircleAvatar(
-          radius: 22,
-          backgroundColor: AppColors.siteManager.withValues(alpha: 0.12),
-          backgroundImage: manager.avatarUrl != null
-              ? NetworkImage(manager.avatarUrl!)
-              : null,
-          child: manager.avatarUrl == null
-              ? Text(
-                  _avatarText(manager.fullName),
-                  style: const TextStyle(
-                    color: AppColors.siteManager,
-                    fontWeight: FontWeight.w700,
-                  ),
-                )
-              : null,
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                manager.fullName ?? 'Unknown Manager',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${assignedProjects.length} Projects',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (manager.phone != null && manager.phone!.isNotEmpty)
-                Text(
-                  manager.phone!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              if (manager.email != null && manager.email!.isNotEmpty)
-                Text(
-                  manager.email!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        children: [
-          const Divider(height: 1),
-          const SizedBox(height: 10),
-          if (assignedProjects.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'No project assigned',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.warning,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-          else
-            ...assignedProjects.map(
-              (project) => _AssignedProjectRow(project: project),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _avatarText(String? fullName) {
-    if (fullName == null || fullName.trim().isEmpty) {
-      return '?';
-    }
-    return fullName.trim()[0].toUpperCase();
-  }
-}
-
-class _AssignedProjectRow extends StatelessWidget {
-  final ProjectModel project;
-
-  const _AssignedProjectRow({required this.project});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FD),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE7EAF5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  project.name,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: project.status.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  project.status.displayName,
-                  style: TextStyle(
-                    color: project.status.color,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            project.location?.isNotEmpty == true
-                ? project.location!
-                : 'Location not set',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              minHeight: 6,
-              value: (project.progress.clamp(0, 100)) / 100,
-              backgroundColor: const Color(0xFFDDE1EE),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Progress ${project.progress}%',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final VoidCallback onAddManager;
-
-  const _EmptyState({required this.onAddManager});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Avatar
             Container(
-              width: 82,
-              height: 82,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+                color: const Color(0xFF2563EB),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(
-                Icons.people_outline,
-                size: 40,
-                color: AppColors.info,
+              alignment: Alignment.center,
+              child: Text(
+                _getInitials(manager.fullName),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No Site Managers Yet',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            const SizedBox(width: 16),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    manager.fullName ?? 'Unknown',
+                    style: const TextStyle(
+                      color: Color(0xFF1A1C1E),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    manager.position ?? 'Site Manager',
+                    style: const TextStyle(
+                      color: Color(0xFF2563EB), // Blue text for position
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (projects.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Projects:',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: projects.map((p) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF6F7FB),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Text(
+                            p.name,
+                            style: const TextStyle(
+                              color: Color(0xFF4B5563),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No projects assigned',
+                      style: TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap + to add your first site manager.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onAddManager,
-              icon: const Icon(Icons.person_add_alt_1),
-              label: const Text('Add Site Manager'),
+
+            // Actions
+            const SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: onEditTap,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      color: Color(0xFF1A1C1E),
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: onDeleteTap,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFEE2E2)),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Color(0xFFEF4444),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _getInitials(String? name) {
+    if (name == null || name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 }

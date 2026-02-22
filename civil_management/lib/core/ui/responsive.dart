@@ -13,8 +13,13 @@ class R {
   bool get isTablet => w >= 600 && w < 1024;
   bool get isDesktop => w >= 1024;
 
-  EdgeInsets get pad =>
-      EdgeInsets.symmetric(horizontal: isDesktop ? 32 : isTablet ? 24 : 16);
+  EdgeInsets get pad => EdgeInsets.symmetric(
+    horizontal: isDesktop
+        ? 32
+        : isTablet
+        ? 24
+        : 16,
+  );
 
   double font(double mobile, {double? tablet, double? desktop}) {
     if (isDesktop && desktop != null) return desktop;

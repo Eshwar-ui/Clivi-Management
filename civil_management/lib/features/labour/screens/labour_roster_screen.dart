@@ -126,8 +126,7 @@ class LabourRosterScreen extends ConsumerWidget {
               (labour) => _LabourCard(
                 labour: labour,
                 onToggleStatus: () => _toggleStatus(ref, labour),
-                onEdit: () =>
-                    _showLabourSheet(context, ref, existing: labour),
+                onEdit: () => _showLabourSheet(context, ref, existing: labour),
                 onDelete: () => _confirmDelete(context, ref, labour.id),
               ),
             ),
@@ -148,8 +147,7 @@ class LabourRosterScreen extends ConsumerWidget {
               (labour) => _LabourCard(
                 labour: labour,
                 onToggleStatus: () => _toggleStatus(ref, labour),
-                onEdit: () =>
-                    _showLabourSheet(context, ref, existing: labour),
+                onEdit: () => _showLabourSheet(context, ref, existing: labour),
                 onDelete: () => _confirmDelete(context, ref, labour.id),
               ),
             ),
@@ -173,8 +171,11 @@ class LabourRosterScreen extends ConsumerWidget {
     _showLabourSheet(context, ref);
   }
 
-  void _showLabourSheet(BuildContext context, WidgetRef ref,
-      {LabourModel? existing}) {
+  void _showLabourSheet(
+    BuildContext context,
+    WidgetRef ref, {
+    LabourModel? existing,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -184,10 +185,12 @@ class LabourRosterScreen extends ConsumerWidget {
         onAdded: () {
           ref.invalidate(projectLabourProvider(projectId));
           // Also refresh attendance view so new labour appear immediately
-          ref.invalidate(labourWithAttendanceProvider((
-            projectId: projectId,
-            date: DateTime.now(),
-          )));
+          ref.invalidate(
+            labourWithAttendanceProvider((
+              projectId: projectId,
+              date: DateTime.now(),
+            )),
+          );
         },
       ),
     );
@@ -219,16 +222,13 @@ class LabourRosterScreen extends ConsumerWidget {
     if (ok == true) {
       await ref.read(labourRepositoryProvider).deleteLabour(id);
       ref.invalidate(projectLabourProvider(projectId));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Worker removed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Worker removed')));
     }
   }
 
-  Future<void> _confirmDeleteAll(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmDeleteAll(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -244,8 +244,7 @@ class LabourRosterScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextField(
               controller: controller,
-              decoration:
-                  const InputDecoration(labelText: 'Confirmation'),
+              decoration: const InputDecoration(labelText: 'Confirmation'),
             ),
           ],
         ),
@@ -412,14 +411,8 @@ class _LabourCard extends StatelessWidget {
                     : 'Mark Active',
               ),
             ),
-            const PopupMenuItem(
-              value: 'edit',
-              child: Text('Edit'),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Text('Delete'),
-            ),
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
         ),
       ),
@@ -455,10 +448,10 @@ class _AddLabourSheetState extends ConsumerState<_AddLabourSheet> {
   @override
   void initState() {
     super.initState();
-    _nameController =
-        TextEditingController(text: widget.existing?.name ?? '');
-    _phoneController =
-        TextEditingController(text: widget.existing?.phone ?? '');
+    _nameController = TextEditingController(text: widget.existing?.name ?? '');
+    _phoneController = TextEditingController(
+      text: widget.existing?.phone ?? '',
+    );
     _wageController = TextEditingController(
       text: widget.existing?.dailyWage?.toString() ?? '',
     );
@@ -484,11 +477,11 @@ class _AddLabourSheetState extends ConsumerState<_AddLabourSheet> {
       ),
       child: Form(
         key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
               _isEdit ? 'Edit Worker' : 'Add New Worker',
               style: Theme.of(
                 context,
@@ -593,7 +586,9 @@ class _AddLabourSheetState extends ConsumerState<_AddLabourSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              _isEdit ? 'Worker updated successfully' : 'Worker added successfully',
+              _isEdit
+                  ? 'Worker updated successfully'
+                  : 'Worker added successfully',
             ),
           ),
         );

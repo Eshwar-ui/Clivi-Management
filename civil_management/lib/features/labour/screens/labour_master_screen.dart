@@ -71,8 +71,11 @@ class LabourMasterScreen extends ConsumerWidget {
     );
   }
 
-  void _openSheet(BuildContext context, WidgetRef ref,
-      {LabourModel? existing}) {
+  void _openSheet(
+    BuildContext context,
+    WidgetRef ref, {
+    LabourModel? existing,
+  }) {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final phoneCtrl = TextEditingController(text: existing?.phone ?? '');
     final formKey = GlobalKey<FormState>();
@@ -99,10 +102,9 @@ class LabourMasterScreen extends ConsumerWidget {
                 children: [
                   Text(
                     existing == null ? 'Add Worker' : 'Edit Worker',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

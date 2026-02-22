@@ -9,10 +9,11 @@ final machineryRepositoryProvider = Provider<MachineryRepository>((ref) {
 });
 
 // Logs Future Provider (Stream doesn't support joins properly)
-final machineryLogsProvider = FutureProvider.family.autoDispose<List<MachineryLog>, String>((ref, projectId) async {
-  final repo = ref.watch(machineryRepositoryProvider);
-  return repo.getMachineryLogsByProject(projectId);
-});
+final machineryLogsProvider = FutureProvider.family
+    .autoDispose<List<MachineryLog>, String>((ref, projectId) async {
+      final repo = ref.watch(machineryRepositoryProvider);
+      return repo.getMachineryLogsByProject(projectId);
+    });
 
 // Machinery List (for dropdown)
 final machineryListProvider = FutureProvider<List<MachineryModel>>((ref) async {
@@ -90,6 +91,7 @@ class MachineryController extends StateNotifier<AsyncValue<void>> {
     required String projectId,
     required String machineryId,
     required String workActivity,
+    required DateTime logDate,
     required double startReading,
     required double endReading,
     String? notes,
@@ -101,6 +103,7 @@ class MachineryController extends StateNotifier<AsyncValue<void>> {
         projectId: projectId,
         machineryId: machineryId,
         workActivity: workActivity,
+        logDate: logDate,
         startReading: startReading,
         endReading: endReading,
         notes: notes,
@@ -109,7 +112,9 @@ class MachineryController extends StateNotifier<AsyncValue<void>> {
       print('[MACHINERY CONTROLLER] Reading-based log saved successfully');
       return true;
     } catch (e, st) {
-      print('[MACHINERY CONTROLLER ERROR] Failed to log reading-based usage: $e');
+      print(
+        '[MACHINERY CONTROLLER ERROR] Failed to log reading-based usage: $e',
+      );
       print('[MACHINERY CONTROLLER STACK] $st');
       state = AsyncValue.error(e, st);
       return false;
@@ -117,6 +122,7 @@ class MachineryController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final machineryControllerProvider = StateNotifierProvider<MachineryController, AsyncValue<void>>((ref) {
-  return MachineryController(ref.watch(machineryRepositoryProvider));
-});
+final machineryControllerProvider =
+    StateNotifierProvider<MachineryController, AsyncValue<void>>((ref) {
+      return MachineryController(ref.watch(machineryRepositoryProvider));
+    });

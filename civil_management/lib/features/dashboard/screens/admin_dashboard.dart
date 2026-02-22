@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/widgets/custom_app_bar.dart';
+import '../../auth/data/models/user_profile_model.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../data/models/dashboard_models.dart';
 
@@ -21,6 +23,7 @@ class AdminDashboard extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
+      appBar: _buildAppBar(context, profile),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -46,7 +49,6 @@ class AdminDashboard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(context, profile?.fullName ?? 'Admin'),
                 _buildStatsRow(context, statsState),
                 const SizedBox(height: 20),
                 _buildOperationsSection(context, operationsCounts),
@@ -72,52 +74,55 @@ class AdminDashboard extends ConsumerWidget {
     ]);
   }
 
-  Widget _buildHeader(BuildContext context, String name) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    UserProfileModel? profile,
+  ) {
+    return CustomAppBar(
+      title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
-              ),
-              TextButton.icon(
-                onPressed: () => context.push('/admin/site-managers/add'),
-                icon: const Icon(Icons.person_add_alt_1, size: 18),
-                label: const Text('Add Site Manager'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-              const Spacer(),
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                child: Icon(Icons.person, color: AppColors.primary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           Text(
             'Welcome back,',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
-            name.isNotEmpty ? name : 'Admin',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            (profile?.fullName ?? '').isNotEmpty ? profile!.fullName! : 'Admin',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
         ],
       ),
+      showBackButton: false,
+      actions: [
+        Container(
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.notifications_outlined, size: 20),
+            color: AppColors.textPrimary,
+            onPressed: () {},
+            padding: EdgeInsets.zero,
+          ),
+        ),
+        const SizedBox(width: 12),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          child: const Icon(Icons.person, color: AppColors.primary, size: 20),
+        ),
+      ],
     );
   }
 
@@ -355,18 +360,12 @@ class AdminDashboard extends ConsumerWidget {
         onTap: () => context.push('/admin/site-managers'),
       ),
       _OperationTile(
-        label: 'Labor',
-        subtitle: liveCounts == null
-            ? 'Loading...'
-            : subtitleFor(
-                count: liveCounts.workers,
-                singular: 'Worker',
-                plural: 'Workers',
-              ),
-        icon: Icons.people_alt_outlined,
+        label: 'Material Master List',
+        subtitle: 'Manage Materials',
+        icon: Icons.list_alt,
         bg: Colors.green[50],
         onTap: () {
-          context.push('/master/labour');
+          context.push('/master/materials');
         },
       ),
     ];
@@ -509,7 +508,7 @@ class AdminDashboard extends ConsumerWidget {
     RecentActivityState state,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -528,7 +527,7 @@ class AdminDashboard extends ConsumerWidget {
 
   Widget _buildProjectsLoading() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
         children: List.generate(3, (index) {
           return Container(
@@ -707,7 +706,7 @@ class AdminDashboard extends ConsumerWidget {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       itemCount: state.activities.take(5).length,
       itemBuilder: (context, index) {
         final activity = state.activities[index];

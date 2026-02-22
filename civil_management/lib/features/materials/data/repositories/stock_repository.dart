@@ -16,9 +16,9 @@ class StockRepository {
     final response = await _client
         .from('stock_items')
         .select('*')
-        .eq('project_id', projectId)  // 👈 FILTER BY PROJECT
+        .eq('project_id', projectId) // 👈 FILTER BY PROJECT
         .order('name', ascending: true);
-    
+
     return (response as List).map((json) => StockItem.fromJson(json)).toList();
   }
 
@@ -38,8 +38,10 @@ class StockRepository {
         ''')
         .eq('project_id', projectId) // ensure per-project isolation
         .order('logged_at', ascending: false);
-    
-    return (response as List).map((json) => MaterialLog.fromJson(json)).toList();
+
+    return (response as List)
+        .map((json) => MaterialLog.fromJson(json))
+        .toList();
   }
 
   /// Get Suppliers for a SPECIFIC project
@@ -56,7 +58,10 @@ class StockRepository {
   }
 
   /// Add a new Supplier for a SPECIFIC project
-  Future<SupplierModel> addProjectSupplier(String projectId, String name) async {
+  Future<SupplierModel> addProjectSupplier(
+    String projectId,
+    String name,
+  ) async {
     validateProjectId(projectId);
     // 1. Check existing in this project
     final existing = await _client
@@ -65,7 +70,7 @@ class StockRepository {
         .eq('project_id', projectId)
         .ilike('name', name)
         .maybeSingle();
-        
+
     if (existing != null) {
       return SupplierModel.fromJson(existing);
     }
@@ -81,7 +86,7 @@ class StockRepository {
         })
         .select()
         .single();
-        
+
     return SupplierModel.fromJson(response);
   }
 
@@ -147,7 +152,9 @@ class StockRepository {
     debugPrint('=== logMaterialInward DEBUG ===');
     debugPrint('projectId: $projectId');
     debugPrint('stockItemName: $stockItemName');
-    debugPrint('stockItemGrade: $stockItemGrade (isNull: ${stockItemGrade == null})');
+    debugPrint(
+      'stockItemGrade: $stockItemGrade (isNull: ${stockItemGrade == null})',
+    );
     debugPrint('stockItemUnit: $stockItemUnit');
     debugPrint('supplierId: $supplierId');
     debugPrint('quantity: $quantity');
@@ -161,7 +168,7 @@ class StockRepository {
     if (supplierId.isEmpty) {
       throw Exception('Supplier ID is required. Vendor must be selected.');
     }
-    
+
     final params = {
       'p_project_id': projectId,
       'p_material_name': stockItemName,
@@ -174,9 +181,9 @@ class StockRepository {
       'p_activity': activity ?? 'Material Received',
       'p_notes': notes,
     };
-    
+
     debugPrint('RPC params: $params');
-    
+
     try {
       final result = await _client.rpc('receive_material', params: params);
       debugPrint('RPC Success! Result: $result');
@@ -213,7 +220,7 @@ class StockRepository {
       'logged_at': DateTime.now().toIso8601String(),
     });
   }
-  
+
   /// Stream stock items (using dynamic view if possible, or table)
   Stream<List<StockItem>> streamStockItemsByProject(String projectId) {
     validateProjectId(projectId);

@@ -26,7 +26,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     super.initState();
     // Fetch reports when screen mounts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(reportProvider.notifier).loadReports(projectId: widget.projectId);
+      ref
+          .read(reportProvider.notifier)
+          .loadReports(projectId: widget.projectId);
     });
   }
 
@@ -62,10 +64,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 data: (suppliers) => _VendorFilter(
                   suppliers: suppliers,
                   selectedVendorId: state.selectedVendorId,
-                  onChanged: (vendorId) => notifier.setVendor(
-                    vendorId,
-                    projectId: widget.projectId,
-                  ),
+                  onChanged: (vendorId) =>
+                      notifier.setVendor(vendorId, projectId: widget.projectId),
                 ),
                 loading: () => const Align(
                   alignment: Alignment.centerLeft,
@@ -82,17 +82,19 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               // Time Period Tabs
               _TimeFilterTabs(
                 selectedPeriod: state.selectedPeriod,
-                onSelect: (period) => notifier.setPeriod(
-                  period,
-                  projectId: widget.projectId,
-                ),
+                onSelect: (period) =>
+                    notifier.setPeriod(period, projectId: widget.projectId),
               ),
               const SizedBox(height: 24),
 
               if (state.isLoading && state.stats == FinancialStats.empty)
                 const LoadingWidget(message: 'Loading insights...')
-              else if (state.error != null && state.stats == FinancialStats.empty)
-                AppErrorWidget(message: state.error!, onRetry: () => notifier.refresh())
+              else if (state.error != null &&
+                  state.stats == FinancialStats.empty)
+                AppErrorWidget(
+                  message: state.error!,
+                  onRetry: () => notifier.refresh(),
+                )
               else ...[
                 // Financial Health Card (Line Chart)
                 _FinancialHealthCard(stats: state.stats),
@@ -120,7 +122,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 // Insights Tip
                 if (state.stats.growthPercentage != 0)
                   _InsightTip(growth: state.stats.growthPercentage),
-                  
+
                 // Extra padding for scroll
                 const SizedBox(height: 40),
               ],
@@ -136,10 +138,7 @@ class _TimeFilterTabs extends StatelessWidget {
   final TimePeriod selectedPeriod;
   final Function(TimePeriod) onSelect;
 
-  const _TimeFilterTabs({
-    required this.selectedPeriod,
-    required this.onSelect,
-  });
+  const _TimeFilterTabs({required this.selectedPeriod, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +174,9 @@ class _TimeFilterTabs extends StatelessWidget {
                   period.label,
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -213,10 +214,7 @@ class _FinancialHealthCard extends StatelessWidget {
         children: [
           const Text(
             'Financial Health',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -246,9 +244,16 @@ class _FinancialHealthCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: (stats.growthPercentage >= 0 ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+                          color:
+                              (stats.growthPercentage >= 0
+                                      ? AppColors.success
+                                      : AppColors.error)
+                                  .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -256,7 +261,9 @@ class _FinancialHealthCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: stats.growthPercentage >= 0 ? AppColors.success : AppColors.error,
+                            color: stats.growthPercentage >= 0
+                                ? AppColors.success
+                                : AppColors.error,
                           ),
                         ),
                       ),
@@ -283,7 +290,8 @@ class _FinancialHealthCard extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (stats.chartData.isEmpty) return const SizedBox.shrink();
+                        if (stats.chartData.isEmpty)
+                          return const SizedBox.shrink();
                         final index = value.toInt();
                         if (index < 0 || index >= stats.chartData.length) {
                           return const SizedBox.shrink();
@@ -306,9 +314,15 @@ class _FinancialHealthCard extends StatelessWidget {
                       reservedSize: 22,
                     ),
                   ),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
@@ -344,8 +358,12 @@ class _ResourceSplitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Calculate total for percentage
-    final total = stats.laborCost + stats.materialCost + stats.machineryCost + stats.otherCost;
-    
+    final total =
+        stats.laborCost +
+        stats.materialCost +
+        stats.machineryCost +
+        stats.otherCost;
+
     // Avoid division by zero
     final safeTotal = total > 0 ? total : 1.0;
 
@@ -367,10 +385,7 @@ class _ResourceSplitCard extends StatelessWidget {
         children: [
           const Text(
             'Resource Split',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
           Row(
@@ -420,13 +435,15 @@ class _ResourceSplitCard extends StatelessWidget {
                     _LegendItem(
                       color: AppColors.success,
                       label: 'Material',
-                      percentage: (stats.materialCost / safeTotal * 100).round(),
+                      percentage: (stats.materialCost / safeTotal * 100)
+                          .round(),
                     ),
                     const SizedBox(height: 12),
                     _LegendItem(
                       color: AppColors.primary,
                       label: 'Machinery',
-                      percentage: (stats.machineryCost / safeTotal * 100).round(),
+                      percentage: (stats.machineryCost / safeTotal * 100)
+                          .round(),
                     ),
                   ],
                 ),
@@ -457,10 +474,7 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -511,11 +525,11 @@ class _InsightTip extends StatelessWidget {
     if (growth == 0) return const SizedBox.shrink();
 
     final isPositive = growth > 0;
-    // For expenses, positive growth might actually be bad (spending more), 
-    // but typically "Running faster" implies efficiency. 
+    // For expenses, positive growth might actually be bad (spending more),
+    // but typically "Running faster" implies efficiency.
     // For now we'll stick to a simple interpretation:
     // "Projects running X% [higher/lower] than last period"
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -562,10 +576,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.purple[700]!,
-            Colors.purple[500]!,
-          ],
+          colors: [Colors.purple[700]!, Colors.purple[500]!],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -600,11 +611,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
-                    Icons.store,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  child: const Icon(Icons.store, color: Colors.white, size: 32),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -663,7 +670,10 @@ class _VendorFilter extends StatelessWidget {
         labelText: 'Vendor',
         isDense: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
       ),
       items: [
         const DropdownMenuItem<String?>(
@@ -671,10 +681,7 @@ class _VendorFilter extends StatelessWidget {
           child: Text('All vendors'),
         ),
         ...suppliers.map(
-          (s) => DropdownMenuItem<String?>(
-            value: s.id,
-            child: Text(s.name),
-          ),
+          (s) => DropdownMenuItem<String?>(value: s.id, child: Text(s.name)),
         ),
       ],
       onChanged: onChanged,
@@ -732,11 +739,13 @@ class _OperationsReports extends StatelessWidget {
               : Column(
                   children: machineryRows.take(6).map((row) {
                     return _TwoLineTile(
-                      title: '${row.machineryName}${row.machineryType.isNotEmpty ? ' (${row.machineryType})' : ''}',
+                      title:
+                          '${row.machineryName}${row.machineryType.isNotEmpty ? ' (${row.machineryType})' : ''}',
                       subtitle:
                           '${row.projectName} • ${row.totalHours.toStringAsFixed(1)} hrs',
-                      trailing:
-                          row.lastWorkedAt != null ? _dateLabel(row.lastWorkedAt!) : '',
+                      trailing: row.lastWorkedAt != null
+                          ? _dateLabel(row.lastWorkedAt!)
+                          : '',
                     );
                   }).toList(),
                 ),
@@ -753,8 +762,10 @@ class _OperationsReports extends StatelessWidget {
                         ? '₹${row.dailyWage.toStringAsFixed(0)} /day'
                         : '';
                     return _TwoLineTile(
-                      title: '${row.labourName}${row.skillType.isNotEmpty ? ' • ${row.skillType}' : ''}',
-                      subtitle: '${row.projectName}${wage.isNotEmpty ? ' • $wage' : ''}',
+                      title:
+                          '${row.labourName}${row.skillType.isNotEmpty ? ' • ${row.skillType}' : ''}',
+                      subtitle:
+                          '${row.projectName}${wage.isNotEmpty ? ' • $wage' : ''}',
                     );
                   }).toList(),
                 ),
@@ -866,10 +877,7 @@ class _TwoLineTile extends StatelessWidget {
           if (trailing != null && trailing!.isNotEmpty)
             Text(
               trailing!,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
         ],
       ),
@@ -887,10 +895,7 @@ class _EmptyRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         message,
-        style: TextStyle(
-          fontSize: 12,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
     );
   }

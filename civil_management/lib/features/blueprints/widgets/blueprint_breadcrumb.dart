@@ -15,28 +15,22 @@ class BlueprintBreadcrumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Text(
             projectName,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
           ),
           Text(
             ' / ',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[400],
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[400]),
           ),
           Text(
             'Blueprint',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
           ),
           if (folderName != null) ...[
             Text(

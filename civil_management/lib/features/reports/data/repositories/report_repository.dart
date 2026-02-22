@@ -17,10 +17,7 @@ class ReportRepository {
     try {
       final response = await _client.rpc(
         'get_financial_metrics',
-        params: {
-          'p_period': period.value,
-          'p_project_id_text': projectId,
-        },
+        params: {'p_period': period.value, 'p_project_id_text': projectId},
       );
 
       if (response == null) {
@@ -64,19 +61,25 @@ class ReportRepository {
         baseQuery = baseQuery.eq('supplier_id', vendorId);
       }
 
-      final rows = await baseQuery.order('logged_at', ascending: false).limit(limit);
+      final rows = await baseQuery
+          .order('logged_at', ascending: false)
+          .limit(limit);
 
       // Group client-side by (material, vendor, project)
       final Map<String, MaterialVendorReportRow> grouped = {};
       for (final row in rows as List) {
         final materialName = row['stock_items']['name'] as String? ?? 'Unknown';
         final unit = row['stock_items']['unit'] as String? ?? '';
-        final vendorName = row['suppliers']?['name'] as String? ?? 'Unknown Vendor';
+        final vendorName =
+            row['suppliers']?['name'] as String? ?? 'Unknown Vendor';
         final projId = row['project_id'] as String;
-        final projName = row['projects']?['name'] as String? ?? 'Unknown Project';
+        final projName =
+            row['projects']?['name'] as String? ?? 'Unknown Project';
         final qty = (row['quantity'] as num?)?.toDouble() ?? 0;
         final loggedAtStr = row['logged_at'] as String?;
-        final loggedAt = loggedAtStr != null ? DateTime.parse(loggedAtStr) : null;
+        final loggedAt = loggedAtStr != null
+            ? DateTime.parse(loggedAtStr)
+            : null;
 
         final key = '$materialName|$vendorName|$projId';
         final existing = grouped[key];
@@ -103,8 +106,11 @@ class ReportRepository {
         }
       }
 
-      return grouped.values.toList()
-        ..sort((a, b) => (b.lastReceivedAt ?? DateTime(1970)).compareTo(a.lastReceivedAt ?? DateTime(1970)));
+      return grouped.values.toList()..sort(
+        (a, b) => (b.lastReceivedAt ?? DateTime(1970)).compareTo(
+          a.lastReceivedAt ?? DateTime(1970),
+        ),
+      );
     } on PostgrestException catch (e) {
       logger.e('Failed to fetch material vendor report: ${e.message}');
       throw DatabaseException.fromPostgrest(e);
@@ -120,9 +126,7 @@ class ReportRepository {
     int limit = 200,
   }) async {
     try {
-      var baseQuery = _client
-          .from('machinery_logs')
-          .select('''
+      var baseQuery = _client.from('machinery_logs').select('''
             project_id,
             log_date,
             hours_used,
@@ -134,7 +138,9 @@ class ReportRepository {
         baseQuery = baseQuery.eq('project_id', projectId);
       }
 
-      final rows = await baseQuery.order('log_date', ascending: false).limit(limit);
+      final rows = await baseQuery
+          .order('log_date', ascending: false)
+          .limit(limit);
 
       final Map<String, MachineryProjectReportRow> grouped = {};
       for (final row in rows as List) {
@@ -160,7 +166,9 @@ class ReportRepository {
         } else {
           grouped[key] = MachineryProjectReportRow(
             machineryName: existing.machineryName,
-            machineryType: existing.machineryType.isNotEmpty ? existing.machineryType : machineType,
+            machineryType: existing.machineryType.isNotEmpty
+                ? existing.machineryType
+                : machineType,
             projectId: existing.projectId,
             projectName: existing.projectName,
             totalHours: existing.totalHours + hrs,
@@ -169,8 +177,11 @@ class ReportRepository {
         }
       }
 
-      return grouped.values.toList()
-        ..sort((a, b) => (b.lastWorkedAt ?? DateTime(1970)).compareTo(a.lastWorkedAt ?? DateTime(1970)));
+      return grouped.values.toList()..sort(
+        (a, b) => (b.lastWorkedAt ?? DateTime(1970)).compareTo(
+          a.lastWorkedAt ?? DateTime(1970),
+        ),
+      );
     } on PostgrestException catch (e) {
       logger.e('Failed to fetch machinery report: ${e.message}');
       throw DatabaseException.fromPostgrest(e);
@@ -201,7 +212,9 @@ class ReportRepository {
         baseQuery = baseQuery.eq('project_id', projectId);
       }
 
-      final rows = await baseQuery.order('created_at', ascending: false).limit(limit);
+      final rows = await baseQuery
+          .order('created_at', ascending: false)
+          .limit(limit);
 
       return (rows as List).map((row) {
         final projId = row['project_id'] as String? ?? '';

@@ -11,7 +11,7 @@ class MaterialLog {
   final String? notes;
   final String? loggedBy;
   final DateTime loggedAt;
-  
+
   // Additional fields
   final String? grade;
   final double? billAmount;
@@ -48,19 +48,19 @@ class MaterialLog {
       activity: json['activity'] as String?,
       notes: json['notes'] as String?,
       loggedBy: json['logged_by'] as String?,
-      loggedAt: json['logged_at'] != null 
-          ? DateTime.parse(json['logged_at'] as String) 
+      loggedAt: json['logged_at'] != null
+          ? DateTime.parse(json['logged_at'] as String)
           : DateTime.now(),
-      
+
       grade: json['grade'] as String?,
       billAmount: (json['bill_amount'] as num?)?.toDouble(),
       paymentType: json['payment_type'] as String?,
-      
-      stockItem: json['stock_item'] != null 
-          ? StockItem.fromJson(json['stock_item'] as Map<String, dynamic>) 
+
+      stockItem: json['stock_item'] != null
+          ? StockItem.fromJson(json['stock_item'] as Map<String, dynamic>)
           : null,
-      supplier: json['supplier'] != null 
-          ? SupplierModel.fromJson(json['supplier'] as Map<String, dynamic>) 
+      supplier: json['supplier'] != null
+          ? SupplierModel.fromJson(json['supplier'] as Map<String, dynamic>)
           : null,
     );
   }

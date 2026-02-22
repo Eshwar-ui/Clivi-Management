@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -20,12 +21,27 @@ class BillsScreen extends ConsumerStatefulWidget {
 class _BillsScreenState extends ConsumerState<BillsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  DateTime? _selectedFilterDate;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabSelection);
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedFilterDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedFilterDate = picked;
+      });
+    }
   }
 
   void _handleTabSelection() {
@@ -51,20 +67,36 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
 
     final billsAsync = ref.watch(dashboardBillsCombinedProvider(isSiteManager));
     final billsData = billsAsync.valueOrNull ?? const <BillModel>[];
-    final pendingCount = billsData.where((bill) => !bill.status.isCompleted).length;
-    final completedCount = billsData.where((bill) => bill.status.isCompleted).length;
+    final pendingCount = billsData
+        .where((bill) => !bill.status.isCompleted)
+        .length;
+    final completedCount = billsData
+        .where((bill) => bill.status.isCompleted)
+        .length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Raise'),
-        actions: [
-          if (isAdmin)
-            IconButton(
-              tooltip: 'Approval Queue',
-              icon: const Icon(Icons.playlist_add_check_circle_outlined),
+      floatingActionButton: isSiteManager
+          ? FloatingActionButton(
+              onPressed: () => context.push('/bills/create'),
+              child: const Icon(Icons.add),
+            )
+          : isAdmin
+          ? FloatingActionButton(
+              child: Icon(Icons.playlist_add_check_circle_outlined),
               onPressed: () => context.push('/bills/approval-queue'),
-            ),
-        ],
+            )
+          : null,
+
+      appBar: CustomAppBar(
+        title: Text(
+          'Raise',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        showBackButton: false,
+       
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(84),
           child: Padding(
@@ -73,30 +105,49 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
               children: [
                 Align(
                   alignment: Alignment.centerRight,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          size: 16,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          DateFormat('dd-MM-yyyy').format(DateTime.now()),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
+                  child: InkWell(
+                    onTap: _pickDate,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _selectedFilterDate != null
+                                ? DateFormat('dd-MM-yyyy').format(
+                                    _selectedFilterDate!,
+                                  )
+                                : 'Select Date',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          if (_selectedFilterDate != null) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => setState(() => _selectedFilterDate = null),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -129,12 +180,18 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
       body: billsAsync.when(
         data: (bills) {
           final filteredBills = bills.where((bill) {
-            if (_showCompletedTab) {
-              return bill.status.isCompleted;
+            bool matchesDate = true;
+            if (_selectedFilterDate != null) {
+              matchesDate = bill.billDate.year == _selectedFilterDate!.year &&
+                  bill.billDate.month == _selectedFilterDate!.month &&
+                  bill.billDate.day == _selectedFilterDate!.day;
             }
-            return !bill.status.isCompleted;
-          }).toList()
-            ..sort((a, b) => b.billDate.compareTo(a.billDate));
+            
+            if (_showCompletedTab) {
+              return bill.status.isCompleted && matchesDate;
+            }
+            return !bill.status.isCompleted && matchesDate;
+          }).toList()..sort((a, b) => b.billDate.compareTo(a.billDate));
 
           return _buildBillList(
             bills: filteredBills,
@@ -145,15 +202,21 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
         loading: () => const LoadingWidget(message: 'Loading bills...'),
         error: (err, stack) => AppErrorWidget(
           message: err.toString(),
-          onRetry: () => ref.refresh(dashboardBillsStreamProvider(isSiteManager)),
+          onRetry: () =>
+              ref.refresh(dashboardBillsStreamProvider(isSiteManager)),
         ),
       ),
-      floatingActionButton: isSiteManager
-          ? FloatingActionButton(
-              onPressed: () => context.push('/bills/create'),
-              child: const Icon(Icons.add),
-            )
-          : null,
+      // floatingActionButton: isSiteManager
+      //     ? FloatingActionButton(
+      //         onPressed: () => context.push('/bills/create'),
+      //         child: const Icon(Icons.add),
+      //       )
+      //     : isAdmin
+      //         ? FloatingActionButton(
+      //             onPressed: () => context.push('/bills/approval-queue'),
+      //             child: const Icon(Icons.playlist_add_check_circle_outlined),
+      //           )
+      //         : null,
     );
   }
 
@@ -263,11 +326,13 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
 
   Future<void> _showEditBillDialog(BillModel bill) async {
     final titleController = TextEditingController(text: bill.title);
-    final amountController =
-        TextEditingController(text: bill.amount.toStringAsFixed(2));
+    final amountController = TextEditingController(
+      text: bill.amount.toStringAsFixed(2),
+    );
     final vendorController = TextEditingController(text: bill.vendorName ?? '');
-    final descriptionController =
-        TextEditingController(text: bill.description ?? '');
+    final descriptionController = TextEditingController(
+      text: bill.description ?? '',
+    );
 
     BillType selectedType = bill.type;
     PaymentType selectedPaymentType = bill.paymentType ?? PaymentType.cash;
@@ -286,32 +351,34 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
               final amount = double.tryParse(amountController.text.trim());
               if (title.isEmpty || amount == null || amount <= 0) {
                 ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Enter valid title and amount'),
-                  ),
+                  const SnackBar(content: Text('Enter valid title and amount')),
                 );
                 return;
               }
 
               setModalState(() => isSaving = true);
-              final success = await ref.read(billControllerProvider.notifier).updateBill(
-                billId: bill.id,
-                updates: {
-                  'title': title,
-                  'amount': amount,
-                  'bill_type': selectedType.value,
-                  'vendor_name': vendorController.text.trim().isEmpty
-                      ? null
-                      : vendorController.text.trim(),
-                  'description': descriptionController.text.trim().isEmpty
-                      ? null
-                      : descriptionController.text.trim(),
-                  'payment_type': selectedPaymentType.value,
-                  'payment_status': selectedPaymentStatus.value,
-                  'bill_date':
-                      selectedBillDate.toIso8601String().split('T').first,
-                },
-              );
+              final success = await ref
+                  .read(billControllerProvider.notifier)
+                  .updateBill(
+                    billId: bill.id,
+                    updates: {
+                      'title': title,
+                      'amount': amount,
+                      'bill_type': selectedType.value,
+                      'vendor_name': vendorController.text.trim().isEmpty
+                          ? null
+                          : vendorController.text.trim(),
+                      'description': descriptionController.text.trim().isEmpty
+                          ? null
+                          : descriptionController.text.trim(),
+                      'payment_type': selectedPaymentType.value,
+                      'payment_status': selectedPaymentStatus.value,
+                      'bill_date': selectedBillDate
+                          .toIso8601String()
+                          .split('T')
+                          .first,
+                    },
+                  );
               if (!mounted) return;
 
               setModalState(() => isSaving = false);
@@ -328,9 +395,9 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                 final errorMessage = state.hasError
                     ? state.error.toString()
                     : 'Failed to update bill';
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(content: Text(errorMessage)),
-                );
+                ScaffoldMessenger.of(
+                  this.context,
+                ).showSnackBar(SnackBar(content: Text(errorMessage)));
               }
             }
 
@@ -349,8 +416,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     Text(
                       'Edit Bill',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     TextField(
@@ -497,7 +564,9 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Text('Save Changes'),
                       ),
@@ -534,9 +603,9 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
 
     if (shouldDelete != true || !mounted) return;
 
-    final success = await ref.read(billControllerProvider.notifier).deleteBill(
-          bill.id,
-        );
+    final success = await ref
+        .read(billControllerProvider.notifier)
+        .deleteBill(bill.id);
     if (!mounted) return;
 
     if (success) {
@@ -588,9 +657,9 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                 final errorMessage = state.hasError
                     ? state.error.toString()
                     : 'Failed to update bill';
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(content: Text(errorMessage)),
-                );
+                ScaffoldMessenger.of(
+                  this.context,
+                ).showSnackBar(SnackBar(content: Text(errorMessage)));
               }
             }
 
@@ -608,15 +677,15 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                   Text(
                     'Approve Bill',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     bill.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<PaymentStatus>(
@@ -635,6 +704,10 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                         child: Text('Will Pay'),
                       ),
                       DropdownMenuItem(
+                        value: PaymentStatus.halfPaid,
+                        child: Text('Half Paid'),
+                      ),
+                      DropdownMenuItem(
                         value: PaymentStatus.fullPaid,
                         child: Text('Paid'),
                       ),
@@ -643,7 +716,9 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                         ? null
                         : (value) {
                             if (value != null) {
-                              setModalState(() => selectedPaymentStatus = value);
+                              setModalState(
+                                () => selectedPaymentStatus = value,
+                              );
                             }
                           },
                   ),
@@ -774,7 +849,7 @@ class _BillCard extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: bill.createdByName ?? bill.raisedBy ?? '-',
+                      text: bill.vendorName ?? bill.createdByName ?? bill.raisedBy ?? '-',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -797,7 +872,10 @@ class _BillCard extends StatelessWidget {
                   const Spacer(),
                   if (canEdit || canDelete)
                     PopupMenuButton<_BillMenuAction>(
-                      icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: AppColors.textSecondary,
+                      ),
                       onSelected: onMenuAction,
                       itemBuilder: (context) {
                         final items = <PopupMenuEntry<_BillMenuAction>>[];
@@ -838,10 +916,7 @@ class _StatusChip extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _StatusChip({
-    required this.label,
-    required this.color,
-  });
+  const _StatusChip({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {

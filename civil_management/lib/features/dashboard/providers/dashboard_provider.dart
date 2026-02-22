@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/supabase_client.dart';
 import '../../../core/services/local_database_service.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../data/models/dashboard_models.dart';
 import '../data/repositories/dashboard_repository.dart';
 
@@ -280,6 +281,7 @@ final recentActivityProvider =
       return RecentActivityNotifier(repository);
     });
 
+
 /// Active projects state
 class ActiveProjectsState {
   final List<ProjectSummary> projects;
@@ -309,18 +311,37 @@ class ActiveProjectsState {
 /// Active projects notifier
 class ActiveProjectsNotifier extends StateNotifier<ActiveProjectsState> {
   final DashboardRepository _repository;
+  final Ref _ref;
 
-  ActiveProjectsNotifier(this._repository)
+  ActiveProjectsNotifier(this._repository, this._ref)
     : super(const ActiveProjectsState()) {
     fetchProjects();
   }
+
+  bool get _isAdmin {
+    final role = _ref.read(userRoleProvider);
+    return role == UserRole.admin || role == UserRole.superAdmin;
+  }
+
+  String? get _currentUserId => _ref.read(currentUserProvider)?.id;
 
   /// Fetch active projects
   Future<void> fetchProjects() async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final projects = await _repository.getActiveProjectsSummary();
+      List<ProjectSummary> projects;
+
+      if (_isAdmin) {
+        projects = await _repository.getActiveProjectsSummary();
+      } else {
+        if (_currentUserId == null) {
+          projects = [];
+        } else {
+          projects = await _repository.getActiveAssignedProjectsSummary(_currentUserId!);
+        }
+      }
+
       state = state.copyWith(projects: projects, isLoading: false);
     } catch (e) {
       logger.e('Failed to fetch active projects: $e');
@@ -336,7 +357,7 @@ class ActiveProjectsNotifier extends StateNotifier<ActiveProjectsState> {
 final activeProjectsProvider =
     StateNotifierProvider<ActiveProjectsNotifier, ActiveProjectsState>((ref) {
       final repository = ref.watch(dashboardRepositoryProvider);
-      return ActiveProjectsNotifier(repository);
+      return ActiveProjectsNotifier(repository, ref);
     });
 
 /// Convenience providers

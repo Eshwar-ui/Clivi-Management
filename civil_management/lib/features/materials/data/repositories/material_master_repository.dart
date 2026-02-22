@@ -1,4 +1,3 @@
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_client.dart';
 import '../models/material_master_model.dart';
@@ -7,7 +6,8 @@ import '../models/material_grade_model.dart';
 class MaterialMasterRepository {
   final SupabaseClient _client;
 
-  MaterialMasterRepository({SupabaseClient? client}) : _client = client ?? supabase;
+  MaterialMasterRepository({SupabaseClient? client})
+    : _client = client ?? supabase;
 
   /// Search material master by name
   Future<List<MaterialMaster>> searchMaterials(String query) async {
@@ -16,7 +16,17 @@ class MaterialMasterRepository {
         .select()
         .ilike('name', '%$query%')
         .limit(10);
-    
+
+    return (response as List).map((e) => MaterialMaster.fromJson(e)).toList();
+  }
+
+  /// Get all material masters
+  Future<List<MaterialMaster>> getAllMaterials() async {
+    final response = await _client
+        .from('material_master')
+        .select()
+        .order('name');
+
     return (response as List).map((e) => MaterialMaster.fromJson(e)).toList();
   }
 
@@ -26,12 +36,14 @@ class MaterialMasterRepository {
         .from('material_grades')
         .select()
         .eq('material_id', materialId);
-        
+
     return (response as List).map((e) => MaterialGrade.fromJson(e)).toList();
   }
 
   /// Get grades for a specific material NAME (Helper for Stock Item linkage)
-  Future<List<MaterialGrade>> getGradesForMaterialName(String materialName) async {
+  Future<List<MaterialGrade>> getGradesForMaterialName(
+    String materialName,
+  ) async {
     // 1. Find material ID
     final material = await _client
         .from('material_master')
@@ -68,7 +80,8 @@ class MaterialMasterRepository {
           .single();
       return MaterialMaster.fromJson(response);
     } on PostgrestException catch (e) {
-      if (e.code == '23505') { // Unique violation
+      if (e.code == '23505') {
+        // Unique violation
         final retry = await _client
             .from('material_master')
             .select()

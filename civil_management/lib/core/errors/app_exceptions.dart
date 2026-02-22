@@ -26,8 +26,10 @@ class AppAuthException extends AppException {
   }
 
   static String _getReadableAuthMessage(String message) {
-    if (message.contains('Invalid login credentials')) {
-      return 'Invalid email or password';
+    final lower = message.toLowerCase();
+    if (lower.contains('invalid login credentials') ||
+        lower.contains('invalid_credentials')) {
+      return 'Incorrect password, invalid email, or no account registered to this email';
     }
     if (message.contains('Email not confirmed')) {
       return 'Please verify your email address';

@@ -157,7 +157,9 @@ class InventoryRepository {
 
       // 3. (Optional) Create bill for received materials
       final shouldCreateBill =
-          log.logType == LogType.inward && billAmount != null && paymentType != null;
+          log.logType == LogType.inward &&
+          billAmount != null &&
+          paymentType != null;
       if (shouldCreateBill) {
         await _client.from('bills').insert({
           'project_id': log.projectId,
@@ -267,14 +269,17 @@ class InventoryRepository {
     await _client.from('material_logs').delete().eq('id', logId);
 
     // Log operation for admins
-    await _client.rpc('log_operation', params: {
-      'p_operation_type': 'delete',
-      'p_entity_type': 'stock',
-      'p_entity_id': logId,
-      'p_title': '[DELETE] Material log',
-      'p_description': note ?? '',
-      'p_project_id': projectId,
-    });
+    await _client.rpc(
+      'log_operation',
+      params: {
+        'p_operation_type': 'delete',
+        'p_entity_type': 'stock',
+        'p_entity_id': logId,
+        'p_title': '[DELETE] Material log',
+        'p_description': note ?? '',
+        'p_project_id': projectId,
+      },
+    );
   }
 
   /// Delete a supplier (soft delete by setting is_active = false)

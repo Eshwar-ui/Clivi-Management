@@ -1,7 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_client.dart';
+import '../../../../core/config/env.dart';
 import '../../../../core/errors/app_exceptions.dart';
 import '../../../../core/utils/retry_helper.dart';
+import '../../../../core/utils/no_op_local_storage.dart';
 import '../models/models.dart';
 
 /// Repository for all authentication-related Supabase operations
@@ -110,28 +112,51 @@ class AuthRepository {
 
   /// Create a new user as admin without affecting the current session
   /// This preserves the admin's login state while creating the new user
+  /// Create a new user as admin without affecting the current session
+  /// This preserves the admin's login state while creating the new user
   Future<UserProfileModel> createUserAsAdmin({
     required String email,
     required String password,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? phone,
+    String? position,
+    String? address,
     String role = 'site_manager',
   }) async {
     // Save current admin session
     final adminSession = currentSession;
-    final adminAccessToken = adminSession?.accessToken;
-    final adminRefreshToken = adminSession?.refreshToken;
 
     if (adminSession == null) {
       throw AppAuthException('Admin must be logged in to create users');
     }
 
+    // Create a secondary client that doesn't persist sessions
+    // This prevents the admin's session from being overwritten in local storage
+    final tempClient = SupabaseClient(
+      Env.supabaseUrl,
+      Env.supabaseAnonKey,
+      authOptions: const FlutterAuthClientOptions(
+        localStorage: NoOpLocalStorage(),
+      ),
+    );
+
     try {
-      // Create the new user (this will temporarily switch the session)
-      final response = await _client.auth.signUp(
+      final fullName = [
+        firstName,
+        lastName,
+      ].where((s) => s != null && s.isNotEmpty).join(' ');
+
+      // Create the new user using the temporary client
+      final response = await tempClient.auth.signUp(
         email: email,
         password: password,
-        data: {'full_name': fullName, 'phone': phone},
+        data: {
+          'full_name': fullName,
+          'phone': phone,
+          'position': position,
+          'address': address,
+        },
       );
 
       if (response.user == null) {
@@ -141,64 +166,75 @@ class AuthRepository {
       final newUserId = response.user!.id;
       logger.i('Created new user: $email');
 
-      // Immediately restore admin session
-      await _client.auth.setSession(adminRefreshToken!);
-      logger.i('Admin session restored');
-
       // Use RetryHelper to wait for profile to be created by trigger
+      // Note: We use the MAIN client to check the profile, as we are authenticated as admin there
       final createdProfile = await RetryHelper.retryUntil<UserProfileModel>(
         () => getUserProfile(newUserId),
         (result) => result != null,
         maxAttempts: 5,
-        initialDelay: const Duration(milliseconds: 100),
+        initialDelay: const Duration(milliseconds: 500),
         maxDelay: const Duration(seconds: 2),
       );
 
-      // Update the new user's profile with role and details
-      try {
-        final profile = await updateUserProfile(
-          userId: newUserId,
-          updates: {
-            'role': role,
-            'full_name': fullName,
-            'phone': phone,
-            'updated_at': DateTime.now().toIso8601String(),
-          },
-        );
-        return profile;
-      } catch (e) {
-        // If profile doesn't exist yet, create it
-        logger.w('Profile not found, creating: $e');
-        final profile = await createUserProfile({
-          'id': newUserId,
-          'email': email,
-          'role': role,
-          'full_name': fullName,
-          'phone': phone,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-        return profile;
-      }
-    } on AuthException catch (e) {
-      // Try to restore admin session on error
-      if (adminRefreshToken != null) {
+      // Add extra details that might not be covered by metadata trigger sync
+      if (createdProfile != null) {
         try {
-          await _client.auth.setSession(adminRefreshToken);
-        } catch (_) {}
+          final updates = <String, dynamic>{
+            'role': role,
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+
+          if (position != null) updates['position'] = position;
+          if (address != null) updates['address'] = address;
+          // Ensure full name and phone are synced if trigger missed them
+          if (fullName.isNotEmpty) updates['full_name'] = fullName;
+          if (phone != null) updates['phone'] = phone;
+
+          final profile = await updateUserProfile(
+            userId: newUserId,
+            updates: updates,
+          );
+          return profile;
+        } catch (e) {
+          logger.w('Failed to update profile details: $e');
+          return createdProfile;
+        }
       }
+
+      throw AppAuthException('Profile creation failed');
+    } on AuthException catch (e) {
       logger.e('Create user failed: ${e.message}');
       throw AppAuthException.fromSupabase(e);
     } catch (e) {
-      // Try to restore admin session on error
-      if (adminRefreshToken != null) {
-        try {
-          await _client.auth.setSession(adminRefreshToken);
-        } catch (_) {}
-      }
       logger.e('Create user error: $e');
       throw AppAuthException(
         'An unexpected error occurred while creating user',
+      );
+    } finally {
+      // Dispose temp client to free resources
+      await tempClient.dispose();
+    }
+  }
+
+  /// Delete a user (admin only)
+  Future<void> deleteUser(String userId) async {
+    try {
+      // Typically, deleting a user from 'user_profiles' might be enough to
+      // soft-delete them from queries, or you can call a custom RPC
+      // if you need to delete them from auth.users.
+      // The previous implementation tried to set role to 'deleted', which violates
+      // the 'profiles_role_check' constraint. To fully delete a user profile, we
+      // issue a delete command.
+      await _client.from('user_profiles').delete().eq('id', userId);
+
+      logger.i('User marked as deleted: $userId');
+    } on PostgrestException catch (e) {
+      logger.e('Failed to delete user profile: ${e.message}');
+      throw AppAuthException('Failed to delete user: ${e.message}');
+    } catch (e) {
+      logger.e('Delete user error: $e');
+      throw AppAuthException(
+        'An unexpected error occurred while deleting user',
       );
     }
   }

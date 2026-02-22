@@ -19,8 +19,12 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stockAsync = ref.watch(stockRepositoryProvider).getStockItemsByProject(widget.projectId);
-    final logsAsync = ref.watch(stockRepositoryProvider).getMaterialLogsByProject(widget.projectId);
+    final stockAsync = ref
+        .watch(stockRepositoryProvider)
+        .getStockItemsByProject(widget.projectId);
+    final logsAsync = ref
+        .watch(stockRepositoryProvider)
+        .getMaterialLogsByProject(widget.projectId);
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -32,7 +36,11 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        titleTextStyle: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       body: FutureBuilder(
         future: Future.wait([stockAsync, logsAsync]),
@@ -41,14 +49,16 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return AppErrorWidget(message: 'Error loading data: ${snapshot.error}');
+            return AppErrorWidget(
+              message: 'Error loading data: ${snapshot.error}',
+            );
           }
 
           final stockItems = snapshot.data![0] as List<StockItem>;
           final logs = snapshot.data![1] as List<MaterialLog>;
 
           if (stockItems.isEmpty) {
-             return const Center(child: Text('No materials found'));
+            return const Center(child: Text('No materials found'));
           }
 
           // 1. Group Logic
@@ -58,24 +68,26 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
             // Store with original casing key if preferred, but for grouping use normalized
             // We'll use the capitalized name from the first item as the display key
             // Ideally finding the key first
-             String? key;
-             for (var k in groupedMaterials.keys) {
-               if (k.toLowerCase() == name) {
-                 key = k;
-                 break;
-               }
-             }
-             key ??= item.name; // Use this item's name as new key
-             
-             if (!groupedMaterials.containsKey(key)) {
-               groupedMaterials[key] = [];
-             }
-             groupedMaterials[key]!.add(item);
+            String? key;
+            for (var k in groupedMaterials.keys) {
+              if (k.toLowerCase() == name) {
+                key = k;
+                break;
+              }
+            }
+            key ??= item.name; // Use this item's name as new key
+
+            if (!groupedMaterials.containsKey(key)) {
+              groupedMaterials[key] = [];
+            }
+            groupedMaterials[key]!.add(item);
           }
 
           // Vendor totals for this project (inward only)
           final Map<String, _VendorTotal> vendorTotals = {};
-          for (final log in logs.where((l) => l.logType == 'inward' && l.supplier != null)) {
+          for (final log in logs.where(
+            (l) => l.logType == 'inward' && l.supplier != null,
+          )) {
             final key = log.supplier!.id;
             vendorTotals.putIfAbsent(
               key,
@@ -97,7 +109,8 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
                     ButtonSegment(value: true, label: Text('By Vendor')),
                   ],
                   selected: {_showByVendor},
-                  onSelectionChanged: (v) => setState(() => _showByVendor = v.first),
+                  onSelectionChanged: (v) =>
+                      setState(() => _showByVendor = v.first),
                 ),
               ),
               Expanded(
@@ -109,11 +122,15 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
                         itemBuilder: (context, index) {
                           final vendor = vendorTotals.values.elementAt(index);
                           return Card(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: ListTile(
                               title: Text(vendor.supplierName),
                               subtitle: const Text('Inward quantity'),
-                              trailing: Text(vendor.totalQuantity.toStringAsFixed(2)),
+                              trailing: Text(
+                                vendor.totalQuantity.toStringAsFixed(2),
+                              ),
                             ),
                           );
                         },
@@ -122,25 +139,31 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
                         padding: const EdgeInsets.all(16),
                         itemCount: groupedMaterials.keys.length,
                         itemBuilder: (context, index) {
-                          final materialName = groupedMaterials.keys.elementAt(index);
+                          final materialName = groupedMaterials.keys.elementAt(
+                            index,
+                          );
                           final items = groupedMaterials[materialName]!;
-                          
+
                           // Calculate Aggregates
                           double totalQuantity = 0;
                           double totalConsumed = 0;
                           double totalCost = 0;
-                          
+
                           // Determine primary unit (first item's unit) - simplistic
                           final unit = items.first.unit;
 
                           for (var item in items) {
-                            totalQuantity += item.quantity; // This is current stock
-                            
+                            totalQuantity +=
+                                item.quantity; // This is current stock
+
                             // Calculate consumption and receipts from logs for this item ID
-                            final itemLogs = logs.where((l) => l.itemId == item.id);
+                            final itemLogs = logs.where(
+                              (l) => l.itemId == item.id,
+                            );
                             for (var log in itemLogs) {
                               if (log.logType == 'inward') {
-                                if (log.billAmount != null) totalCost += log.billAmount!;
+                                if (log.billAmount != null)
+                                  totalCost += log.billAmount!;
                               }
                               if (log.logType == 'outward') {
                                 totalConsumed += log.quantity;
@@ -149,12 +172,12 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
                           }
 
                           return _MaterialGroupCard(
-                             name: materialName,
-                             totalCurrentStock: totalQuantity,
-                             totalConsumed: totalConsumed,
-                             totalCost: totalCost,
-                             unit: unit,
-                             variants: items,
+                            name: materialName,
+                            totalCurrentStock: totalQuantity,
+                            totalConsumed: totalConsumed,
+                            totalCost: totalCost,
+                            unit: unit,
+                            variants: items,
                           );
                         },
                       ),
@@ -214,90 +237,145 @@ class _MaterialGroupCardState extends State<_MaterialGroupCard> {
           // Header (Always Visible)
           InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12), bottom: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(12),
+              bottom: Radius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                   Row(
-                     children: [
-                       Container(
-                         padding: const EdgeInsets.all(10),
-                         decoration: BoxDecoration(
-                           color: AppColors.primary.withValues(alpha: 0.1),
-                           borderRadius: BorderRadius.circular(8),
-                         ),
-                         child: const Icon(Icons.inventory_2, color: AppColors.primary),
-                       ),
-                       const SizedBox(width: 12),
-                       Expanded(
-                         child: Column(
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                           children: [
-                             Text(
-                               widget.name,
-                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                             ),
-                             Text(
-                               '${widget.variants.length} Variants',
-                               style: const TextStyle(color: Colors.grey, fontSize: 12),
-                             ),
-                           ],
-                         ),
-                       ),
-                       Column(
-                         crossAxisAlignment: CrossAxisAlignment.end,
-                         children: [
-                           Text(
-                             '₹${widget.totalCost.toStringAsFixed(0)}',
-                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
-                           ),
-                           const Text('Total Cost', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                         ],
-                       ),
-                       const SizedBox(width: 8),
-                       Icon(_expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.grey),
-                     ],
-                   ),
-                   const SizedBox(height: 12),
-                   // Quick Stats Row
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                     children: [
-                       _StatItem(label: 'Net Stock', value: '${widget.totalCurrentStock} ${widget.unit}'),
-                       _StatItem(label: 'Total Consumed', value: '${widget.totalConsumed} ${widget.unit}'),
-                     ],
-                   ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.inventory_2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              '${widget.variants.length} Variants',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₹${widget.totalCost.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const Text(
+                            'Total Cost',
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Quick Stats Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _StatItem(
+                        label: 'Net Stock',
+                        value: '${widget.totalCurrentStock} ${widget.unit}',
+                      ),
+                      _StatItem(
+                        label: 'Total Consumed',
+                        value: '${widget.totalConsumed} ${widget.unit}',
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
-          
+
           // Expanded Details (Variants)
           if (_expanded)
-             Container(
-               color: Colors.grey[50],
-               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-               child: Column(
-                 crossAxisAlignment: CrossAxisAlignment.start,
-                 children: [
-                   const Divider(height: 1),
-                   const SizedBox(height: 8),
-                   const Text('VARIANTS / GRADES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
-                   const SizedBox(height: 8),
-                   ...widget.variants.map((item) => Padding(
-                     padding: const EdgeInsets.only(bottom: 8),
-                     child: Row(
-                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                       children: [
-                         Text(item.name + (item.grade != null && item.grade!.isNotEmpty ? ' (${item.grade})' : ''), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                         Text('${item.quantity} ${item.unit}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                       ],
-                     ),
-                   )),
-                 ],
-               ),
-             ),
+            Container(
+              color: Colors.grey[50],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'VARIANTS / GRADES',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...widget.variants.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            item.name +
+                                (item.grade != null && item.grade!.isNotEmpty
+                                    ? ' (${item.grade})'
+                                    : ''),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${item.quantity} ${item.unit}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -314,9 +392,15 @@ class _StatItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }

@@ -9,7 +9,7 @@ class SearchableDropdownWithCreate<T> extends StatefulWidget {
   final T? value;
   final List<T> items;
   final String Function(T) itemLabelBuilder;
-  final Future<T> Function(String) onAdd;
+  final Future<T> Function(String)? onAdd;
   final void Function(T?) onChanged;
   final String? Function(T?)? validator;
   final bool isLoading;
@@ -19,7 +19,7 @@ class SearchableDropdownWithCreate<T> extends StatefulWidget {
     required this.label,
     required this.items,
     required this.itemLabelBuilder,
-    required this.onAdd,
+    this.onAdd,
     required this.onChanged,
     this.value,
     this.hint,
@@ -102,19 +102,25 @@ class _SearchableDropdownWithCreateState<T>
                   onSelect: (item) {
                     _selectItem(item);
                   },
-                  onAdd: (query) async {
-                     _removeOverlay();
-                     // Show loading or optimistic update?
-                     // For now, call the future
-                     try {
-                        final newItem = await widget.onAdd(query);
-                        _selectItem(newItem);
-                     } catch (e) {
-                        if (context.mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding item: $e')));
+                  onAdd: widget.onAdd != null
+                      ? (query) async {
+                          _removeOverlay();
+                          // Show loading or optimistic update?
+                          // For now, call the future
+                          try {
+                            final newItem = await widget.onAdd!(query);
+                            _selectItem(newItem);
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error adding item: $e'),
+                                ),
+                              );
+                            }
+                          }
                         }
-                     }
-                  },
+                      : null,
                 ),
               ),
             ),
@@ -154,14 +160,17 @@ class _SearchableDropdownWithCreateState<T>
             readOnly: false, // Allow typing to search
             suffixIcon: widget.isLoading
                 ? const SizedBox(
-                    width: 20, 
-                    height: 20, 
+                    width: 20,
+                    height: 20,
                     child: Padding(
                       padding: EdgeInsets.all(12.0),
                       child: CircularProgressIndicator(strokeWidth: 2),
-                    ))
+                    ),
+                  )
                 : IconButton(
-                    icon: Icon(_isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down),
+                    icon: Icon(
+                      _isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    ),
                     onPressed: _toggleDropdown,
                   ),
             onChanged: (val) {
@@ -170,7 +179,7 @@ class _SearchableDropdownWithCreateState<T>
               _overlayEntry?.markNeedsBuild();
             },
             onTap: () {
-               if (!_isOpen) _showOverlay();
+              if (!_isOpen) _showOverlay();
             },
           ),
         ],
@@ -184,20 +193,20 @@ class _DropdownList<T> extends StatelessWidget {
   final String Function(T) itemLabelBuilder;
   final String searchQuery;
   final Function(T) onSelect;
-  final Function(String) onAdd;
+  final Function(String)? onAdd;
 
   const _DropdownList({
     required this.items,
     required this.itemLabelBuilder,
     required this.searchQuery,
     required this.onSelect,
-    required this.onAdd,
+    this.onAdd,
   });
 
   @override
   Widget build(BuildContext context) {
     final normalizedQuery = searchQuery.toLowerCase().trim();
-    
+
     final filteredItems = items.where((item) {
       return itemLabelBuilder(item).toLowerCase().contains(normalizedQuery);
     }).toList();
@@ -206,10 +215,11 @@ class _DropdownList<T> extends StatelessWidget {
     final exactMatchExists = filteredItems.any(
       (item) => itemLabelBuilder(item).toLowerCase() == normalizedQuery,
     );
-    
+
     // Check if we should show "Add" option
-    // Show if query is not empty AND no exact match found
-    final showAddOption = normalizedQuery.isNotEmpty && !exactMatchExists;
+    // Show if onAdd is provided AND query is not empty AND no exact match found
+    final showAddOption =
+        onAdd != null && normalizedQuery.isNotEmpty && !exactMatchExists;
 
     return ListView.separated(
       padding: EdgeInsets.zero,
@@ -227,7 +237,7 @@ class _DropdownList<T> extends StatelessWidget {
           return ListTile(
             leading: const Icon(Icons.add, color: AppColors.primary),
             title: Text('Add "$searchQuery"'),
-            onTap: () => onAdd(searchQuery),
+            onTap: onAdd != null ? () => onAdd!(searchQuery) : null,
           );
         }
       },

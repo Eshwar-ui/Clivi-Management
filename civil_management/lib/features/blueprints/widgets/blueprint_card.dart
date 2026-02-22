@@ -20,12 +20,10 @@ class BlueprintCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPdf = blueprint.fileName.toLowerCase().endsWith('.pdf');
-    
+
     return Card(
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -38,9 +36,9 @@ class BlueprintCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isPdf 
-                    ? Colors.blue.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
+                  color: isPdf
+                      ? Colors.blue.withOpacity(0.1)
+                      : Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -50,7 +48,7 @@ class BlueprintCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Title and Metadata
               Expanded(
                 child: Column(
@@ -66,7 +64,7 @@ class BlueprintCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Metadata row
                     Row(
                       children: [
@@ -77,7 +75,7 @@ class BlueprintCard extends StatelessWidget {
                             color: Colors.grey[600],
                           ),
                         ),
-                        
+
                         // Admin badge
                         if (blueprint.isAdminOnly) ...[
                           Text(
@@ -94,7 +92,7 @@ class BlueprintCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                        
+
                         // Date
                         Text(
                           ' • ',
@@ -113,7 +111,7 @@ class BlueprintCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Action buttons
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -152,7 +150,9 @@ class BlueprintCard extends StatelessWidget {
     final name = blueprint.fileName.toLowerCase();
     if (name.endsWith('.pdf')) {
       return 'PDF';
-    } else if (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg')) {
+    } else if (name.endsWith('.png') ||
+        name.endsWith('.jpg') ||
+        name.endsWith('.jpeg')) {
       return 'Image';
     }
     return 'File';
@@ -162,7 +162,7 @@ class BlueprintCard extends StatelessWidget {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays == 0) {
       return 'Today';
     } else if (difference.inDays == 1) {

@@ -133,4 +133,3 @@ ORDER BY table_name, column_name;
 // `PostgrestException` has `message`, `details`, `hint`, `code`.
 // The flutter error log shows just `400`.
 // I will modify `StockRepository` to catch and rethrow with more info.
-

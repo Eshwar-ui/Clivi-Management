@@ -2,8 +2,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/custom_app_bar.dart';
 import '../data/models/vendor_summary_models.dart';
 import '../providers/vendor_analytics_provider.dart';
+import '../services/vendor_report_service.dart';
 
 class VendorAnalyticsDashboard extends ConsumerWidget {
   const VendorAnalyticsDashboard({super.key});
@@ -23,15 +26,19 @@ class VendorAnalyticsDashboard extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F9),
-      appBar: AppBar(
+      appBar: CustomAppBar(
         backgroundColor: const Color(0xFFF3F5F9),
-        elevation: 0,
-        titleSpacing: 0,
-        title: const Text(
+        title: Text(
           'Material Suppliers',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
+        showBackButton: false,
       ),
+
       body: vendorsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
@@ -137,7 +144,14 @@ class VendorAnalyticsDashboard extends ConsumerWidget {
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await VendorReportService.generateReport(
+                            vendors: sorted,
+                            tab: tab,
+                            fromDate: range.start,
+                            toDate: range.end,
+                          );
+                        },
                         child: const Text(
                           'Export',
                           style: TextStyle(fontWeight: FontWeight.w700),
@@ -743,13 +757,17 @@ class _SupplyDetailsScreenState extends ConsumerState<SupplyDetailsScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F9),
-      appBar: AppBar(
+      appBar: CustomAppBar(
         backgroundColor: const Color(0xFFF3F5F9),
-        elevation: 0,
-        title: const Text(
+        title: Text(
           'Supply Details',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
+        showBackButton: true,
       ),
       body: projectsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

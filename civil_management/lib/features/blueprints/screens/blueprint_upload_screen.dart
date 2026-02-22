@@ -75,12 +75,12 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     // Check if file is selected (web or mobile)
-    final hasFile = kIsWeb 
+    final hasFile = kIsWeb
         ? (_selectedFileBytes != null && _selectedFileName != null)
         : _selectedFile != null;
-    
+
     if (!hasFile) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a file to upload.')),
@@ -92,7 +92,8 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
 
     final uploaderId = ref.read(currentUserProvider)!.id;
     final userRole = ref.read(userRoleProvider);
-    final isAdminUser = userRole == UserRole.admin || userRole == UserRole.superAdmin;
+    final isAdminUser =
+        userRole == UserRole.admin || userRole == UserRole.superAdmin;
 
     try {
       // Create a temporary file for web uploads
@@ -105,7 +106,7 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
       } else {
         fileToUpload = _selectedFile!;
       }
-      
+
       await ref
           .read(blueprintRepositoryProvider)
           .uploadBlueprint(
@@ -119,6 +120,7 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
           );
 
       // Invalidate providers to refresh the lists
+      ref.invalidate(allBlueprintsProvider(widget.projectId));
       ref.invalidate(blueprintFoldersProvider(widget.projectId));
       ref.invalidate(
         blueprintFilesProvider(
@@ -161,7 +163,7 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
@@ -213,9 +215,9 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
               ],
             ),
           ),
-          
+
           const Divider(height: 1),
-          
+
           // Form
           Expanded(
             child: SingleChildScrollView(
@@ -247,7 +249,8 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
                       builder: (context, ref, _) {
                         final role = ref.watch(userRoleProvider);
                         final canToggleAdminOnly =
-                            role == UserRole.admin || role == UserRole.superAdmin;
+                            role == UserRole.admin ||
+                            role == UserRole.superAdmin;
                         return SwitchListTile(
                           title: const Text('Admin Only'),
                           subtitle: Text(
@@ -276,7 +279,7 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
                         foregroundColor: theme.primaryColor,
                       ),
                     ),
-                    
+
                     if (_selectedFile != null || _selectedFileName != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 12.0),
@@ -289,7 +292,10 @@ class _BlueprintUploadScreenState extends ConsumerState<BlueprintUploadScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green[700]),
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green[700],
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(

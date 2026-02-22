@@ -29,9 +29,10 @@ class FinancialStats {
       materialCost: (json['material_cost'] as num?)?.toDouble() ?? 0,
       machineryCost: (json['machinery_cost'] as num?)?.toDouble() ?? 0,
       otherCost: (json['other_cost'] as num?)?.toDouble() ?? 0,
-      chartData: (json['chart_data'] as List?)
-          ?.map((e) => ChartDataPoint.fromJson(e))
-          .toList() ??
+      chartData:
+          (json['chart_data'] as List?)
+              ?.map((e) => ChartDataPoint.fromJson(e))
+              .toList() ??
           [],
     );
   }
@@ -45,10 +46,7 @@ class ChartDataPoint {
   final String label;
   final double value;
 
-  const ChartDataPoint({
-    required this.label,
-    required this.value,
-  });
+  const ChartDataPoint({required this.label, required this.value});
 
   factory ChartDataPoint.fromJson(Map<String, dynamic> json) {
     return ChartDataPoint(

@@ -11,15 +11,21 @@ class SupabaseTestHelper {
     // This is a no-op if already initialized
     try {
       await Supabase.initialize(
-        url: const String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://fhochkjwsmwuiiqqdupa.supabase.co'),
-        anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'sb_publishable__KXvv54R30ZgYkABqCL2mA_n-QpAV19'),
+        url: const String.fromEnvironment(
+          'SUPABASE_URL',
+          defaultValue: 'https://fhochkjwsmwuiiqqdupa.supabase.co',
+        ),
+        anonKey: const String.fromEnvironment(
+          'SUPABASE_ANON_KEY',
+          defaultValue: 'sb_publishable__KXvv54R30ZgYkABqCL2mA_n-QpAV19',
+        ),
       );
     } catch (e) {
       // Already initialized
       print('Supabase already initialized: $e');
     }
   }
-  
+
   /// Sign in with test credentials
   static Future<User?> signInTestUser() async {
     try {
@@ -33,7 +39,7 @@ class SupabaseTestHelper {
       rethrow;
     }
   }
-  
+
   /// Sign out current user
   static Future<void> signOut() async {
     try {
@@ -42,11 +48,11 @@ class SupabaseTestHelper {
       print('Failed to sign out: $e');
     }
   }
-  
+
   /// Clean up test projects
   static Future<void> cleanupTestProjects(List<String> projectIds) async {
     if (projectIds.isEmpty) return;
-    
+
     try {
       for (final projectId in projectIds) {
         try {
@@ -64,12 +70,12 @@ class SupabaseTestHelper {
       print('Error during cleanup: $e');
     }
   }
-  
+
   /// Get current user ID
   static String? getCurrentUserId() {
     return supabase.auth.currentUser?.id;
   }
-  
+
   /// Wait for async operation with timeout
   static Future<T> waitFor<T>(
     Future<T> Function() operation, {
@@ -87,7 +93,7 @@ class SupabaseMatchers {
       RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
     );
   }
-  
+
   /// Matcher for valid timestamp
   static Matcher isValidTimestamp() {
     return isA<DateTime>();

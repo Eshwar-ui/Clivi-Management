@@ -85,9 +85,9 @@ class _SiteManagerSelectionSheetState
               children: [
                 Text(
                   'Select Site Managers',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -100,11 +100,11 @@ class _SiteManagerSelectionSheetState
           if (_isLoading)
             Expanded(child: Center(child: LoadingIndicator()))
           else if (_error != null)
-            Expanded(child: Center(child: InlineErrorWidget(message: _error!)))
-          else if (_managers.isEmpty)
-            const Expanded(
-              child: Center(child: Text('No site managers found')),
+            Expanded(
+              child: Center(child: InlineErrorWidget(message: _error!)),
             )
+          else if (_managers.isEmpty)
+            const Expanded(child: Center(child: Text('No site managers found')))
           else
             Expanded(
               child: ListView.separated(
@@ -180,10 +180,7 @@ class _SiteManagerSelectionSheetState
                   if (manager.phone != null)
                     Text(
                       manager.phone!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                 ],
               ),

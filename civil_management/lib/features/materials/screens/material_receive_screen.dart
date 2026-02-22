@@ -6,11 +6,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../providers/master_data_provider.dart';
-import '../providers/stock_provider.dart' show stockRepositoryProvider, materialLogsProvider;
+import '../providers/stock_provider.dart';
 import '../data/models/stock_item.dart';
 import '../data/models/material_grade_model.dart';
 import '../../inventory/data/models/supplier_model.dart';
-import '../../inventory/providers/inventory_provider.dart' show suppliersProvider, inventoryRepositoryProvider;
+import '../../inventory/providers/inventory_provider.dart'
+    show suppliersProvider, inventoryRepositoryProvider;
 import '../../common/widgets/searchable_dropdown_with_create.dart';
 import '../data/models/material_master_model.dart';
 import '../data/models/material_log.dart';
@@ -19,32 +20,32 @@ import '../data/models/material_log.dart';
 class MaterialEntryForm {
   // Use unique key to force rebuild when removing/adding
   final Key key = UniqueKey();
-  
+
   // Data holders
-  StockItem? selectedMaterial;
+  MaterialMaster? selectedMaterial;
   MaterialGrade? selectedGrade;
   SupplierModel? selectedSupplier;
-  
+
   final TextEditingController quantityController = TextEditingController();
   final TextEditingController unitController = TextEditingController();
   final TextEditingController billAmountController = TextEditingController();
   String paymentType = 'Cash'; // Default
-  
+
   // Validation helper
   bool isValid() {
     final qty = double.tryParse(quantityController.text) ?? 0;
     // Bill amount can be 0 (e.g. sample?) but typically should be >= 0
     final amount = double.tryParse(billAmountController.text) ?? 0;
-    
+
     return selectedMaterial != null &&
-           selectedSupplier != null &&
-           quantityController.text.isNotEmpty &&
-           qty > 0 && 
-           amount >= 0 && 
-           unitController.text.isNotEmpty &&
-           billAmountController.text.isNotEmpty;
+        selectedSupplier != null &&
+        quantityController.text.isNotEmpty &&
+        qty > 0 &&
+        amount >= 0 &&
+        unitController.text.isNotEmpty &&
+        billAmountController.text.isNotEmpty;
   }
-  
+
   void dispose() {
     quantityController.dispose();
     unitController.dispose();
@@ -55,15 +56,16 @@ class MaterialEntryForm {
 class MaterialReceiveScreen extends ConsumerStatefulWidget {
   final String projectId;
   final bool isEmbedded;
-  
+
   const MaterialReceiveScreen({
-    super.key, 
+    super.key,
     required this.projectId,
     this.isEmbedded = false,
   });
 
   @override
-  ConsumerState<MaterialReceiveScreen> createState() => _MaterialReceiveScreenState();
+  ConsumerState<MaterialReceiveScreen> createState() =>
+      _MaterialReceiveScreenState();
 }
 
 class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
@@ -106,7 +108,8 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Please fill all required fields in all entries')),
+              content: Text('Please fill all required fields in all entries'),
+            ),
           );
         }
         return;
@@ -124,8 +127,10 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  'Invalid Project ID. Please open from Projects screen again.\n$pid')),
+            content: Text(
+              'Invalid Project ID. Please open from Projects screen again.\n$pid',
+            ),
+          ),
         );
       }
       return;
@@ -159,20 +164,27 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Materials received successfully')),
         );
-        // Reset forms instead of popping
-        setState(() {
-          for (var e in _entries) e.dispose();
-          _entries.clear();
-          _addNewEntry();
-        });
-        // Refresh the logs provider
+
+        // Refresh the logs and summary providers instantly
         ref.invalidate(materialLogsProvider(pid));
+        ref.invalidate(stockBalanceProvider(pid));
+
+        if (widget.isEmbedded) {
+          Navigator.pop(context); // Close the bottom sheet
+        } else {
+          // Reset forms instead of popping if standing alone
+          setState(() {
+            for (var e in _entries) e.dispose();
+            _entries.clear();
+            _addNewEntry();
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save material: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save material: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -181,225 +193,105 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bodyContent = _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!widget.isEmbedded) ...[
-                     const Text('Add data to the site ledger', style: TextStyle(color: Colors.grey)),
-                     const SizedBox(height: 16),
-                  ],
-                  
-                  // Dynamic Forms
-                  ..._entries.asMap().entries.map((item) {
-                    final index = item.key;
-                    final entry = item.value;
-                    return _EntryCard(
-                      key: entry.key,
-                      entry: entry,
-                      index: index,
-                      projectId: widget.projectId,
-                      onRemove: () => _removeEntry(index),
-                      isRemovable: _entries.length > 1,
-                    );
-                  }),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Action Buttons
-                  AppButton(
-                    text: 'Save Material Entry',
-                    onPressed: _submitAll,
-                    isLoading: _isLoading,
+    final bodyContent = _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!widget.isEmbedded) ...[
+                  const Text(
+                    'Add data to the site ledger',
+                    style: TextStyle(color: Colors.grey),
                   ),
-                  const SizedBox(height: 12),
-                  
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  const SizedBox(height: 16),
+                ],
+
+                // Dynamic Forms
+                ..._entries.asMap().entries.map((item) {
+                  final index = item.key;
+                  final entry = item.value;
+                  return _EntryCard(
+                    key: entry.key,
+                    entry: entry,
+                    index: index,
+                    projectId: widget.projectId,
+                    onRemove: () => _removeEntry(index),
+                    isRemovable: _entries.length > 1,
+                  );
+                }),
+
+                const SizedBox(height: 16),
+
+                // Action Buttons
+                AppButton(
+                  text: 'Save Material Entry',
+                  onPressed: _submitAll,
+                  isLoading: _isLoading,
+                ),
+                const SizedBox(height: 12),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      onPressed: _addNewEntry,
-                      child: const Text('Add New Material', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                    ),
+                    onPressed: _addNewEntry,
+                    child: const Text(
+                      'Add New Material',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 32),
-                  
-                  // History Section
-                  const _MaterialsHistoryHeader(),
-                  const SizedBox(height: 12),
-                  _MaterialsHistoryList(projectId: widget.projectId),
-                ],
-              ),
-            );
+                const SizedBox(height: 32),
+              ],
+            ),
+          );
 
     if (widget.isEmbedded) {
-      return bodyContent;
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.download_rounded,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Materials Received',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: bodyContent),
+        ],
+      );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Materials'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Log Materials'), centerTitle: false),
       body: bodyContent,
-    );
-  }
-}
-
-class _MaterialsHistoryHeader extends StatelessWidget {
-  const _MaterialsHistoryHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('Materials History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 4),
-            Text('Recent verified logs', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          ],
-        ),
-        OutlinedButton(
-          onPressed: () {
-            // Logic to filter or view all? Currently just visual as per design
-          },
-          style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            side: BorderSide(color: Colors.grey.shade300),
-          ),
-          child: const Text('Select', style: TextStyle(color: Colors.black)),
-        )
-      ],
-    );
-  }
-}
-
-class _MaterialsHistoryList extends ConsumerWidget {
-  final String projectId;
-  const _MaterialsHistoryList({required this.projectId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // We reuse the existing FutureProvider associated with logs
-    // Note: Assuming materialLogsProvider is defined in stock_provider.dart
-    // If not, we should have added it. I recall seeing it in the stock_provider.dart view.
-    final logsAsync = ref.watch(materialLogsProvider(projectId));
-    
-    return logsAsync.when(
-      data: (logs) {
-        if (logs.isEmpty) {
-          return const Center(child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Text('No recent logs'),
-          ));
-        }
-        // Show top 5 recent logs for summary
-        final displayLogs = logs.take(5).toList();
-        
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: displayLogs.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final log = displayLogs[index];
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          log.stockItem?.name ?? 'Unknown Material',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        if (log.grade != null && log.grade!.isNotEmpty)
-                          Text(
-                            'GRADE ${log.grade}',
-                            style: const TextStyle(
-                                color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              width: 6, height: 6,
-                              decoration: const BoxDecoration(
-                                color: Colors.grey, shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              log.supplier?.name ?? 'Unknown Vendor',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                             TextSpan(
-                               text: '${log.quantity.toStringAsFixed(0)} ', 
-                               style: const TextStyle(
-                                 color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16
-                               )
-                             ),
-                             TextSpan(
-                               text: log.stockItem?.unit ?? '',
-                               style: const TextStyle(
-                                 color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold
-                               )
-                             )
-                          ]
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        DateFormat('MMM dd').format(log.loggedAt),
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
-                      )
-                    ],
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
     );
   }
 }
@@ -426,7 +318,7 @@ class _EntryCard extends ConsumerStatefulWidget {
 
 class _EntryCardState extends ConsumerState<_EntryCard> {
   // Local state for async fetches in dropdowns
-  List<StockItem> _projectMaterials = [];
+  List<MaterialMaster> _masterMaterials = [];
   List<MaterialGrade> _availableGrades = [];
   bool _loadingMaterials = false;
   bool _loadingGrades = false;
@@ -454,19 +346,13 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
   Future<void> _fetchMaterials() async {
     setState(() => _loadingMaterials = true);
     try {
-      final materials = await ref.read(stockRepositoryProvider).getStockItemsByProject(widget.projectId);
-      
-      // Filter distinct by name to avoid duplicates in dropdown
-      final uniqueMaterials = <String, StockItem>{};
-      for (var item in materials) {
-        if (!uniqueMaterials.containsKey(item.name.toLowerCase())) {
-          uniqueMaterials[item.name.toLowerCase()] = item;
-        }
-      }
-      
-      if (mounted) setState(() => _projectMaterials = uniqueMaterials.values.toList());
+      final materials = await ref
+          .read(materialMasterRepositoryProvider)
+          .getAllMaterials();
+
+      if (mounted) setState(() => _masterMaterials = materials);
     } catch (e) {
-      debugPrint('Error fetching materials: $e');
+      debugPrint('Error fetching master materials: $e');
     } finally {
       if (mounted) setState(() => _loadingMaterials = false);
     }
@@ -475,18 +361,22 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
   Future<void> _fetchGrades(String materialName) async {
     setState(() => _loadingGrades = true);
     try {
-      final grades = await ref.read(materialMasterRepositoryProvider).getGradesForMaterialName(materialName);
+      final grades = await ref
+          .read(materialMasterRepositoryProvider)
+          .getGradesForMaterialName(materialName);
       if (mounted) setState(() => _availableGrades = grades);
     } catch (e) {
-       debugPrint('Error fetching grades: $e');
-       if (mounted) setState(() => _availableGrades = []);
+      debugPrint('Error fetching grades: $e');
+      if (mounted) setState(() => _availableGrades = []);
     } finally {
       if (mounted) setState(() => _loadingGrades = false);
     }
   }
 
-  Future<SupplierModel?> _openAddSupplierSheet(BuildContext context,
-      {String initialName = ''}) async {
+  Future<SupplierModel?> _openAddSupplierSheet(
+    BuildContext context, {
+    String initialName = '',
+  }) async {
     final nameCtrl = TextEditingController(text: initialName);
     final phoneCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
@@ -520,10 +410,9 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                     children: [
                       Text(
                         'Add Vendor',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -595,8 +484,9 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                                 if (!formKey.currentState!.validate()) return;
                                 setState(() => saving = true);
                                 try {
-                                  final repo =
-                                      ref.read(inventoryRepositoryProvider);
+                                  final repo = ref.read(
+                                    inventoryRepositoryProvider,
+                                  );
                                   final supplier = await repo.addSupplier(
                                     SupplierModel(
                                       id: '',
@@ -609,15 +499,14 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                                           : emailCtrl.text.trim(),
                                       contactPerson:
                                           contactCtrl.text.trim().isEmpty
-                                              ? null
-                                              : contactCtrl.text.trim(),
+                                          ? null
+                                          : contactCtrl.text.trim(),
                                       address: addressCtrl.text.trim().isEmpty
                                           ? null
                                           : addressCtrl.text.trim(),
-                                      category:
-                                          categoryCtrl.text.trim().isEmpty
-                                              ? null
-                                              : categoryCtrl.text.trim(),
+                                      category: categoryCtrl.text.trim().isEmpty
+                                          ? null
+                                          : categoryCtrl.text.trim(),
                                       notes: notesCtrl.text.trim().isEmpty
                                           ? null
                                           : notesCtrl.text.trim(),
@@ -629,8 +518,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content:
-                                          Text('Failed to add vendor: $e'),
+                                      content: Text('Failed to add vendor: $e'),
                                     ),
                                   );
                                 } finally {
@@ -653,7 +541,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
   @override
   Widget build(BuildContext context) {
     final entry = widget.entry;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 0,
@@ -676,72 +564,72 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                   constraints: const BoxConstraints(),
                 ),
               ),
-              
+
             // 1. MATERIAL DROPDOWN
-            SearchableDropdownWithCreate<StockItem>(
-              label: 'Material Name',
-              hint: '-- Select Material --',
+            DropdownButtonFormField<MaterialMaster>(
+              isExpanded: true,
               value: entry.selectedMaterial,
-              items: _projectMaterials,
-              isLoading: _loadingMaterials,
-              itemLabelBuilder: (item) => item.name,
+              decoration: const InputDecoration(
+                labelText: 'Material Name',
+                hintText: '-- Select Material from Master List --',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
+              ),
+              items: _masterMaterials.map((item) {
+                return DropdownMenuItem<MaterialMaster>(
+                  value: item,
+                  child: Text(item.name),
+                );
+              }).toList(),
               onChanged: (item) {
                 setState(() {
                   entry.selectedMaterial = item;
                   entry.selectedGrade = null; // Reset grade
-                  entry.unitController.text = item?.unit ?? '';
+                  if (entry.unitController.text.isEmpty) {
+                    entry.unitController.text = 'Units';
+                  }
                   _availableGrades = []; // Clear old grades
                 });
                 if (item != null) {
                   _fetchGrades(item.name);
                 }
               },
-              onAdd: (name) async {
-                final newItem = await ref.read(stockRepositoryProvider).getOrCreateStockItem(
-                  projectId: widget.projectId,
-                  name: name,
-                  unit: 'Units', // Default
-                );
-                await _fetchMaterials(); 
-                return newItem;
-              },
+              validator: (val) => val == null ? 'Required' : null,
             ),
             const SizedBox(height: 16),
-            
+
             // 2. GRADE DROPDOWN
-            SearchableDropdownWithCreate<MaterialGrade>(
-              label: 'Grade / Type',
-              hint: 'Cement, Iron, etc.',
+            DropdownButtonFormField<MaterialGrade>(
+              isExpanded: true,
               value: entry.selectedGrade,
-              items: _availableGrades,
-              isLoading: _loadingGrades,
-              itemLabelBuilder: (g) => g.gradeName,
+              decoration: const InputDecoration(
+                labelText: 'Grade / Type',
+                hintText: 'Select predefined grade',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
+              ),
+              items: _availableGrades.map((g) {
+                return DropdownMenuItem<MaterialGrade>(
+                  value: g,
+                  child: Text(g.gradeName),
+                );
+              }).toList(),
               onChanged: (g) {
                 setState(() => entry.selectedGrade = g);
               },
-              onAdd: (gradeName) async {
-                if (entry.selectedMaterial == null) throw 'Select Material first';
-                
-                final masterRepo = ref.read(materialMasterRepositoryProvider);
-                var masterList = await masterRepo.searchMaterials(entry.selectedMaterial!.name);
-                MaterialMaster master;
-                if (masterList.isEmpty) {
-                  master = await masterRepo.addMaterialMaster(entry.selectedMaterial!.name);
-                } else {
-                  try {
-                    master = masterList.firstWhere(
-                      (m) => m.name.toLowerCase() == entry.selectedMaterial!.name.toLowerCase()
-                    );
-                  } catch (e) {
-                    master = await masterRepo.addMaterialMaster(entry.selectedMaterial!.name);
-                  }
-                }
-                
-                final newGradeData = await masterRepo.addMaterialGrade(materialId: master.id, gradeName: gradeName);
-                final newGrade = MaterialGrade.fromJson(newGradeData);
-                await _fetchGrades(entry.selectedMaterial!.name);
-                return newGrade;
-              },
+              validator: (val) => val == null ? 'Required' : null,
             ),
             const SizedBox(height: 16),
 
@@ -757,16 +645,20 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _unitItems.contains(entry.unitController.text)
                         ? entry.unitController.text
                         : null,
                     decoration: const InputDecoration(
-                        labelText: 'Unit',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      labelText: 'Unit',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
                     ),
                     items: _unitItems
                         .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -781,55 +673,100 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
             ),
             const SizedBox(height: 16),
 
-             // 3. VENDOR DROPDOWN (master suppliers)
-             ref.watch(suppliersProvider).when(
-               loading: () => const LinearProgressIndicator(),
-               error: (e, _) => Text('Error loading suppliers: $e'),
-               data: (suppliers) => SearchableDropdownWithCreate<SupplierModel>(
-                  label: 'Vendor / Supplier', 
-                  hint: 'Enter vendor name',
-                  value: entry.selectedSupplier,
-                  items: suppliers,
-                  itemLabelBuilder: (s) => s.name,
-              onChanged: (s) => setState(() => entry.selectedSupplier = s),
-              onAdd: (name) async {
-                     final newSupplier = await _openAddSupplierSheet(context, initialName: name);
-                     if (newSupplier != null) {
-                       ref.invalidate(suppliersProvider);
-                       setState(() => entry.selectedSupplier = newSupplier);
-                     }
-                     return newSupplier ?? entry.selectedSupplier!;
-                 },
+            // 3. VENDOR DROPDOWN (master suppliers)
+            ref
+                .watch(suppliersProvider)
+                .when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (e, _) => Text('Error loading suppliers: $e'),
+                  data: (suppliers) => Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<SupplierModel>(
+                          isExpanded: true,
+                          value: entry.selectedSupplier,
+                          decoration: const InputDecoration(
+                            labelText: 'Vendor / Supplier',
+                            hintText: 'Select vendor',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(8),
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 16,
+                            ),
+                          ),
+                          items: suppliers.map((s) {
+                            return DropdownMenuItem<SupplierModel>(
+                              value: s,
+                              child: Text(s.name),
+                            );
+                          }).toList(),
+                          onChanged: (s) =>
+                              setState(() => entry.selectedSupplier = s),
+                          validator: (val) => val == null ? 'Required' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () async {
+                          final newSupplier = await _openAddSupplierSheet(
+                            context,
+                          );
+                          if (newSupplier != null) {
+                            ref.invalidate(suppliersProvider);
+                            setState(
+                              () => entry.selectedSupplier = newSupplier,
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.add_circle_outline,
+                          color: AppColors.primary,
+                          size: 32,
+                        ),
+                        tooltip: 'Add New Vendor',
+                      ),
+                    ],
+                  ),
+                ),
+
+            const SizedBox(height: 16),
+
+            DropdownButtonFormField<String>(
+              value: entry.paymentType,
+              decoration: const InputDecoration(
+                labelText: 'Payment Type',
+                hintText: '-- Select Payment Type --',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
               ),
+              items: [
+                'Cash',
+                'Online',
+                'Cheque',
+                'Credit',
+              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (val) {
+                if (val != null) setState(() => entry.paymentType = val);
+              },
             ),
 
-             const SizedBox(height: 16),
-             
-             DropdownButtonFormField<String>(
-                value: entry.paymentType,
-                decoration: const InputDecoration(
-                  labelText: 'Payment Type', 
-                  hintText: '-- Select Payment Type --',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                ),
-                items: ['Cash', 'Online', 'Cheque', 'Credit']
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => entry.paymentType = val);
-                },
-              ),
-              
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-             CurrencyTextField(
-               controller: entry.billAmountController,
-               label: 'Bill amount',
-               // prefixText is handled internally by CurrencyTextField with prefixIcon
-             ),
+            CurrencyTextField(
+              controller: entry.billAmountController,
+              label: 'Bill amount',
+              // prefixText is handled internally by CurrencyTextField with prefixIcon
+            ),
           ],
         ),
       ),

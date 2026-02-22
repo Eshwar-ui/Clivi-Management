@@ -49,7 +49,8 @@ enum BillStatus {
     }
   }
 
-  bool get isCompleted => this == BillStatus.paid || this == BillStatus.completed;
+  bool get isCompleted =>
+      this == BillStatus.paid || this == BillStatus.completed;
 }
 
 enum BillType {
@@ -216,27 +217,39 @@ class BillModel {
       type: BillType.fromString(json['bill_type'] as String?),
       status: BillStatus.fromString(json['status'] as String?),
       billDate: DateTime.parse(json['bill_date'] as String),
-      dueDate: json['due_date'] != null ? DateTime.parse(json['due_date'] as String) : null,
+      dueDate: json['due_date'] != null
+          ? DateTime.parse(json['due_date'] as String)
+          : null,
       vendorName: json['vendor_name'] as String?,
       receiptUrl: (json['receipt_url'] ?? json['image_url']) as String?,
       createdBy: json['created_by'] as String?,
       raisedBy: json['raised_by'] as String?,
       approvedBy: json['approved_by'] as String?,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
-      approvedAt: json['approved_at'] != null ? DateTime.parse(json['approved_at'] as String) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      approvedAt: json['approved_at'] != null
+          ? DateTime.parse(json['approved_at'] as String)
+          : null,
       paymentType: PaymentType.fromString(json['payment_type'] as String?),
-      paymentStatus: PaymentStatus.fromString(json['payment_status'] as String?),
-      
-      projectName: json['project'] != null 
-          ? json['project']['name'] as String? 
-          : (json['projects'] != null ? json['projects']['name'] as String? : null),
-          
-      createdByName: json['creator'] != null 
-          ? json['creator']['full_name'] as String? 
-          : (json['user_profiles'] != null ? json['user_profiles']['full_name'] as String? : null),
-          
-      approvedByName: json['approver'] != null 
-          ? json['approver']['full_name'] as String? 
+      paymentStatus: PaymentStatus.fromString(
+        json['payment_status'] as String?,
+      ),
+
+      projectName: json['project'] != null
+          ? json['project']['name'] as String?
+          : (json['projects'] != null
+                ? json['projects']['name'] as String?
+                : null),
+
+      createdByName: json['creator'] != null
+          ? json['creator']['full_name'] as String?
+          : (json['user_profiles'] != null
+                ? json['user_profiles']['full_name'] as String?
+                : null),
+
+      approvedByName: json['approver'] != null
+          ? json['approver']['full_name'] as String?
           : null,
     );
   }

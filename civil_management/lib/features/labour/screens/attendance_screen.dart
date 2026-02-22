@@ -102,7 +102,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       final labour = item['labour'] as LabourModel;
       final attendance = item['attendance'] as LabourAttendanceModel?;
       _attendanceMap[labour.id] =
-          attendance?.status ?? _attendanceMap[labour.id] ?? AttendanceStatus.present;
+          attendance?.status ??
+          _attendanceMap[labour.id] ??
+          AttendanceStatus.present;
     }
 
     return Column(
@@ -206,10 +208,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       await repo.bulkMarkAttendance(attendances);
 
       // Refresh data providers to reflect latest state
-      ref.invalidate(labourWithAttendanceProvider((
-        projectId: widget.projectId,
-        date: _selectedDate,
-      )));
+      ref.invalidate(
+        labourWithAttendanceProvider((
+          projectId: widget.projectId,
+          date: _selectedDate,
+        )),
+      );
       ref.invalidate(projectLabourProvider(widget.projectId));
 
       if (mounted) {

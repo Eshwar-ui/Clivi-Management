@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../inventory/providers/inventory_provider.dart';
@@ -27,14 +26,8 @@ class VendorsListScreen extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'refresh',
-                child: Text('Refresh'),
-              ),
-              PopupMenuItem(
-                value: 'delete_all',
-                child: Text('Delete All'),
-              ),
+              PopupMenuItem(value: 'refresh', child: Text('Refresh')),
+              PopupMenuItem(value: 'delete_all', child: Text('Delete All')),
             ],
           ),
         ],
@@ -90,13 +83,14 @@ class VendorsListScreen extends ConsumerWidget {
     );
   }
 
-  void _showVendorSheet(BuildContext context, WidgetRef ref,
-      {SupplierModel? existing}) {
+  void _showVendorSheet(
+    BuildContext context,
+    WidgetRef ref, {
+    SupplierModel? existing,
+  }) {
     final nameController = TextEditingController(text: existing?.name ?? '');
-    final phoneController =
-        TextEditingController(text: existing?.phone ?? '');
-    final emailController =
-        TextEditingController(text: existing?.email ?? '');
+    final phoneController = TextEditingController(text: existing?.phone ?? '');
+    final emailController = TextEditingController(text: existing?.email ?? '');
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
 
@@ -105,110 +99,112 @@ class VendorsListScreen extends ConsumerWidget {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (sheetCtx) {
-        return StatefulBuilder(builder: (context, setState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    existing == null ? 'Add Vendor' : 'Edit Vendor',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name *'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: phoneController,
-                    decoration: const InputDecoration(labelText: 'Phone'),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: isSaving
-                        ? null
-                        : () async {
-                            if (!formKey.currentState!.validate()) return;
-                            setState(() => isSaving = true);
-                            try {
-                              final repo =
-                                  ref.read(inventoryRepositoryProvider);
-                              if (existing == null) {
-                                await repo.addSupplier(
-                                  SupplierModel(
-                                    id: '',
-                                    name: nameController.text.trim(),
-                                    phone: phoneController.text.trim().isEmpty
-                                        ? null
-                                        : phoneController.text.trim(),
-                                    email: emailController.text.trim().isEmpty
-                                        ? null
-                                        : emailController.text.trim(),
-                                    contactPerson: null,
-                                    address: null,
-                                    category: null,
-                                    notes: null,
-                                    isActive: true,
-                                    createdAt: null,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      existing == null ? 'Add Vendor' : 'Edit Vendor',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Name *'),
+                      validator: (v) =>
+                          v == null || v.trim().isEmpty ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: phoneController,
+                      decoration: const InputDecoration(labelText: 'Phone'),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setState(() => isSaving = true);
+                              try {
+                                final repo = ref.read(
+                                  inventoryRepositoryProvider,
+                                );
+                                if (existing == null) {
+                                  await repo.addSupplier(
+                                    SupplierModel(
+                                      id: '',
+                                      name: nameController.text.trim(),
+                                      phone: phoneController.text.trim().isEmpty
+                                          ? null
+                                          : phoneController.text.trim(),
+                                      email: emailController.text.trim().isEmpty
+                                          ? null
+                                          : emailController.text.trim(),
+                                      contactPerson: null,
+                                      address: null,
+                                      category: null,
+                                      notes: null,
+                                      isActive: true,
+                                      createdAt: null,
+                                    ),
+                                  );
+                                } else {
+                                  await repo.updateSupplier(existing.id, {
+                                    'name': nameController.text.trim(),
+                                    'phone': phoneController.text.trim(),
+                                    'email': emailController.text.trim(),
+                                  });
+                                }
+                                ref.invalidate(vendorOverviewProvider);
+                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      existing == null
+                                          ? 'Vendor added'
+                                          : 'Vendor updated',
+                                    ),
                                   ),
                                 );
-                              } else {
-                                await repo.updateSupplier(existing.id, {
-                                  'name': nameController.text.trim(),
-                                  'phone': phoneController.text.trim(),
-                                  'email': emailController.text.trim(),
-                                });
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to save vendor: $e'),
+                                  ),
+                                );
+                              } finally {
+                                setState(() => isSaving = false);
                               }
-                              ref.invalidate(vendorOverviewProvider);
-                              if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(existing == null
-                                      ? 'Vendor added'
-                                      : 'Vendor updated'),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                      Text('Failed to save vendor: $e'),
-                                ),
-                              );
-                            } finally {
-                              setState(() => isSaving = false);
-                            }
-                          },
-                    child:
-                        Text(existing == null ? 'Save' : 'Update'),
-                  ),
-                ],
+                            },
+                      child: Text(existing == null ? 'Save' : 'Update'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -229,9 +225,7 @@ class VendorsListScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Confirmation text',
-              ),
+              decoration: const InputDecoration(labelText: 'Confirmation text'),
             ),
           ],
         ),
@@ -257,9 +251,9 @@ class VendorsListScreen extends ConsumerWidget {
           const SnackBar(content: Text('All vendors deactivated')),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bulk delete failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Bulk delete failed: $e')));
       }
     }
   }
@@ -290,13 +284,13 @@ class VendorsListScreen extends ConsumerWidget {
       try {
         await ref.read(inventoryRepositoryProvider).deleteSupplier(vendorId);
         ref.invalidate(vendorOverviewProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vendor deleted')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Vendor deleted')));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
       }
     }
   }

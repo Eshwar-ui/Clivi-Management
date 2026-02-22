@@ -93,8 +93,9 @@ class MachineryMasterScreen extends ConsumerWidget {
   }) {
     final nameController = TextEditingController(text: existing?.name ?? '');
     final typeController = TextEditingController(text: existing?.type ?? '');
-    final regController =
-        TextEditingController(text: existing?.registrationNo ?? '');
+    final regController = TextEditingController(
+      text: existing?.registrationNo ?? '',
+    );
     String ownership = existing?.ownershipType ?? 'Rental';
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
@@ -120,24 +121,21 @@ class MachineryMasterScreen extends ConsumerWidget {
                 children: [
                   Text(
                     existing == null ? 'Add Machinery' : 'Edit Machinery',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Name *'),
+                    decoration: const InputDecoration(labelText: 'Name *'),
                     validator: (v) =>
                         v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: typeController,
-                    decoration:
-                        const InputDecoration(labelText: 'Type *'),
+                    decoration: const InputDecoration(labelText: 'Type *'),
                     validator: (v) =>
                         v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
@@ -151,8 +149,7 @@ class MachineryMasterScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: ownership,
-                    decoration:
-                        const InputDecoration(labelText: 'Ownership'),
+                    decoration: const InputDecoration(labelText: 'Ownership'),
                     items: const [
                       DropdownMenuItem(value: 'Own', child: Text('Own')),
                       DropdownMenuItem(value: 'Rental', child: Text('Rental')),
@@ -174,8 +171,8 @@ class MachineryMasterScreen extends ConsumerWidget {
                                   type: typeController.text.trim(),
                                   registrationNo:
                                       regController.text.trim().isEmpty
-                                          ? null
-                                          : regController.text.trim(),
+                                      ? null
+                                      : regController.text.trim(),
                                   ownershipType: ownership,
                                 );
                               } else {
@@ -184,8 +181,8 @@ class MachineryMasterScreen extends ConsumerWidget {
                                   data: {
                                     'name': nameController.text.trim(),
                                     'type': typeController.text.trim(),
-                                    'registration_no':
-                                        regController.text.trim(),
+                                    'registration_no': regController.text
+                                        .trim(),
                                     'ownership_type': ownership,
                                   },
                                 );
@@ -194,9 +191,11 @@ class MachineryMasterScreen extends ConsumerWidget {
                               if (ctx.mounted) Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(existing == null
-                                      ? 'Machinery added'
-                                      : 'Machinery updated'),
+                                  content: Text(
+                                    existing == null
+                                        ? 'Machinery added'
+                                        : 'Machinery updated',
+                                  ),
                                 ),
                               );
                             } catch (e) {
@@ -246,16 +245,13 @@ class MachineryMasterScreen extends ConsumerWidget {
     if (ok == true) {
       await ref.read(machineryRepositoryProvider).deleteMachinery(id);
       ref.invalidate(machineryListProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Machinery deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Machinery deleted')));
     }
   }
 
-  Future<void> _confirmDeleteAll(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmDeleteAll(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -271,8 +267,7 @@ class MachineryMasterScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             TextField(
               controller: controller,
-              decoration:
-                  const InputDecoration(labelText: 'Confirmation text'),
+              decoration: const InputDecoration(labelText: 'Confirmation text'),
             ),
           ],
         ),
@@ -293,9 +288,9 @@ class MachineryMasterScreen extends ConsumerWidget {
     if (ok == true) {
       await ref.read(machineryRepositoryProvider).deleteAllMachinery();
       ref.invalidate(machineryListProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All machinery deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('All machinery deleted')));
     }
   }
 }

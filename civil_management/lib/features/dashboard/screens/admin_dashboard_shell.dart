@@ -11,7 +11,7 @@ import 'package:civil_management/features/vendors/screens/vendor_analytics_dashb
 
 class DashboardShell extends ConsumerStatefulWidget {
   final int initialIndex;
-  
+
   const DashboardShell({super.key, this.initialIndex = 0});
 
   @override
@@ -37,31 +37,31 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
     final role = profile?.role ?? 'admin';
-    
-    final Widget homeScreen = role == 'site_manager' 
-        ? const SiteManagerDashboard() 
+
+    final Widget homeScreen = role == 'site_manager'
+        ? const SiteManagerDashboard()
         : const AdminDashboard();
 
     final List<Widget> pages = [
       homeScreen,
       const ProjectListScreen(),
       const BillsScreen(),
-      const VendorAnalyticsDashboard(),
+      if (role == 'admin') const VendorAnalyticsDashboard(),
       const ProfileScreen(),
     ];
 
     // Ensure index is valid
     if (_selectedIndex >= pages.length) {
-      _selectedIndex = 0;
+      _selectedIndex = pages.length - 1;
     }
 
     return Scaffold(
       body: pages[_selectedIndex],
-      bottomNavigationBar: _buildBottomNav(context, _selectedIndex),
+      bottomNavigationBar: _buildBottomNav(context, _selectedIndex, role),
     );
   }
 
-  Widget _buildBottomNav(BuildContext context, int currentIndex) {
+  Widget _buildBottomNav(BuildContext context, int currentIndex, String role) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -97,17 +97,18 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
                 isSelected: currentIndex == 2,
                 onTap: () => _onItemTapped(2),
               ),
-              _buildNavItem(
-                icon: Icons.bar_chart,
-                label: 'Reports',
-                isSelected: currentIndex == 3,
-                onTap: () => _onItemTapped(3),
-              ),
+              if (role == 'admin')
+                _buildNavItem(
+                  icon: Icons.bar_chart,
+                  label: 'Reports',
+                  isSelected: currentIndex == 3,
+                  onTap: () => _onItemTapped(3),
+                ),
               _buildNavItem(
                 icon: Icons.person_outline,
                 label: 'Profile',
-                isSelected: currentIndex == 4,
-                onTap: () => _onItemTapped(4),
+                isSelected: currentIndex == (role == 'admin' ? 4 : 3),
+                onTap: () => _onItemTapped(role == 'admin' ? 4 : 3),
               ),
             ],
           ),

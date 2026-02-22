@@ -51,8 +51,11 @@ class _DailyMaterialLogScreenState extends ConsumerState<DailyMaterialLogScreen>
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Material Log - ${widget.projectName}',
-            maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(
+          'Material Log - ${widget.projectName}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -73,8 +76,14 @@ class _DailyMaterialLogScreenState extends ConsumerState<DailyMaterialLogScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _LogListTab(projectId: widget.projectId, logType: LogType.inward),
-                  _LogListTab(projectId: widget.projectId, logType: LogType.outward),
+                  _LogListTab(
+                    projectId: widget.projectId,
+                    logType: LogType.inward,
+                  ),
+                  _LogListTab(
+                    projectId: widget.projectId,
+                    logType: LogType.outward,
+                  ),
                 ],
               ),
             ),
@@ -98,7 +107,6 @@ class _DailyMaterialLogScreenState extends ConsumerState<DailyMaterialLogScreen>
         );
         return;
       }
-
     });
 
     showModalBottomSheet(
@@ -112,8 +120,9 @@ class _DailyMaterialLogScreenState extends ConsumerState<DailyMaterialLogScreen>
           child: _AddLogBottomSheet(
             projectId: widget.projectId,
             stockItems: stockItemsAsync.value ?? [],
-            initialLogType:
-                _tabController.index == 0 ? LogType.inward : LogType.outward,
+            initialLogType: _tabController.index == 0
+                ? LogType.inward
+                : LogType.outward,
             onAdded: () {
               ref.invalidate(inwardLogsProvider(widget.projectId));
               ref.invalidate(outwardLogsProvider(widget.projectId));
@@ -124,7 +133,6 @@ class _DailyMaterialLogScreenState extends ConsumerState<DailyMaterialLogScreen>
       ),
     );
   }
-
 }
 
 class _SupplierPicker extends ConsumerWidget {
@@ -158,10 +166,7 @@ class _SupplierPicker extends ConsumerWidget {
                 border: OutlineInputBorder(),
               ),
               items: suppliers
-                  .map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Text(s.name),
-                      ))
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s.name)))
                   .toList(),
               onChanged: onSelected,
             ),
@@ -213,7 +218,9 @@ class _SupplierPicker extends ConsumerWidget {
               final name = nameController.text.trim();
               if (name.isEmpty) return;
               try {
-                await ref.read(inventoryRepositoryProvider).addSupplier(
+                await ref
+                    .read(inventoryRepositoryProvider)
+                    .addSupplier(
                       SupplierModel(
                         id: '',
                         name: name,
@@ -422,21 +429,24 @@ class _MaterialLogCard extends ConsumerWidget {
                               }
                               Navigator.pop(ctx, true);
                             },
-                            child: const Text('Delete',
-                                style: TextStyle(color: Colors.red)),
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
                           ),
                         ],
                       ),
                     );
                     if (confirmed == true) {
-                      await ref.read(inventoryRepositoryProvider)
+                      await ref
+                          .read(inventoryRepositoryProvider)
                           .deleteMaterialLog(
-                        logId: log.id,
-                        projectId: log.projectId,
-                        note: noteController.text.trim().isEmpty
-                            ? null
-                            : noteController.text.trim(),
-                      );
+                            logId: log.id,
+                            projectId: log.projectId,
+                            note: noteController.text.trim().isEmpty
+                                ? null
+                                : noteController.text.trim(),
+                          );
                       onDeleted();
                     }
                   },
@@ -668,7 +678,9 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
                   DropdownMenuItem(value: 'cash', child: Text('Cash')),
                   DropdownMenuItem(value: 'upi', child: Text('Online/UPI')),
                   DropdownMenuItem(
-                      value: 'bank_transfer', child: Text('Bank Transfer')),
+                    value: 'bank_transfer',
+                    child: Text('Bank Transfer'),
+                  ),
                   DropdownMenuItem(value: 'cheque', child: Text('Cheque')),
                 ],
                 onChanged: (v) => setState(() => _paymentType = v),
@@ -678,8 +690,9 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
               // Bill amount
               TextField(
                 controller: _amountController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Bill Amount',
                   border: OutlineInputBorder(),
@@ -743,10 +756,12 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
         quantity: quantity,
         activity: _activityController.text.trim().isEmpty
             ? (_selectedLogType == LogType.outward
-                ? 'Material Used'
-                : 'Material Received')
+                  ? 'Material Used'
+                  : 'Material Received')
             : _activityController.text.trim(),
-        notes: _notesController.text.isEmpty ? null : _notesController.text.trim(),
+        notes: _notesController.text.isEmpty
+            ? null
+            : _notesController.text.trim(),
         supplierId: _selectedSupplier?.id,
       );
 
@@ -770,7 +785,7 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
           _selectedItem?.name,
           if (_selectedItem?.description != null &&
               _selectedItem!.description!.isNotEmpty)
-            _selectedItem!.description
+            _selectedItem!.description,
         ].whereType<String>().join(' - '),
       );
       widget.onAdded();
@@ -804,8 +819,9 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
             ),
             TextField(
               controller: gradeController,
-              decoration:
-                  const InputDecoration(labelText: 'Grade / Type (optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Grade / Type (optional)',
+              ),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -815,13 +831,13 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
                 DropdownMenuItem(value: 'kg', child: Text('Kg')),
                 DropdownMenuItem(value: 'tons', child: Text('Tons')),
                 DropdownMenuItem(
-                    value: 'cubic_meter', child: Text('Cubic Meter')),
+                  value: 'cubic_meter',
+                  child: Text('Cubic Meter'),
+                ),
                 DropdownMenuItem(value: 'units', child: Text('Units')),
               ],
               onChanged: (v) => unit = v ?? unit,
-              decoration: const InputDecoration(
-                labelText: 'Unit',
-              ),
+              decoration: const InputDecoration(labelText: 'Unit'),
             ),
           ],
         ),

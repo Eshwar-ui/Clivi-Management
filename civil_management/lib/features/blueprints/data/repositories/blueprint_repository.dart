@@ -107,7 +107,10 @@ class BlueprintRepository {
             .uploadBinary(
               filePath,
               fileBytes,
-              fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: true,
+              ),
             );
       } else if (!kIsWeb) {
         // For mobile/desktop: use regular upload with File
@@ -116,7 +119,10 @@ class BlueprintRepository {
             .upload(
               filePath,
               file,
-              fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: true,
+              ),
             );
       } else {
         // Fallback: try reading bytes from file
@@ -126,7 +132,10 @@ class BlueprintRepository {
             .uploadBinary(
               filePath,
               bytes,
-              fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: true,
+              ),
             );
       }
 

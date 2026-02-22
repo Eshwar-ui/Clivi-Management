@@ -10,10 +10,12 @@ class FileUtils {
     // FilePicker requires FileType.custom when passing allowedExtensions.
     final hasExtensions =
         allowedExtensions != null && allowedExtensions.isNotEmpty;
-    final effectiveType =
-        (hasExtensions || type == FileType.custom) ? FileType.custom : type;
-    final sanitizedExtensions =
-        hasExtensions ? allowedExtensions!.map(_stripDot).toList() : null;
+    final effectiveType = (hasExtensions || type == FileType.custom)
+        ? FileType.custom
+        : type;
+    final sanitizedExtensions = hasExtensions
+        ? allowedExtensions!.map(_stripDot).toList()
+        : null;
 
     // Avoid crashing if caller asked for custom but forgot extensions.
     if (effectiveType == FileType.custom && sanitizedExtensions == null) {
@@ -41,18 +43,19 @@ class FileUtils {
   }) async {
     final hasExtensions =
         allowedExtensions != null && allowedExtensions.isNotEmpty;
-    final effectiveType =
-        (hasExtensions || type == FileType.custom) ? FileType.custom : type;
-    final sanitizedExtensions =
-        hasExtensions ? allowedExtensions!.map(_stripDot).toList() : null;
+    final effectiveType = (hasExtensions || type == FileType.custom)
+        ? FileType.custom
+        : type;
+    final sanitizedExtensions = hasExtensions
+        ? allowedExtensions!.map(_stripDot).toList()
+        : null;
 
     if (effectiveType == FileType.custom && sanitizedExtensions == null) {
-      final result =
-          await FilePicker.platform.pickFiles(
-            type: FileType.any,
-            allowMultiple: true,
-            withData: true,
-          );
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: true,
+        withData: true,
+      );
       return result?.files ?? [];
     }
 

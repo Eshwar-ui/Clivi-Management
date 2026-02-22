@@ -36,8 +36,12 @@ class MachineryModel {
       status: json['status'] as String? ?? 'active',
       ownershipType: json['ownership_type'] as String?,
       currentProjectId: json['current_project_id'] as String?,
-      purchaseDate: json['purchase_date'] != null ? DateTime.parse(json['purchase_date'] as String) : null,
-      lastService: json['last_service'] != null ? DateTime.parse(json['last_service'] as String) : null,
+      purchaseDate: json['purchase_date'] != null
+          ? DateTime.parse(json['purchase_date'] as String)
+          : null,
+      lastService: json['last_service'] != null
+          ? DateTime.parse(json['last_service'] as String)
+          : null,
     );
   }
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../../../core/config/supabase_client.dart';
 import '../../../core/widgets/loading_widget.dart';
@@ -17,6 +17,7 @@ class BlueprintViewerScreen extends StatefulWidget {
 
 class _BlueprintViewerScreenState extends State<BlueprintViewerScreen> {
   final BlueprintRepository _repository = BlueprintRepository();
+  final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
   String? _signedUrl;
   String? _error;
   bool _isLoading = true;
@@ -61,6 +62,16 @@ class _BlueprintViewerScreenState extends State<BlueprintViewerScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(widget.blueprint.fileName),
+        actions: isPdf
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.bookmark),
+                  onPressed: () {
+                    _pdfViewerKey.currentState?.openBookmarkView();
+                  },
+                ),
+              ]
+            : null,
       ),
       body: _buildBody(isPdf),
     );
@@ -97,11 +108,11 @@ class _BlueprintViewerScreenState extends State<BlueprintViewerScreen> {
   }
 
   Widget _buildPdfViewer() {
-    return const PDF().cachedFromUrl(
+    return SfPdfViewer.network(
       _signedUrl!,
-      placeholder: (progress) =>
-          LoadingWidget(message: 'Loading PDF... $progress%'),
-      errorWidget: (error) => Center(child: Text(error.toString())),
+      key: _pdfViewerKey,
+      canShowScrollHead: false,
+      canShowScrollStatus: false,
     );
   }
 

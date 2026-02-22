@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/errors/app_exceptions.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive.dart';
 import '../../../core/ui/responsive_scaffold.dart';
 import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/error_widget.dart';
 import '../providers/auth_provider.dart';
 
 /// Forgot password screen
@@ -21,7 +21,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
-  String? _errorMessage;
   bool _emailSent = false;
 
   @override
@@ -35,7 +34,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -49,9 +47,58 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         _emailSent = true;
       });
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        final errorString = e.toString().toLowerCase();
+        final message = ExceptionHandler.getMessage(e);
+
+        if (errorString.contains('socket') ||
+            errorString.contains('network') ||
+            errorString.contains('internet') ||
+            errorString.contains('connection') ||
+            errorString.contains('timeout')) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.wifi_off, color: AppColors.error),
+                  SizedBox(width: 8),
+                  Text('Connection Error'),
+                ],
+              ),
+              content: const Text(
+                'Unable to connect to the server. Please check your internet connection and try again.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        } else if (errorString.contains('user not found') ||
+            errorString.contains('invalid email') ||
+            errorString.contains('no account registered')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'No account registered with this email address.',
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('An error occurred: $message'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -79,9 +126,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: _emailSent ? _buildSuccessView(r) : _buildResetForm(r),
+            child: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: _emailSent ? _buildSuccessView(r) : _buildResetForm(r),
+              ),
             ),
           ),
         );
@@ -110,10 +159,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         Text(
           'Email Sent!',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-                fontSize: r.font(26, tablet: 30),
-              ),
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: r.font(26, tablet: 30),
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -198,33 +247,29 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Text(
             'Forgot Password?',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                  fontSize: r.font(28, tablet: 32),
-                ),
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+              fontSize: r.font(28, tablet: 32),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'No worries! Enter your email and we\'ll send you a reset link.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: r.font(14, tablet: 16),
-                ),
+              color: AppColors.textSecondary,
+              fontSize: r.font(14, tablet: 16),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-
-          // Error Message
-          if (_errorMessage != null) ...[
-            InlineErrorWidget(message: _errorMessage!),
-            const SizedBox(height: 16),
-          ],
 
           // Email Field
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _handleResetPassword(),
             decoration: const InputDecoration(
               labelText: 'Email',
               hintText: 'Enter your email address',

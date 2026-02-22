@@ -348,13 +348,15 @@ class VendorAnalyticsRepository {
 
       // Fallback: some environments persist receive entries in
       // material_receipts/material_receipt_items instead of material_logs.
-      return _loadReceiptSupplyLines(
-        vendorId: vendorId,
-        projectId: projectId,
-        tab: tab,
-        fromDate: fromDate,
-        toDate: toDate,
-      );
+      // Temporarily disabled since the table does not exist and throws 400 Bad Request
+      // return _loadReceiptSupplyLines(
+      //   vendorId: vendorId,
+      //   projectId: projectId,
+      //   tab: tab,
+      //   fromDate: fromDate,
+      //   toDate: toDate,
+      // );
+      return const [];
     } catch (e, st) {
       dev.log(
         '[VendorAnalytics] _loadInwardSupplyLines FAILED: $e',
@@ -373,19 +375,30 @@ class VendorAnalyticsRepository {
     required String materialName,
   }) {
     final supplierCat = (supplierCategory ?? '').trim().toLowerCase();
-    // Keep "both required" when supplier category exists.
-    // If supplier category is missing, rely on material classification only.
-    if (supplierCat.isNotEmpty &&
-        supplierCat != tab.supplierCategory.toLowerCase()) {
-      return false;
+    final categorySource = (stockCategory ?? '').trim().toLowerCase();
+    final materialSource = materialName.toLowerCase();
+
+    // 1. First, check if the actual material name or its stock category matches any keywords
+    final matchesMaterial = tab.keywords.any(
+      (kw) => categorySource.contains(kw) || materialSource.contains(kw),
+    );
+
+    if (matchesMaterial) {
+      return true; // We found the material matches this tab specifically
     }
 
-    final categorySource = (stockCategory ?? '').trim();
-    final source = categorySource.isNotEmpty
-        ? categorySource.toLowerCase()
-        : materialName.toLowerCase();
+    // 2. If the material name itself doesn't explicitly match, check if the supplier category matches
+    // (e.g. supplier is "Steel", but material was generically named "Rods")
+    if (supplierCat.isNotEmpty) {
+      final matchesSupplier =
+          tab.keywords.any((kw) => supplierCat.contains(kw)) ||
+          supplierCat == tab.supplierCategory.toLowerCase();
+      if (matchesSupplier) {
+        return true;
+      }
+    }
 
-    return tab.keywords.any(source.contains);
+    return false;
   }
 
   Future<List<VendorSupplyLine>> _loadReceiptSupplyLines({

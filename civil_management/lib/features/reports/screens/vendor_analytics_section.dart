@@ -1,4 +1,3 @@
-
 class _VendorAnalyticsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -6,10 +5,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.purple[700]!,
-            Colors.purple[500]!,
-          ],
+          colors: [Colors.purple[700]!, Colors.purple[500]!],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -44,11 +40,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
-                    Icons.store,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  child: const Icon(Icons.store, color: Colors.white, size: 32),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

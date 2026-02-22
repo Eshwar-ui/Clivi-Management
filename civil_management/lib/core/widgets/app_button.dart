@@ -33,7 +33,14 @@ class AppButton extends StatelessWidget {
         minimumSize: isFullWidth ? const Size(double.infinity, 48) : null,
       ),
       child: isLoading
-          ? const LoadingIndicator()
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const LoadingIndicator(),
+                const SizedBox(width: 8),
+                Text(text),
+              ],
+            )
           : icon != null
           ? Row(
               mainAxisSize: MainAxisSize.min,

@@ -7,7 +7,7 @@ import '../data/models/machinery_model.dart';
 
 class MachineryLogScreen extends ConsumerStatefulWidget {
   final String projectId;
-  
+
   const MachineryLogScreen({super.key, required this.projectId});
 
   @override
@@ -16,23 +16,23 @@ class MachineryLogScreen extends ConsumerStatefulWidget {
 
 class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
-  
+
   String? _selectedMachineryId;
   final TextEditingController _activityController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
 
   double get _totalHours {
     if (_startTime == null || _endTime == null) return 0.0;
-    
+
     final start = _startTime!.hour + _startTime!.minute / 60.0;
     final end = _endTime!.hour + _endTime!.minute / 60.0;
-    
+
     if (end <= start) return 0.0;
-    
+
     return double.parse((end - start).toStringAsFixed(2));
   }
 
@@ -41,9 +41,7 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
     final machineryListAsync = ref.watch(machineryListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Machinery Usage'),
-      ),
+      appBar: AppBar(title: const Text('Log Machinery Usage')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -54,25 +52,37 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
               // 1. Log Date
               ListTile(
                 title: const Text('Date'),
-                subtitle: Text(DateFormat('EEE, dd MMM yyyy').format(_selectedDate)),
+                subtitle: Text(
+                  DateFormat('EEE, dd MMM yyyy').format(_selectedDate),
+                ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _pickDate,
                 tileColor: Colors.grey.withOpacity(0.05),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               const SizedBox(height: 16),
 
               // 2. Machinery Dropdown
               machineryListAsync.when(
                 data: (list) => DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Select Machinery'),
+                  decoration: const InputDecoration(
+                    labelText: 'Select Machinery',
+                  ),
                   value: _selectedMachineryId,
-                  items: list.map((m) => DropdownMenuItem(
-                    value: m.id,
-                    child: Text('${m.name} (${m.type ?? ''})'),
-                  )).toList(),
-                  onChanged: (val) => setState(() => _selectedMachineryId = val),
-                  validator: (v) => v == null ? 'Please select machinery' : null,
+                  items: list
+                      .map(
+                        (m) => DropdownMenuItem(
+                          value: m.id,
+                          child: Text('${m.name} (${m.type ?? ''})'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _selectedMachineryId = val),
+                  validator: (v) =>
+                      v == null ? 'Please select machinery' : null,
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (e, _) => Text('Error loading machinery: $e'),
@@ -118,9 +128,9 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
                     style: TextStyle(color: Colors.red),
                   ),
                 ),
-              
+
               const SizedBox(height: 16),
-              
+
               // 5. Total Hours Display
               Container(
                 padding: const EdgeInsets.all(16),
@@ -131,7 +141,10 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Hours:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Total Hours:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     Text(
                       '${_totalHours.toStringAsFixed(2)} hrs',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -159,13 +172,16 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
   }
 
   Widget _buildTimePicker({
-    required String label, 
+    required String label,
     required TimeOfDay? time,
     required Function(TimeOfDay) onPick,
   }) {
     return InkWell(
       onTap: () async {
-        final t = await showTimePicker(context: context, initialTime: time ?? TimeOfDay.now());
+        final t = await showTimePicker(
+          context: context,
+          initialTime: time ?? TimeOfDay.now(),
+        );
         if (t != null) onPick(t);
       },
       child: InputDecorator(
@@ -190,35 +206,50 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_startTime == null || _endTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select times')));
-      return;
-    }
-    
-    if (_totalHours <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid duration')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select times')));
       return;
     }
 
-    final success = await ref.read(machineryControllerProvider.notifier).logTimeBased(
-      projectId: widget.projectId,
-      machineryId: _selectedMachineryId!,
-      workActivity: _activityController.text.trim(),
-      logDate: _selectedDate,
-      startTime: '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}',
-      endTime: '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
-      totalHours: _totalHours,
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-    );
+    if (_totalHours <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invalid duration')));
+      return;
+    }
+
+    final success = await ref
+        .read(machineryControllerProvider.notifier)
+        .logTimeBased(
+          projectId: widget.projectId,
+          machineryId: _selectedMachineryId!,
+          workActivity: _activityController.text.trim(),
+          logDate: _selectedDate,
+          startTime:
+              '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}',
+          endTime:
+              '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+          totalHours: _totalHours,
+          notes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        );
 
     if (success && mounted) {
       context.pop();
       ref.invalidate(machineryLogsProvider(widget.projectId));
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Log Saved')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Log Saved')));
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to log usage! Check console logs.'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Failed to log usage! Check console logs.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

@@ -25,8 +25,8 @@ class StockItem {
       grade: json['grade'] as String?,
       unit: json['unit']?.toString() ?? 'units',
       quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'] as String) 
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
     );
   }

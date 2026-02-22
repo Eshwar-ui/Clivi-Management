@@ -33,7 +33,7 @@ dependencies:
   # Utilities
   intl: ^0.20.2
   logger: ^2.5.0
-  flutter_cached_pdfview: ^0.4.3
+  syncfusion_flutter_pdfviewer: ^32.2.5
   file_picker: ^10.3.8
   
   # Serialization
@@ -44,6 +44,8 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   fl_chart: ^1.1.1
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:

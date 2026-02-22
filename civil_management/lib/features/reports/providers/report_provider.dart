@@ -107,18 +107,18 @@ class ReportNotifier extends StateNotifier<ReportState> {
   /// Change time period filter
   void setPeriod(TimePeriod period, {String? projectId}) {
     if (state.selectedPeriod == period) return;
-    
+
     state = state.copyWith(selectedPeriod: period);
     loadReports(projectId: projectId, vendorId: state.selectedVendorId);
   }
-  
+
   /// Change vendor filter
   void setVendor(String? vendorId, {String? projectId}) {
     if (state.selectedVendorId == vendorId) return;
     state = state.copyWith(selectedVendorId: vendorId);
     loadReports(projectId: projectId, vendorId: vendorId);
   }
-  
+
   /// Refresh data
   Future<void> refresh({String? projectId}) async {
     await loadReports(projectId: projectId, vendorId: state.selectedVendorId);
@@ -130,9 +130,11 @@ class ReportNotifier extends StateNotifier<ReportState> {
 // ============================================================
 
 /// Reports provider (optionally qualified by project ID)
-/// Since reports screen is global for now, we don't need family yet, 
+/// Since reports screen is global for now, we don't need family yet,
 /// but keeping structure flexible.
-final reportProvider = StateNotifierProvider<ReportNotifier, ReportState>((ref) {
+final reportProvider = StateNotifierProvider<ReportNotifier, ReportState>((
+  ref,
+) {
   final repository = ref.watch(reportRepositoryProvider);
   return ReportNotifier(repository);
 });

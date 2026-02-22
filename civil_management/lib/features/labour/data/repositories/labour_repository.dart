@@ -214,14 +214,17 @@ class LabourRepository {
     String? note,
   }) async {
     await _client.from('daily_labour_logs').delete().eq('id', logId);
-    await _client.rpc('log_operation', params: {
-      'p_operation_type': 'delete',
-      'p_entity_type': 'labour',
-      'p_entity_id': logId,
-      'p_title': '[DELETE] Labour log',
-      'p_description': note ?? '',
-      'p_project_id': projectId,
-    });
+    await _client.rpc(
+      'log_operation',
+      params: {
+        'p_operation_type': 'delete',
+        'p_entity_type': 'labour',
+        'p_entity_id': logId,
+        'p_title': '[DELETE] Labour log',
+        'p_description': note ?? '',
+        'p_project_id': projectId,
+      },
+    );
   }
 
   Stream<List<DailyLabourLog>> streamDailyLogs(String projectId) {
@@ -230,9 +233,11 @@ class LabourRepository {
         .stream(primaryKey: ['id'])
         .eq('project_id', projectId)
         .order('log_date', ascending: false)
-        .map((data) => data.map((json) => DailyLabourLog.fromJson(json)).toList());
+        .map(
+          (data) => data.map((json) => DailyLabourLog.fromJson(json)).toList(),
+        );
   }
-  
+
   // ==================== STREAMS ====================
 
   /// Stream labour for real-time updates

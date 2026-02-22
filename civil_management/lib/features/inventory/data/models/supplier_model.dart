@@ -81,6 +81,15 @@ class SupplierModel {
 
   @override
   String toString() => 'Supplier($name, ${category ?? 'General'})';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SupplierModel && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// Common supplier categories

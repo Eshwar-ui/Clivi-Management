@@ -1,4 +1,3 @@
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/projects/data/models/project_model.dart';
 import '../../shared/providers/current_project_provider.dart'; // Self import might not be needed if I just remove it or change how I refer to it, but typically not needed.

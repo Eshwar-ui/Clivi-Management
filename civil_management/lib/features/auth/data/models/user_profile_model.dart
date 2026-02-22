@@ -8,6 +8,8 @@ class UserProfileModel {
   final String? phone;
   final String? avatarUrl;
   final String? companyId;
+  final String? position;
+  final String? address;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -19,6 +21,8 @@ class UserProfileModel {
     this.phone,
     this.avatarUrl,
     this.companyId,
+    this.position,
+    this.address,
     this.createdAt,
     this.updatedAt,
   });
@@ -33,6 +37,8 @@ class UserProfileModel {
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       companyId: json['company_id'] as String?,
+      position: json['position'] as String?,
+      address: json['address'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -52,6 +58,8 @@ class UserProfileModel {
       'phone': phone,
       'avatar_url': avatarUrl,
       if (companyId != null) 'company_id': companyId,
+      if (position != null) 'position': position,
+      if (address != null) 'address': address,
       'updated_at': DateTime.now().toIso8601String(),
     };
   }
@@ -59,9 +67,11 @@ class UserProfileModel {
   /// Convert to JSON for update (excludes id and created_at)
   Map<String, dynamic> toUpdateJson() {
     return {
-      'full_name': fullName,
-      'phone': phone,
-      'avatar_url': avatarUrl,
+      if (fullName != null) 'full_name': fullName,
+      if (phone != null) 'phone': phone,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (position != null) 'position': position,
+      if (address != null) 'address': address,
       'updated_at': DateTime.now().toIso8601String(),
     };
   }
@@ -75,6 +85,8 @@ class UserProfileModel {
     String? phone,
     String? avatarUrl,
     String? companyId,
+    String? position,
+    String? address,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -86,6 +98,8 @@ class UserProfileModel {
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       companyId: companyId ?? this.companyId,
+      position: position ?? this.position,
+      address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -93,7 +107,7 @@ class UserProfileModel {
 
   @override
   String toString() {
-    return 'UserProfileModel(id: $id, email: $email, role: $role, fullName: $fullName)';
+    return 'UserProfileModel(id: $id, email: $email, role: $role, fullName: $fullName, position: $position)';
   }
 
   @override
@@ -106,7 +120,9 @@ class UserProfileModel {
         other.fullName == fullName &&
         other.phone == phone &&
         other.avatarUrl == avatarUrl &&
-        other.companyId == companyId;
+        other.companyId == companyId &&
+        other.position == position &&
+        other.address == address;
   }
 
   @override
@@ -117,6 +133,8 @@ class UserProfileModel {
         fullName.hashCode ^
         phone.hashCode ^
         avatarUrl.hashCode ^
-        companyId.hashCode;
+        companyId.hashCode ^
+        position.hashCode ^
+        address.hashCode;
   }
 }

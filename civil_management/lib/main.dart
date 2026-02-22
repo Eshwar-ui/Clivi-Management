@@ -53,7 +53,10 @@ class CivilManagementApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     ref.watch(globalRealtimeSyncProvider);
 
-    ref.listen<AsyncValue<AppLifecycleState?>>(appLifecycleProvider, (previous, next) {
+    ref.listen<AsyncValue<AppLifecycleState?>>(appLifecycleProvider, (
+      previous,
+      next,
+    ) {
       next.whenData((state) {
         if (state != null) {
           SupabaseConfig.handleAppLifecycle(state);

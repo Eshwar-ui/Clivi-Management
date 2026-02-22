@@ -81,6 +81,43 @@ class DashboardRepository {
     }
   }
 
+  /// Fetch active assigned projects summary for a specific user
+  Future<List<ProjectSummary>> getActiveAssignedProjectsSummary(String userId, {int limit = 3}) async {
+    try {
+      final response = await _client
+          .from('projects')
+          .select('''
+            id,
+            name,
+            project_type,
+            status,
+            progress,
+            start_date,
+            end_date,
+            location,
+            project_assignments!inner(
+              user_id
+            )
+          ''')
+          .eq('project_assignments.user_id', userId)
+          .neq('status', 'completed')
+          .neq('status', 'cancelled')
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      if (response == null || (response as List).isEmpty) {
+        return [];
+      }
+
+      return (response as List)
+          .map((json) => ProjectSummary.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      logger.e('Failed to fetch assigned projects summary: $e');
+      throw DatabaseException('Failed to load projects');
+    }
+  }
+
   /// Log a custom operation to the activity feed
   Future<void> logOperation({
     required String operationType,

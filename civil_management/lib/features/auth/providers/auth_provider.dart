@@ -292,15 +292,21 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   Future<UserProfileModel> createSiteManager({
     required String email,
     required String password,
-    String? fullName,
+    required String firstName,
+    required String lastName,
     String? phone,
+    String? position,
+    String? address,
   }) async {
     try {
       final profile = await _repository.createUserAsAdmin(
         email: email,
         password: password,
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         phone: phone,
+        position: position,
+        address: address,
         role: 'site_manager',
       );
 

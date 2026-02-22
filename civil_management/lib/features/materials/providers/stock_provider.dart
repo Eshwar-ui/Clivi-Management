@@ -9,10 +9,12 @@ final stockRepositoryProvider = Provider<StockRepository>((ref) {
 });
 
 // Stock Items Stream
-final stockItemsStreamProvider = StreamProvider.family<List<StockItem>, String>((ref, projectId) {
-  final repo = ref.watch(stockRepositoryProvider);
-  return repo.streamStockItemsByProject(projectId);
-});
+final stockItemsStreamProvider = StreamProvider.family<List<StockItem>, String>(
+  (ref, projectId) {
+    final repo = ref.watch(stockRepositoryProvider);
+    return repo.streamStockItemsByProject(projectId);
+  },
+);
 
 // Logs Stream (Optional, if we add stream method to repo for logs too. Repo currently has getMaterialLogsByProject Future. I should add stream there too if needed. For now Future is fine for logs list, but stream is better. Let's stick to Future or Stream. StockItems HAS stream in repo).
 // The repo has:
@@ -20,9 +22,12 @@ final stockItemsStreamProvider = StreamProvider.family<List<StockItem>, String>(
 // Future<List<MaterialLog>> getMaterialLogsByProject(String projectId)
 
 // I will use Future for logs for now, or add Stream if needed.
-final materialLogsProvider = FutureProvider.family<List<MaterialLog>, String>((ref, projectId) async {
-    final repo = ref.watch(stockRepositoryProvider);
-    return repo.getMaterialLogsByProject(projectId);
+final materialLogsProvider = FutureProvider.family<List<MaterialLog>, String>((
+  ref,
+  projectId,
+) async {
+  final repo = ref.watch(stockRepositoryProvider);
+  return repo.getMaterialLogsByProject(projectId);
 });
 
 // Controller
@@ -91,6 +96,13 @@ class StockController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final stockControllerProvider = StateNotifierProvider<StockController, AsyncValue<void>>((ref) {
-  return StockController(ref.watch(stockRepositoryProvider));
-});
+final stockControllerProvider =
+    StateNotifierProvider<StockController, AsyncValue<void>>((ref) {
+      return StockController(ref.watch(stockRepositoryProvider));
+    });
+
+// Dynamic Stock Balance Provider for summaries and consumption
+final stockBalanceProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, projectId) {
+      return ref.watch(stockRepositoryProvider).getStockBalance(projectId);
+    });

@@ -18,23 +18,24 @@ class AddSiteManagerScreen extends ConsumerStatefulWidget {
 
 class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _positionController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  final _addressController = TextEditingController();
+
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _positionController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -47,14 +48,25 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
     });
 
     try {
+      // Use a default password since we are not asking for it in the UI
+      // In a real app, we would trigger a password reset email or invite flow
+      const defaultPassword = 'CivilManager@123';
+
       await ref
           .read(authProvider.notifier)
           .createSiteManager(
             email: _emailController.text.trim(),
-            password: _passwordController.text,
-            fullName: _fullNameController.text.trim(),
+            password: defaultPassword,
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
             phone: _phoneController.text.trim().isNotEmpty
                 ? _phoneController.text.trim()
+                : null,
+            position: _positionController.text.trim().isNotEmpty
+                ? _positionController.text.trim()
+                : null,
+            address: _addressController.text.trim().isNotEmpty
+                ? _addressController.text.trim()
                 : null,
           );
 
@@ -91,10 +103,21 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Add Site Manager'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Add manager',
+          style: TextStyle(
+            color: Color(0xFF1A1C1E),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1C1E)),
           onPressed: () => context.pop(),
         ),
       ),
@@ -106,84 +129,57 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.siteManager.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.siteManager.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.person_add,
-                          color: AppColors.siteManager,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'New Site Manager',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Fill in the details below to create a new site manager account.',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
                 // Error Message
                 if (_errorMessage != null) ...[
                   InlineErrorWidget(message: _errorMessage!),
                   const SizedBox(height: 16),
                 ],
 
-                // Full Name Field
+                // First Name Field
+                _buildLabel('First Name'),
                 TextFormField(
-                  controller: _fullNameController,
+                  controller: _firstNameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    hintText: 'Enter full name',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
+                  decoration: _inputDecoration('First name'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter full name';
+                      return 'Please enter first name';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
 
+                // Last Name Field
+                _buildLabel('Last Name'),
+                TextFormField(
+                  controller: _lastNameController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: _inputDecoration('Last name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter last name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Position Field
+                _buildLabel('Position'),
+                TextFormField(
+                  controller: _positionController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: _inputDecoration('Head Manager'),
+                ),
+                const SizedBox(height: 16),
+
                 // Email Field
+                _buildLabel('Email'),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'Enter email address',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
+                  decoration: _inputDecoration('example@manager.com'),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter email';
@@ -197,123 +193,46 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                 const SizedBox(height: 16),
 
                 // Phone Field
+                _buildLabel('Phone'),
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone (Optional)',
-                    hintText: 'Enter phone number',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
+                  decoration: _inputDecoration('+91 9000080000'),
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
+                // Address Field
+                _buildLabel('Address'),
                 TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Create a password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters';
-                    }
-                    if (!value.contains(RegExp(r'[A-Z]'))) {
-                      return 'Password must contain an uppercase letter';
-                    }
-                    if (!value.contains(RegExp(r'[0-9]'))) {
-                      return 'Password must contain a number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Confirm Password Field
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: !_isConfirmPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    hintText: 'Re-enter password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isConfirmPasswordVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isConfirmPasswordVisible =
-                              !_isConfirmPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // Password Requirements
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.info.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Password Requirements:',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.info,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildRequirement('At least 8 characters'),
-                      _buildRequirement('One uppercase letter'),
-                      _buildRequirement('One number'),
-                    ],
-                  ),
+                  controller: _addressController,
+                  maxLines: 3,
+                  decoration: _inputDecoration('Hyderabad'),
                 ),
                 const SizedBox(height: 32),
 
-                // Create Button
-                AppButton(
-                  text: 'Create Site Manager',
-                  onPressed: _handleCreateSiteManager,
-                  isLoading: _isLoading,
-                  icon: Icons.person_add,
+                // Save Button
+                SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleCreateSiteManager,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'Save',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
                 ),
               ],
             ),
@@ -323,24 +242,46 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
     );
   }
 
-  Widget _buildRequirement(String text) {
+  Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: AppColors.textSecondary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-          ),
-        ],
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF1A1C1E),
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(
+        color: Color(0xFF1A1C1E),
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error),
       ),
     );
   }

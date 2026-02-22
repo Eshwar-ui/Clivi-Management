@@ -4,7 +4,8 @@ class VendorPayment {
   final String vendorId;
   final DateTime paymentDate;
   final double paymentAmount;
-  final String? paymentMethod; // 'cash', 'cheque', 'upi', 'bank_transfer', 'other'
+  final String?
+  paymentMethod; // 'cash', 'cheque', 'upi', 'bank_transfer', 'other'
   final String? transactionReference;
   final String? notes;
   final String? createdBy;

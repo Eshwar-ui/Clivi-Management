@@ -28,6 +28,7 @@ import '../../features/bills/screens/bills_screen.dart';
 import '../../features/bills/screens/create_bill_screen.dart';
 import '../../features/bills/screens/admin_approval_queue_screen.dart';
 import '../../features/materials/screens/materials_tab_screen.dart';
+import '../../features/materials/screens/material_master_list_screen.dart';
 import '../../features/machinery/screens/machinery_tab_screen.dart';
 import '../../features/machinery/screens/machinery_log_screen.dart';
 import '../../features/machinery/screens/machinery_master_screen.dart';
@@ -137,6 +138,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LabourMasterScreen(),
       ),
       GoRoute(
+        path: '/master/materials',
+        name: 'master-materials',
+        builder: (context, state) => const MaterialMasterListScreen(),
+      ),
+      GoRoute(
         path: '/vendors',
         name: 'vendors',
         builder: (context, state) => const VendorsListScreen(),
@@ -172,7 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'bills',
         builder: (context, state) => const BillsScreen(),
         routes: [
-           GoRoute(
+          GoRoute(
             path: 'create',
             name: 'create-bill',
             builder: (context, state) => const CreateBillScreen(),
@@ -321,36 +327,41 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'materials/receive',
             name: 'material-receive',
-            builder: (context, state) => const Placeholder(), // MaterialReceiveScreen
+            builder: (context, state) =>
+                const Placeholder(), // MaterialReceiveScreen
           ),
           GoRoute(
             path: 'materials/consume',
             name: 'material-consume',
-            builder: (context, state) => const Placeholder(), // MaterialConsumeScreen
+            builder: (context, state) =>
+                const Placeholder(), // MaterialConsumeScreen
           ),
           GoRoute(
-             path: 'materials/stock',
-             name: 'material-stock',
-             builder: (context, state) => const Placeholder(), // StockLedgerScreen
+            path: 'materials/stock',
+            name: 'material-stock',
+            builder: (context, state) =>
+                const Placeholder(), // StockLedgerScreen
           ),
           GoRoute(
-             path: 'materials/receipt/:receiptId',
-             name: 'receipt-detail',
-             builder: (context, state) => const Placeholder(), // ReceiptDetailScreen
+            path: 'materials/receipt/:receiptId',
+            name: 'receipt-detail',
+            builder: (context, state) =>
+                const Placeholder(), // ReceiptDetailScreen
           ),
           // Machinery & Labour Specifics (Logs)
           GoRoute(
-             path: 'machinery/log',
-             name: 'machinery-log',
-             builder: (context, state) {
-               final projectId = state.pathParameters['id']!;
-               return MachineryLogScreen(projectId: projectId);
-             },
+            path: 'machinery/log',
+            name: 'machinery-log',
+            builder: (context, state) {
+              final projectId = state.pathParameters['id']!;
+              return MachineryLogScreen(projectId: projectId);
+            },
           ),
           GoRoute(
-             path: 'labour/attendance',
-             name: 'labour-attendance', // Duplicate check with existing?
-             builder: (context, state) => const Placeholder(), // AttendanceLogScreen
+            path: 'labour/attendance',
+            name: 'labour-attendance', // Duplicate check with existing?
+            builder: (context, state) =>
+                const Placeholder(), // AttendanceLogScreen
           ),
           // Reports Route
           GoRoute(
@@ -361,21 +372,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               return ReportsScreen(projectId: projectId);
             },
             routes: [
-               GoRoute(
-                 path: 'stock',
-                 name: 'report-stock',
-                 builder: (context, state) => const Placeholder(),
-               ),
-               GoRoute(
-                 path: 'machinery',
-                 name: 'report-machinery',
-                 builder: (context, state) => const Placeholder(),
-               ),
-               GoRoute(
-                 path: 'labour',
-                 name: 'report-labour',
-                 builder: (context, state) => const Placeholder(),
-               ),
+              GoRoute(
+                path: 'stock',
+                name: 'report-stock',
+                builder: (context, state) => const Placeholder(),
+              ),
+              GoRoute(
+                path: 'machinery',
+                name: 'report-machinery',
+                builder: (context, state) => const Placeholder(),
+              ),
+              GoRoute(
+                path: 'labour',
+                name: 'report-labour',
+                builder: (context, state) => const Placeholder(),
+              ),
             ],
           ),
         ],
@@ -434,8 +445,13 @@ String _getRoleBasedRoute(UserRole role) {
 /// Auth state listener for router refresh
 class _AuthStateNotifier extends ChangeNotifier {
   _AuthStateNotifier(this._ref) {
-    _ref.listen(authProvider, (_, _) {
-      notifyListeners();
+    _ref.listen(authProvider, (previous, next) {
+      // Only notify GoRouter if authentication state, role, or initialization state changes
+      if (previous?.isAuthenticated != next.isAuthenticated ||
+          previous?.role != next.role ||
+          previous?.isInitialized != next.isInitialized) {
+        notifyListeners();
+      }
     });
   }
 

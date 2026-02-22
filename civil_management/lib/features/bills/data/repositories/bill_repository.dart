@@ -18,9 +18,15 @@ class BillRepository {
   BillRepository({SupabaseClient? client}) : _client = client ?? supabase;
 
   /// Get bills for a specific project (NOT all bills)
-  Future<List<BillModel>> getBillsByProject(String projectId, {String? status}) async {
+  Future<List<BillModel>> getBillsByProject(
+    String projectId, {
+    String? status,
+  }) async {
     try {
-      var query = _client.from('bills').select(_billSelectQuery).eq('project_id', projectId);
+      var query = _client
+          .from('bills')
+          .select(_billSelectQuery)
+          .eq('project_id', projectId);
 
       if (status != null) {
         query = query.eq('status', status);
@@ -28,7 +34,9 @@ class BillRepository {
 
       // Apply sort order at the end
       final response = await query.order('created_at', ascending: false);
-      return (response as List).map((json) => BillModel.fromJson(json)).toList();
+      return (response as List)
+          .map((json) => BillModel.fromJson(json))
+          .toList();
     } on PostgrestException catch (e) {
       throw DatabaseException.fromPostgrest(e);
     } catch (e) {
@@ -51,7 +59,9 @@ class BillRepository {
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
-      return (response as List).map((json) => BillModel.fromJson(json)).toList();
+      return (response as List)
+          .map((json) => BillModel.fromJson(json))
+          .toList();
     } on PostgrestException catch (e) {
       throw DatabaseException.fromPostgrest(e);
     } catch (e) {
@@ -82,10 +92,15 @@ class BillRepository {
       // Upload receipt if provided
       if (receiptBytes != null && receiptName != null) {
         try {
-          final fileExt = receiptName.contains('.') ? receiptName.split('.').last : 'pdf';
+          final fileExt = receiptName.contains('.')
+              ? receiptName.split('.').last
+              : 'pdf';
           final contentType = 'application/$fileExt';
           // bills bucket RLS expects first path segment to be project UUID.
-          final relativePath = UploadHelper.generateUniquePath('receipts', receiptName);
+          final relativePath = UploadHelper.generateUniquePath(
+            'receipts',
+            receiptName,
+          );
           final filePath = '$projectId/$relativePath';
 
           receiptUrl = await UploadHelper.uploadWithRetry(
@@ -95,7 +110,9 @@ class BillRepository {
             contentType: contentType,
           );
         } catch (e) {
-          debugPrint('Receipt upload failed, proceeding without attachment: $e');
+          debugPrint(
+            'Receipt upload failed, proceeding without attachment: $e',
+          );
           receiptUrl = null;
         }
       }
@@ -114,30 +131,32 @@ class BillRepository {
         'raised_by': userId,
         'image_url': receiptUrl ?? '',
         'image_path': receiptUrl ?? '',
-        'bill_date': (billDate ?? DateTime.now()).toIso8601String().split('T').first,
+        'bill_date': (billDate ?? DateTime.now())
+            .toIso8601String()
+            .split('T')
+            .first,
       };
 
-      final response = await _client
-          .from('bills')
-          .insert(data)
-          .select('''
+      final response = await _client.from('bills').insert(data).select('''
             *,
             creator:user_profiles!bills_created_by_fkey(id, full_name, email)
-          ''')
-          .single();
+          ''').single();
 
       final bill = BillModel.fromJson(response);
 
       // Log operation for admin notifications (activity feed)
       try {
-        await _client.rpc('log_operation', params: {
-          'p_operation_type': 'create',
-          'p_entity_type': 'bill',
-          'p_entity_id': bill.id,
-          'p_title': '[BILL] ${bill.title}',
-          'p_description': 'Amount: ₹${bill.amount.toStringAsFixed(2)}',
-          'p_project_id': bill.projectId,
-        });
+        await _client.rpc(
+          'log_operation',
+          params: {
+            'p_operation_type': 'create',
+            'p_entity_type': 'bill',
+            'p_entity_id': bill.id,
+            'p_title': '[BILL] ${bill.title}',
+            'p_description': 'Amount: ₹${bill.amount.toStringAsFixed(2)}',
+            'p_project_id': bill.projectId,
+          },
+        );
       } catch (e) {
         debugPrint('log_operation failed for bill: $e');
       }
@@ -157,29 +176,45 @@ class BillRepository {
   }
 
   /// Get role-based bills across accessible projects.
-  /// If [onlyRaisedByCurrentUser] is true, returns only current user's raised bills.
+  /// If [onlyAssignedProjects] is true, returns only bills for assigned projects.
   Future<List<BillModel>> getBillsForDashboard({
     String? status,
-    bool onlyRaisedByCurrentUser = false,
+    bool onlyAssignedProjects = false,
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
-      if (onlyRaisedByCurrentUser && userId == null) {
+      if (onlyAssignedProjects && userId == null) {
         return [];
       }
 
-      var query = _client.from('bills').select(_billSelectQuery);
+      String selectQuery = _billSelectQuery;
+      
+      if (onlyAssignedProjects && userId != null) {
+        selectQuery = '''
+          *,
+          creator:user_profiles!bills_created_by_fkey(id, full_name, email),
+          approver:user_profiles!bills_approved_by_fkey(id, full_name, email),
+          project:projects!inner(
+            id,
+            name,
+            project_assignments!inner(user_id)
+          )
+        ''';
+      }
+
+      var query = _client.from('bills').select(selectQuery);
+      
+      if (onlyAssignedProjects && userId != null) {
+        query = query.eq('project.project_assignments.user_id', userId);
+      }
+
       if (status != null) {
         query = query.eq('status', status);
       }
 
       final response = await query.order('created_at', ascending: false);
-      final items = (response as List).map((json) => BillModel.fromJson(json)).toList();
-      if (!onlyRaisedByCurrentUser || userId == null) {
-        return items;
-      }
-      return items
-          .where((bill) => bill.raisedBy == userId || bill.createdBy == userId)
+      return (response as List)
+          .map((json) => BillModel.fromJson(json))
           .toList();
     } on PostgrestException catch (e) {
       throw DatabaseException.fromPostgrest(e);
@@ -190,18 +225,21 @@ class BillRepository {
 
   Future<List<BillModel>> fetchBillsForDashboard({
     String? status,
-    bool onlyRaisedByCurrentUser = false,
+    bool onlyAssignedProjects = false,
   }) {
     return getBillsForDashboard(
       status: status,
-      onlyRaisedByCurrentUser: onlyRaisedByCurrentUser,
+      onlyAssignedProjects: onlyAssignedProjects,
     );
   }
 
   /// Update a bill (only pending bills can be updated by site managers)
-  Future<BillModel> updateBill(String billId, Map<String, dynamic> updates) async {
+  Future<BillModel> updateBill(
+    String billId,
+    Map<String, dynamic> updates,
+  ) async {
     updates['updated_at'] = DateTime.now().toIso8601String();
-    
+
     try {
       final response = await _client
           .from('bills')
@@ -278,7 +316,7 @@ class BillRepository {
   /// Approve a bill (Admin only)
   Future<BillModel> approveBill(String billId) async {
     final userId = _client.auth.currentUser?.id;
-    
+
     try {
       final response = await _client
           .from('bills')
@@ -307,7 +345,7 @@ class BillRepository {
   /// Reject a bill (Admin only)
   Future<BillModel> rejectBill(String billId, {String? reason}) async {
     final userId = _client.auth.currentUser?.id;
-    
+
     try {
       final response = await _client
           .from('bills')
@@ -315,7 +353,8 @@ class BillRepository {
             'status': 'rejected',
             'approved_by': userId,
             'approved_at': DateTime.now().toIso8601String(),
-            'description': reason, // Store rejection reason if description field is used for it, or check if 'rejection_reason' column exists? Guide mapped it to 'description'.
+            'description':
+                reason, // Store rejection reason if description field is used for it, or check if 'rejection_reason' column exists? Guide mapped it to 'description'.
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', billId)
@@ -352,24 +391,38 @@ class BillRepository {
   }
 
   Stream<List<BillModel>> streamBillsForDashboard({
-    bool onlyRaisedByCurrentUser = false,
-  }) {
+    bool onlyAssignedProjects = false,
+  }) async* {
     final userId = _client.auth.currentUser?.id;
-    if (onlyRaisedByCurrentUser && userId == null) {
-      return Stream.value([]);
+    if (onlyAssignedProjects && userId == null) {
+      yield [];
+      return;
     }
 
-    return _client
+    Set<String> assignedProjectIds = {};
+    if (onlyAssignedProjects && userId != null) {
+      try {
+        final assignments = await _client
+            .from('project_assignments')
+            .select('project_id')
+            .eq('user_id', userId);
+        assignedProjectIds = (assignments as List).map((a) => a['project_id'] as String).toSet();
+      } catch (e) {
+        debugPrint('Failed to fetch project assignments for stream: $e');
+      }
+    }
+
+    yield* _client
         .from('bills')
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
         .map((data) => data.map((json) => BillModel.fromJson(json)).toList())
         .map((items) {
-          if (!onlyRaisedByCurrentUser || userId == null) {
+          if (!onlyAssignedProjects || userId == null) {
             return items;
           }
           return items
-              .where((bill) => bill.raisedBy == userId || bill.createdBy == userId)
+              .where((bill) => assignedProjectIds.contains(bill.projectId))
               .toList();
         });
   }

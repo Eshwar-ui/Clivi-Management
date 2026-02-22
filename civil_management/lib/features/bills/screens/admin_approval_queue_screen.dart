@@ -14,9 +14,9 @@ import '../providers/bill_provider.dart';
 
 final approvalQueueSiteManagersProvider =
     FutureProvider<List<UserProfileModel>>((ref) async {
-  final repository = ref.watch(authRepositoryProvider);
-  return repository.getUsersByRole('site_manager');
-});
+      final repository = ref.watch(authRepositoryProvider);
+      return repository.getUsersByRole('site_manager');
+    });
 
 class AdminApprovalQueueScreen extends ConsumerStatefulWidget {
   const AdminApprovalQueueScreen({super.key});
@@ -59,7 +59,8 @@ class _AdminApprovalQueueScreenState
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final isAdmin =
-        authState.role == UserRole.admin || authState.role == UserRole.superAdmin;
+        authState.role == UserRole.admin ||
+        authState.role == UserRole.superAdmin;
 
     if (!isAdmin) {
       return Scaffold(
@@ -120,7 +121,8 @@ class _AdminApprovalQueueScreenState
               loading: () => const LoadingWidget(message: 'Loading queue...'),
               error: (err, st) => AppErrorWidget(
                 message: err.toString(),
-                onRetry: () => ref.refresh(dashboardBillsCombinedProvider(false)),
+                onRetry: () =>
+                    ref.refresh(dashboardBillsCombinedProvider(false)),
               ),
             ),
           ),
@@ -251,8 +253,7 @@ class _AdminApprovalQueueScreenState
         bill.billDate.day,
       );
       return !billDate.isBefore(startDate) && !billDate.isAfter(endDate);
-    }).toList()
-      ..sort((a, b) => b.billDate.compareTo(a.billDate));
+    }).toList()..sort((a, b) => b.billDate.compareTo(a.billDate));
   }
 
   Future<void> _pickDateRange() async {
@@ -320,15 +321,15 @@ class _AdminApprovalQueueScreenState
                   Text(
                     'Approve Bill',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     bill.title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<PaymentStatus>(
@@ -347,6 +348,10 @@ class _AdminApprovalQueueScreenState
                         child: Text('Will Pay'),
                       ),
                       DropdownMenuItem(
+                        value: PaymentStatus.halfPaid,
+                        child: Text('Half Paid'),
+                      ),
+                      DropdownMenuItem(
                         value: PaymentStatus.fullPaid,
                         child: Text('Paid'),
                       ),
@@ -355,7 +360,9 @@ class _AdminApprovalQueueScreenState
                         ? null
                         : (value) {
                             if (value != null) {
-                              setModalState(() => selectedPaymentStatus = value);
+                              setModalState(
+                                () => selectedPaymentStatus = value,
+                              );
                             }
                           },
                   ),
@@ -396,10 +403,7 @@ class _ApprovalQueueCard extends StatelessWidget {
   final BillModel bill;
   final VoidCallback? onReview;
 
-  const _ApprovalQueueCard({
-    required this.bill,
-    this.onReview,
-  });
+  const _ApprovalQueueCard({required this.bill, this.onReview});
 
   @override
   Widget build(BuildContext context) {
@@ -438,15 +442,20 @@ class _ApprovalQueueCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Raised By: ${bill.createdByName ?? bill.raisedBy ?? '-'}',
-              style: TextStyle(color: AppColors.textSecondary),
+              'Raised By: ${bill.vendorName ?? bill.createdByName ?? bill.raisedBy ?? '-'}',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 _StatusPill(
                   label: bill.status.isCompleted ? 'Completed' : 'Pending',
-                  color: bill.status.isCompleted ? AppColors.success : AppColors.warning,
+                  color: bill.status.isCompleted
+                      ? AppColors.success
+                      : AppColors.warning,
                 ),
                 const SizedBox(width: 8),
                 _StatusPill(
@@ -473,10 +482,7 @@ class _StatusPill extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _StatusPill({
-    required this.label,
-    required this.color,
-  });
+  const _StatusPill({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {

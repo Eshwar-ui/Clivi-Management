@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/supabase_client.dart';
 import '../data/models/bill_model.dart';
 import '../data/repositories/bill_repository.dart';
 
@@ -15,98 +16,151 @@ final billRepositoryProvider = Provider<BillRepository>((ref) {
 // ============================================================
 
 /// Real-time stream of bills for a specific project
-final billsStreamProvider = StreamProvider.family<List<BillModel>, String>((ref, projectId) {
+final billsStreamProvider = StreamProvider.family<List<BillModel>, String>((
+  ref,
+  projectId,
+) {
   final repository = ref.watch(billRepositoryProvider);
   return repository.streamBillsByProject(projectId);
 });
 
 /// Baseline fetch of bills (non-realtime)
-final billsProvider = FutureProvider.family<List<BillModel>, String>((ref, projectId) {
+final billsProvider = FutureProvider.family<List<BillModel>, String>((
+  ref,
+  projectId,
+) {
   final repository = ref.watch(billRepositoryProvider);
   return repository.fetchBills(projectId);
 });
 
 /// Combined provider: initial fetch + realtime overlay
-final billsCombinedProvider = Provider.family<AsyncValue<List<BillModel>>, String>((ref, projectId) {
-  final fetchAsync = ref.watch(billsProvider(projectId));
-  final streamAsync = ref.watch(billsStreamProvider(projectId));
+final billsCombinedProvider =
+    Provider.family<AsyncValue<List<BillModel>>, String>((ref, projectId) {
+      final fetchAsync = ref.watch(billsProvider(projectId));
+      final streamAsync = ref.watch(billsStreamProvider(projectId));
 
-  return fetchAsync.when(
-    data: (fetched) {
-      return streamAsync.when(
-        data: (streamed) {
-          // Merge by id (upsert) using streamed as latest
-          final byId = {for (var b in fetched) b.id: b};
-          for (final b in streamed) {
-            final existing = byId[b.id];
-            byId[b.id] = existing == null ? b : _mergeBillSnapshot(existing, b);
-          }
-          return AsyncValue.data(byId.values.toList()
-            ..sort((a, b) => (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-                .compareTo(a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))));
+      return fetchAsync.when(
+        data: (fetched) {
+          return streamAsync.when(
+            data: (streamed) {
+              // Merge by id (upsert) using streamed as latest
+              final byId = {for (var b in fetched) b.id: b};
+              for (final b in streamed) {
+                final existing = byId[b.id];
+                byId[b.id] = existing == null
+                    ? b
+                    : _mergeBillSnapshot(existing, b);
+              }
+              return AsyncValue.data(
+                byId.values.toList()..sort(
+                  (a, b) =>
+                      (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+                          .compareTo(
+                            a.createdAt ??
+                                DateTime.fromMillisecondsSinceEpoch(0),
+                          ),
+                ),
+              );
+            },
+            loading: () => AsyncValue.data(fetched),
+            error: (e, st) {
+              logger.w(
+                'Bills realtime stream unavailable, using fetched snapshot: $e',
+              );
+              return AsyncValue.data(fetched);
+            },
+          );
         },
-        loading: () => AsyncValue.data(fetched),
+        loading: () => const AsyncValue.loading(),
         error: (e, st) => AsyncValue.error(e, st),
       );
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (e, st) => AsyncValue.error(e, st),
-  );
-});
+    });
 
-/// Real-time stream of bills for dashboard (all accessible or only current user's raised bills)
-final dashboardBillsStreamProvider = StreamProvider.family<List<BillModel>, bool>((ref, onlyRaisedByCurrentUser) {
-  final repository = ref.watch(billRepositoryProvider);
-  return repository.streamBillsForDashboard(
-    onlyRaisedByCurrentUser: onlyRaisedByCurrentUser,
-  );
-});
+/// Real-time stream of bills for dashboard (all accessible or only assigned project bills)
+final dashboardBillsStreamProvider =
+    StreamProvider.family<List<BillModel>, bool>((
+      ref,
+      onlyAssignedProjects,
+    ) {
+      final repository = ref.watch(billRepositoryProvider);
+      return repository.streamBillsForDashboard(
+        onlyAssignedProjects: onlyAssignedProjects,
+      );
+    });
 
 /// Baseline fetch for dashboard bills
-final dashboardBillsProvider = FutureProvider.family<List<BillModel>, bool>((ref, onlyRaisedByCurrentUser) {
+final dashboardBillsProvider = FutureProvider.family<List<BillModel>, bool>((
+  ref,
+  onlyAssignedProjects,
+) {
   final repository = ref.watch(billRepositoryProvider);
   return repository.fetchBillsForDashboard(
-    onlyRaisedByCurrentUser: onlyRaisedByCurrentUser,
+    onlyAssignedProjects: onlyAssignedProjects,
   );
 });
 
 /// Combined provider for dashboard bills
-final dashboardBillsCombinedProvider = Provider.family<AsyncValue<List<BillModel>>, bool>((ref, onlyRaisedByCurrentUser) {
-  final fetchAsync = ref.watch(dashboardBillsProvider(onlyRaisedByCurrentUser));
-  final streamAsync = ref.watch(dashboardBillsStreamProvider(onlyRaisedByCurrentUser));
+final dashboardBillsCombinedProvider =
+    Provider.family<AsyncValue<List<BillModel>>, bool>((
+      ref,
+      onlyAssignedProjects,
+    ) {
+      final fetchAsync = ref.watch(
+        dashboardBillsProvider(onlyAssignedProjects),
+      );
+      final streamAsync = ref.watch(
+        dashboardBillsStreamProvider(onlyAssignedProjects),
+      );
 
-  return fetchAsync.when(
-    data: (fetched) {
-      return streamAsync.when(
-        data: (streamed) {
-          final byId = {for (var b in fetched) b.id: b};
-          for (final b in streamed) {
-            final existing = byId[b.id];
-            byId[b.id] = existing == null ? b : _mergeBillSnapshot(existing, b);
-          }
-          final items = byId.values.toList()
-            ..sort((a, b) => (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-                .compareTo(a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
-          return AsyncValue.data(items);
+      return fetchAsync.when(
+        data: (fetched) {
+          return streamAsync.when(
+            data: (streamed) {
+              final byId = {for (var b in fetched) b.id: b};
+              for (final b in streamed) {
+                final existing = byId[b.id];
+                byId[b.id] = existing == null
+                    ? b
+                    : _mergeBillSnapshot(existing, b);
+              }
+              final items = byId.values.toList()
+                ..sort(
+                  (a, b) =>
+                      (b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+                          .compareTo(
+                            a.createdAt ??
+                                DateTime.fromMillisecondsSinceEpoch(0),
+                          ),
+                );
+              return AsyncValue.data(items);
+            },
+            loading: () => AsyncValue.data(fetched),
+            error: (e, st) {
+              logger.w(
+                'Dashboard bills realtime stream unavailable, using fetched snapshot: $e',
+              );
+              return AsyncValue.data(fetched);
+            },
+          );
         },
-        loading: () => AsyncValue.data(fetched),
+        loading: () => const AsyncValue.loading(),
         error: (e, st) => AsyncValue.error(e, st),
       );
-    },
-    loading: () => const AsyncValue.loading(),
-    error: (e, st) => AsyncValue.error(e, st),
-  );
-});
+    });
 
 /// Fetch pending bills with pagination
-final paginatedPendingBillsProvider = FutureProvider.family<List<BillModel>, ({String projectId, int offset, int limit})>((ref, params) {
-  final repository = ref.watch(billRepositoryProvider);
-  return repository.getPendingBills(
-    projectId: params.projectId,
-    offset: params.offset,
-    limit: params.limit,
-  );
-});
+final paginatedPendingBillsProvider =
+    FutureProvider.family<
+      List<BillModel>,
+      ({String projectId, int offset, int limit})
+    >((ref, params) {
+      final repository = ref.watch(billRepositoryProvider);
+      return repository.getPendingBills(
+        projectId: params.projectId,
+        offset: params.offset,
+        limit: params.limit,
+      );
+    });
 
 // ============================================================
 // CONTROLLER (WRITE)
@@ -222,9 +276,10 @@ class BillController extends StateNotifier<AsyncValue<void>> {
 }
 
 // Controller Provider
-final billControllerProvider = StateNotifierProvider<BillController, AsyncValue<void>>((ref) {
-  return BillController(ref.watch(billRepositoryProvider));
-});
+final billControllerProvider =
+    StateNotifierProvider<BillController, AsyncValue<void>>((ref) {
+      return BillController(ref.watch(billRepositoryProvider));
+    });
 
 BillModel _mergeBillSnapshot(BillModel fetched, BillModel streamed) {
   return streamed.copyWith(

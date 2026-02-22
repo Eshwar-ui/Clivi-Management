@@ -19,7 +19,8 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
   const ProjectDetailScreen({super.key, required this.projectId});
 
   @override
-  ConsumerState<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
+  ConsumerState<ProjectDetailScreen> createState() =>
+      _ProjectDetailScreenState();
 }
 
 class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
@@ -62,7 +63,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           if (isAdmin)
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: Colors.black),
-              onPressed: () => context.pushNamed('edit-project', pathParameters: {'id': widget.projectId}),
+              onPressed: () => context.pushNamed(
+                'edit-project',
+                pathParameters: {'id': widget.projectId},
+              ),
             ),
           if (isAdmin)
             IconButton(
@@ -74,8 +78,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       ),
       builder: (context, r) {
         if (projectState.isLoading) return const LoadingWidget();
-        if (projectState.error != null) return AppErrorWidget(message: projectState.error!);
-        if (projectState.project == null) return const Center(child: Text('Project not found'));
+        if (projectState.error != null)
+          return AppErrorWidget(message: projectState.error!);
+        if (projectState.project == null)
+          return const Center(child: Text('Project not found'));
 
         return Center(
           child: ConstrainedBox(
@@ -89,7 +95,11 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                     project: projectState.project!,
                     isAdmin: isAdmin,
                     onEditManager: () => _showAssignManagerSheet(context),
-                    onEditProject: () => context.pushNamed('edit-project', pathParameters: {'id': widget.projectId}),
+                    onEditProject: () => context.pushNamed(
+                      'edit-project',
+                      pathParameters: {'id': widget.projectId},
+                    ),
+                    onUpdateStatus: () => _showStatusUpdateSheet(context, projectState.project!),
                   ),
                   const SizedBox(height: 24),
                   _ModuleNavigation(projectId: widget.projectId),
@@ -111,6 +121,72 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
   }
 
+  void _showStatusUpdateSheet(BuildContext context, ProjectModel project) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Update Project Status',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ...ProjectStatus.values.map((status) {
+                return ListTile(
+                  leading: Icon(
+                    Icons.circle,
+                    color: status.color,
+                    size: 16,
+                  ),
+                  title: Text(status.displayName),
+                  trailing: project.status == status
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (project.status == status) return;
+
+                    final notifier = ref.read(
+                      projectDetailProvider(widget.projectId).notifier,
+                    );
+                    final success = await notifier.updateProject({
+                      'status': status.value,
+                    });
+                    if (mounted) {
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Status updated successfully'),
+                          ),
+                        );
+                      } else {
+                        final error =
+                            ref
+                                .read(projectDetailProvider(widget.projectId))
+                                .error ??
+                            'Failed to update status';
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(error)),
+                        );
+                      }
+                    }
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _confirmDelete() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -125,9 +201,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -142,16 +216,17 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     if (!mounted) return;
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Project deleted')));
       context.go('/admin/dashboard');
     } else {
-      final error = ref.read(projectDetailProvider(widget.projectId)).error ??
+      final error =
+          ref.read(projectDetailProvider(widget.projectId)).error ??
           'Failed to delete project';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
     }
   }
 }
@@ -162,12 +237,14 @@ class _HeroSection extends StatelessWidget {
   final bool isAdmin;
   final VoidCallback onEditManager;
   final VoidCallback onEditProject;
+  final VoidCallback onUpdateStatus;
 
   const _HeroSection({
     required this.project,
     required this.isAdmin,
     required this.onEditManager,
     required this.onEditProject,
+    required this.onUpdateStatus,
   });
 
   @override
@@ -175,7 +252,8 @@ class _HeroSection extends StatelessWidget {
     final dateFormat = DateFormat('MMM yyyy');
     final width = MediaQuery.of(context).size.width;
     final isWide = width > 720;
-    final assignedManagers = project.assignments ?? const <ProjectAssignmentModel>[];
+    final assignedManagers =
+        project.assignments ?? const <ProjectAssignmentModel>[];
 
     return Container(
       decoration: BoxDecoration(
@@ -207,23 +285,29 @@ class _HeroSection extends StatelessWidget {
                 ),
               ),
               if (isAdmin)
-                 InkWell(
-                   onTap: onEditManager,
-                   borderRadius: BorderRadius.circular(8),
-                   child: Container(
-                     padding: const EdgeInsets.all(8),
-                     decoration: BoxDecoration(
-                       color: Colors.grey[100],
-                       borderRadius: BorderRadius.circular(8),
-                     ),
-                    child: const Icon(Icons.person_add_alt_1, size: 16, color: Colors.black),
-                   ),
-                 ),
+                InkWell(
+                  onTap: onEditManager,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.person_add_alt_1,
+                      size: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            assignedManagers.isEmpty ? 'Not Assigned' : '${assignedManagers.length} Assigned',
+            assignedManagers.isEmpty
+                ? 'Not Assigned'
+                : '${assignedManagers.length} Assigned',
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
@@ -255,7 +339,7 @@ class _HeroSection extends StatelessWidget {
                   .toList(),
             ),
           const SizedBox(height: 20),
-          
+
           // Phase/Status & Date & Edit Project
           Wrap(
             spacing: 12,
@@ -263,7 +347,14 @@ class _HeroSection extends StatelessWidget {
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _StatusChip(status: project.status),
+              if (isAdmin)
+                InkWell(
+                  onTap: onUpdateStatus,
+                  borderRadius: BorderRadius.circular(6),
+                  child: _StatusChip(status: project.status),
+                )
+              else
+                _StatusChip(status: project.status),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -271,7 +362,11 @@ class _HeroSection extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Completion by ${dateFormat.format(project.endDate!)}',
@@ -292,7 +387,11 @@ class _HeroSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       child: const Padding(
                         padding: EdgeInsets.all(4),
-                        child: Icon(Icons.edit_outlined, size: 16, color: Colors.grey),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ],
@@ -300,9 +399,9 @@ class _HeroSection extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Material Snapshot
           _MaterialSnapshot(projectId: project.id, isWide: isWide),
         ],
@@ -319,7 +418,8 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     // Custom labels for the design
     String label = status.displayName;
-    if (status == ProjectStatus.inProgress) label = 'PHASE 2 WORK'; // Matching mockup vibe
+    if (status == ProjectStatus.inProgress)
+      label = 'PHASE 2 WORK'; // Matching mockup vibe
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -344,10 +444,7 @@ class _AssignedManagerChip extends StatelessWidget {
   final String name;
   final String? phone;
 
-  const _AssignedManagerChip({
-    required this.name,
-    this.phone,
-  });
+  const _AssignedManagerChip({required this.name, this.phone});
 
   @override
   Widget build(BuildContext context) {
@@ -385,7 +482,9 @@ class _MaterialSnapshot extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final breakdownAsync = ref.watch(projectMaterialBreakdownProvider(projectId));
+    final breakdownAsync = ref.watch(
+      projectMaterialBreakdownProvider(projectId),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -405,42 +504,49 @@ class _MaterialSnapshot extends ConsumerWidget {
             (m) => m.name.toLowerCase().contains('cement'),
             orElse: () => const MaterialBreakdown(name: 'Cement', unit: 'Bags'),
           );
-          
-          // Fallback if list is empty but we want to show placeholders? 
+
+          // Fallback if list is empty but we want to show placeholders?
           // Requirements say "No dummy data". Show what we have.
           final displayItems = <MaterialBreakdown>[
-             if (materials.any((m) => m.name.toLowerCase().contains('steel'))) steel,
-             if (materials.any((m) => m.name.toLowerCase().contains('cement'))) cement,
+            if (materials.any((m) => m.name.toLowerCase().contains('steel')))
+              steel,
+            if (materials.any((m) => m.name.toLowerCase().contains('cement')))
+              cement,
           ];
-          
+
           // If no specific Steel/Cement, show top 2 items
           if (displayItems.isEmpty && materials.isNotEmpty) {
-             displayItems.addAll(materials.take(2));
+            displayItems.addAll(materials.take(2));
           }
 
           if (displayItems.isEmpty) {
-             return const Center(
-               child: Text('No material data tracked', style: TextStyle(color: Colors.grey, fontSize: 12)),
-             );
+            return const Center(
+              child: Text(
+                'No material data tracked',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            );
           }
 
           final rows = displayItems
-              .map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _MaterialRow(item: item, isWide: isWide),
-                  ))
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _MaterialRow(item: item, isWide: isWide),
+                ),
+              )
               .toList();
 
           return isWide
-              ? Row(
-                  children: rows
-                      .map((w) => Expanded(child: w))
-                      .toList(),
-                )
+              ? Row(children: rows.map((w) => Expanded(child: w)).toList())
               : Column(children: rows);
         },
-        loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        error: (err, _) => const Text('Failed to load materials', style: TextStyle(fontSize: 12, color: Colors.red)),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        error: (err, _) => const Text(
+          'Failed to load materials',
+          style: TextStyle(fontSize: 12, color: Colors.red),
+        ),
       ),
     );
   }
@@ -454,13 +560,17 @@ class _MaterialRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final unit = item.unit ?? '';
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.calendar_view_day, size: 14, color: Colors.black54),
+            const Icon(
+              Icons.calendar_view_day,
+              size: 14,
+              color: Colors.black54,
+            ),
             const SizedBox(width: 8),
             Text(
               item.name.toUpperCase(),
@@ -504,11 +614,11 @@ class _StatPill extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: Color(0xFF555555)),
           ),
           const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
               color: Color(0xFF0055FF), // Vibrant blue
             ),
           ),
@@ -533,17 +643,23 @@ class _ModuleNavigation extends StatelessWidget {
           icon: Icons.description_outlined,
           color: const Color(0xFFE8F0FE), // Light Blue
           iconColor: const Color(0xFF1967D2),
-          onTap: () => context.goNamed('project-blueprints', pathParameters: {'id': projectId}),
+          onTap: () => context.goNamed(
+            'project-blueprints',
+            pathParameters: {'id': projectId},
+          ),
         ),
         const SizedBox(height: 16),
         _ModuleNavCard(
           title: 'Operations',
           subtitle: 'Consumption And Expenses',
           icon: Icons.engineering_outlined,
-          color: const Color(0xFFE3F2FD), 
+          color: const Color(0xFFE3F2FD),
           iconColor: const Color(0xFF1565C0),
           // Note: Mockup shows specific design, we map to existing Operations screen
-          onTap: () => context.goNamed('project-operations', pathParameters: {'id': projectId}), 
+          onTap: () => context.goNamed(
+            'project-operations',
+            pathParameters: {'id': projectId},
+          ),
         ),
         const SizedBox(height: 16),
         _ModuleNavCard(
@@ -552,7 +668,10 @@ class _ModuleNavigation extends StatelessWidget {
           icon: Icons.analytics_outlined,
           color: const Color(0xFFF3E5F5), // Light purple tone
           iconColor: const Color(0xFF7B1FA2),
-          onTap: () => context.goNamed('project-reports', pathParameters: {'id': projectId}),
+          onTap: () => context.goNamed(
+            'project-reports',
+            pathParameters: {'id': projectId},
+          ),
         ),
       ],
     );
