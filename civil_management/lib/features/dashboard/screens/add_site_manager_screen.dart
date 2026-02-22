@@ -24,9 +24,13 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void dispose() {
@@ -36,6 +40,8 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -48,15 +54,11 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
     });
 
     try {
-      // Use a default password since we are not asking for it in the UI
-      // In a real app, we would trigger a password reset email or invite flow
-      const defaultPassword = 'CivilManager@123';
-
       await ref
           .read(authProvider.notifier)
           .createSiteManager(
             email: _emailController.text.trim(),
-            password: defaultPassword,
+            password: _passwordController.text,
             firstName: _firstNameController.text.trim(),
             lastName: _lastNameController.text.trim(),
             phone: _phoneController.text.trim().isNotEmpty
@@ -109,7 +111,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'Add manager',
+          'Add Manager',
           style: TextStyle(
             color: Color(0xFF1A1C1E),
             fontWeight: FontWeight.w700,
@@ -208,6 +210,96 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                   maxLines: 3,
                   decoration: _inputDecoration('Hyderabad'),
                 ),
+                const SizedBox(height: 16),
+
+                // Password Field
+                _buildLabel('Password'),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: _inputDecoration('Enter password').copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: const Color(0xFF6B7280),
+                      ),
+                      onPressed: () => setState(
+                        () => _isPasswordVisible = !_isPasswordVisible,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Confirm Password Field
+                _buildLabel('Confirm Password'),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: !_isConfirmPasswordVisible,
+                  decoration: _inputDecoration('Re-enter password').copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: const Color(0xFF6B7280),
+                      ),
+                      onPressed: () => setState(
+                        () => _isConfirmPasswordVisible =
+                            !_isConfirmPasswordVisible,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm the password';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Info note about admin session
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: AppColors.info),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'You will remain logged in as Admin after creating this account.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.info,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 32),
 
                 // Save Button
@@ -225,7 +317,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
-                            'Save',
+                            'Create Account',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -260,8 +352,8 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(
-        color: Color(0xFF1A1C1E),
-        fontWeight: FontWeight.w700,
+        color: Color(0xFF9CA3AF),
+        fontWeight: FontWeight.w400,
         fontSize: 14,
       ),
       filled: true,
@@ -282,6 +374,10 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
       ),
     );
   }

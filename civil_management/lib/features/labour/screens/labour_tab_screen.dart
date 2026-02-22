@@ -35,7 +35,7 @@ class LabourTabScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+backgroundColor: const Color(0xFFF4F6FA),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogLaborSheet(context, projectId),
         backgroundColor: const Color(0xFF1E293B),
@@ -195,6 +195,7 @@ class LabourTabScreen extends ConsumerWidget {
                         unskilled: log.unskilledCount,
                         initials: _getInitials(log.contractorName),
                         color: _getColor(index),
+                        date: log.logDate,
                       );
                     },
                   );
@@ -254,6 +255,7 @@ class _LaborHistoryCard extends StatelessWidget {
   final int unskilled;
   final String initials;
   final Color color;
+  final DateTime date;
 
   const _LaborHistoryCard({
     required this.name,
@@ -263,6 +265,7 @@ class _LaborHistoryCard extends StatelessWidget {
     required this.unskilled,
     required this.initials,
     required this.color,
+    required this.date,
   });
 
   @override
@@ -316,7 +319,15 @@ class _LaborHistoryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                if (phone != null)
+                Text(
+                  DateFormat('MMM dd, yyyy').format(date),
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                ),
+                if (phone != null) ...[
+                  const SizedBox(height: 2),
                   Text(
                     phone!,
                     style: const TextStyle(
@@ -325,6 +336,7 @@ class _LaborHistoryCard extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                ],
               ],
             ),
           ),

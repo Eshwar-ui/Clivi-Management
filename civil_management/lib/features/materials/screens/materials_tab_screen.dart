@@ -27,7 +27,7 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
         .getMaterialLogsByProject(widget.projectId);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         title: const Text('Material Details'),
         backgroundColor: Colors.white,

@@ -50,8 +50,8 @@ class DashboardRepository {
         return [];
       }
 
-      return (response)
-          .map((json) => OperationLog.fromJson(json as Map<String, dynamic>))
+      return (response as List<dynamic>)
+          .map<OperationLog>((json) => OperationLog.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       logger.e('Failed to fetch recent activity: $e');
@@ -72,8 +72,8 @@ class DashboardRepository {
         return [];
       }
 
-      return (response)
-          .map((json) => ProjectSummary.fromJson(json))
+      return (response as List<dynamic>)
+          .map<ProjectSummary>((json) => ProjectSummary.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       logger.e('Failed to fetch active projects: $e');
@@ -109,8 +109,8 @@ class DashboardRepository {
         return [];
       }
 
-      return (response)
-          .map((json) => ProjectSummary.fromJson(json))
+      return (response as List<dynamic>)
+          .map<ProjectSummary>((json) => ProjectSummary.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       logger.e('Failed to fetch assigned projects summary: $e');

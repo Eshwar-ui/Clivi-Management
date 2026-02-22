@@ -1,10 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_client.dart';
-import '../../../../core/config/env.dart';
 import '../../../../core/errors/app_exceptions.dart';
 import '../../../../core/utils/retry_helper.dart';
-import '../../../../core/utils/no_op_local_storage.dart';
 import '../models/models.dart';
+
 
 /// Repository for all authentication-related Supabase operations
 /// Follows the Repository Pattern - all Supabase calls go through here
@@ -110,10 +109,9 @@ class AuthRepository {
     }
   }
 
-  /// Create a new user as admin without affecting the current session
-  /// This preserves the admin's login state while creating the new user
-  /// Create a new user as admin without affecting the current session
-  /// This preserves the admin's login state while creating the new user
+  /// Create a new user as admin without affecting the current session.
+  /// Uses the create-site-manager Edge Function with service_role key,
+  /// so the admin's session is NEVER touched.
   Future<UserProfileModel> createUserAsAdmin({
     required String email,
     required String password,
@@ -124,95 +122,48 @@ class AuthRepository {
     String? address,
     String role = 'site_manager',
   }) async {
-    // Save current admin session
     final adminSession = currentSession;
-
     if (adminSession == null) {
       throw AppAuthException('Admin must be logged in to create users');
     }
 
-    // Create a secondary client that doesn't persist sessions
-    // This prevents the admin's session from being overwritten in local storage
-    final tempClient = SupabaseClient(
-      Env.supabaseUrl,
-      Env.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
-        localStorage: NoOpLocalStorage(),
-      ),
-    );
-
     try {
-      final fullName = [
-        firstName,
-        lastName,
-      ].where((s) => s != null && s.isNotEmpty).join(' ');
+      final fullName = [firstName, lastName]
+          .where((s) => s != null && s.isNotEmpty)
+          .join(' ');
 
-      // Create the new user using the temporary client
-      final response = await tempClient.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'full_name': fullName,
+      // Call Edge Function — uses service_role on the server, no client auth change
+      final response = await _client.functions.invoke(
+        'create-site-manager',
+        body: {
+          'email': email,
+          'password': password,
+          'full_name': fullName.isNotEmpty ? fullName : null,
           'phone': phone,
           'position': position,
           'address': address,
+          'role': role,
         },
       );
 
-      if (response.user == null) {
-        throw AppAuthException('Failed to create user account');
+      if (response.status != 200) {
+        final errorData = response.data;
+        final msg = errorData is Map ? errorData['error'] ?? 'Failed to create user' : 'Failed to create user';
+        throw AppAuthException(msg.toString());
       }
 
-      final newUserId = response.user!.id;
-      logger.i('Created new user: $email');
-
-      // Use RetryHelper to wait for profile to be created by trigger
-      // Note: We use the MAIN client to check the profile, as we are authenticated as admin there
-      final createdProfile = await RetryHelper.retryUntil<UserProfileModel>(
-        () => getUserProfile(newUserId),
-        (result) => result != null,
-        maxAttempts: 5,
-        initialDelay: const Duration(milliseconds: 500),
-        maxDelay: const Duration(seconds: 2),
-      );
-
-      // Add extra details that might not be covered by metadata trigger sync
-      if (createdProfile != null) {
-        try {
-          final updates = <String, dynamic>{
-            'role': role,
-            'updated_at': DateTime.now().toIso8601String(),
-          };
-
-          if (position != null) updates['position'] = position;
-          if (address != null) updates['address'] = address;
-          // Ensure full name and phone are synced if trigger missed them
-          if (fullName.isNotEmpty) updates['full_name'] = fullName;
-          if (phone != null) updates['phone'] = phone;
-
-          final profile = await updateUserProfile(
-            userId: newUserId,
-            updates: updates,
-          );
-          return profile;
-        } catch (e) {
-          logger.w('Failed to update profile details: $e');
-          return createdProfile;
-        }
+      final data = response.data;
+      if (data == null || data['user'] == null) {
+        throw AppAuthException('No user data returned');
       }
 
-      throw AppAuthException('Profile creation failed');
-    } on AuthException catch (e) {
-      logger.e('Create user failed: ${e.message}');
-      throw AppAuthException.fromSupabase(e);
+      logger.i('Site manager created via Edge Function: $email');
+      return UserProfileModel.fromJson(data['user'] as Map<String, dynamic>);
+    } on AppAuthException {
+      rethrow;
     } catch (e) {
       logger.e('Create user error: $e');
-      throw AppAuthException(
-        'An unexpected error occurred while creating user',
-      );
-    } finally {
-      // Dispose temp client to free resources
-      await tempClient.dispose();
+      throw AppAuthException('An unexpected error occurred while creating user');
     }
   }
 

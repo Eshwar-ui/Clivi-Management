@@ -36,7 +36,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
 
-  ProjectStatus _selectedStatus = ProjectStatus.planning;
+  ProjectStatus _selectedStatus = ProjectStatus.inProgress;
   DateTime? _startDate = DateTime.now();
   DateTime? _endDate = DateTime.now().add(const Duration(days: 90));
 

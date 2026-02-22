@@ -109,8 +109,8 @@ class ProjectRepository {
           'and(created_at.eq.$cursorCreatedAt,id.lt.$cursorId)',
         );
       }
-
       final response = await query
+          .isFilter('deleted_at', null)
           .order('created_at', ascending: false)
           .order('id', ascending: false)
           .limit(limit);
@@ -158,6 +158,7 @@ class ProjectRepository {
 
         // Apply pagination and ordering
         final response = await query
+            .isFilter('deleted_at', null)
             .order('created_at', ascending: false)
             .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -190,6 +191,7 @@ class ProjectRepository {
             )
           ''')
           .eq('project_assignments.user_id', userId)
+          .isFilter('deleted_at', null)
           .order('created_at', ascending: false);
 
       return (response as List)
@@ -497,10 +499,10 @@ class ProjectRepository {
   Future<Map<String, int>> getProjectStats() async {
     try {
       // Fetch only the status column for efficiency
-      // Note: For very large datasets, consider creating a database view or RPC function
       final response = await _client
           .from('projects')
           .select('status')
+          .isFilter('deleted_at', null)
           .limit(10000); // Safety limit to prevent unbounded queries
 
       final stats = <String, int>{

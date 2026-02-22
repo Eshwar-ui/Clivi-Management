@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _passwordError;
 
   String _mapLoginError(dynamic e) {
     final message = ExceptionHandler.getMessage(e);
@@ -64,34 +65,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         normalized.contains('invalid email');
   }
 
-  void _showCredentialErrorSnackbar() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Row(
-            children: const [
-              Icon(Icons.error_outline, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Incorrect password',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(12),
-        ),
-      );
-  }
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -109,6 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _passwordError = null;
     });
 
     try {
@@ -138,44 +112,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         final errorText = _mapLoginError(e);
+        final isCredential = _isCredentialError(e);
+
         setState(() {
-          _errorMessage = errorText;
+          if (isCredential) {
+            _passwordError = 'Incorrect password';
+          } else {
+            _errorMessage = errorText;
+          }
         });
 
-        if (_isCredentialError(e)) {
-          _showCredentialErrorSnackbar();
-        } else {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.wifi_off, color: Colors.white, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        errorText,
-                        style: const TextStyle(color: Colors.white),
-                      ),
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    isCredential ? Icons.error_outline : Icons.wifi_off,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      errorText,
+                      style: const TextStyle(color: Colors.white),
                     ),
-                  ],
-                ),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 4),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: const EdgeInsets.all(12),
+                  ),
+                ],
               ),
-            );
-        }
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.all(12),
+            ),
+          );
       }
     } finally {
       if (mounted) {
         final elapsed = DateTime.now().difference(startedAt);
-        const minLoadingDuration = Duration(milliseconds: 700);
+        const minLoadingDuration = Duration(milliseconds: 2000);
         if (elapsed < minLoadingDuration) {
           await Future.delayed(minLoadingDuration - elapsed);
         }
@@ -193,6 +173,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       builder: (context, r) {
         return Stack(
           children: [
+            // Top progress bar while loading
             if (_isLoading)
               Positioned(
                 top: 0,
@@ -208,126 +189,138 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
+
+            // Main form — no nested ScrollView; ResponsiveScaffold handles it
             Padding(
-              padding: r.pad.copyWith(
-                top: 24,
-                bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-              ),
+              padding: r.pad.copyWith(top: 24, bottom: 24),
               child: Center(
-                child: SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 460),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: EdgeInsets.all(r.isTablet ? 20 : 16),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Icon(
-                              Icons.construction,
-                              size: r.font(40, tablet: 48),
-                              color: Colors.white,
-                            ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: EdgeInsets.all(r.isTablet ? 20 : 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Welcome Back',
-                            style: Theme.of(context).textTheme.displaySmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  fontSize: r.font(30, tablet: 34),
-                                ),
+                          child: Icon(
+                            Icons.construction,
+                            size: r.font(40, tablet: 48),
+                            color: Colors.white,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Sign in to your account',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontSize: r.font(14, tablet: 16),
-                                ),
-                          ),
-                          const SizedBox(height: 28),
-                          if (_errorMessage != null) ...[
-                            InlineErrorWidget(message: _errorMessage!),
-                            const SizedBox(height: 16),
-                          ],
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            onFieldSubmitted: (_) =>
-                                _passwordFocusNode.requestFocus(),
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              hintText: 'Enter your email',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              return null;
-                            },
-                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Welcome Back',
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                fontSize: r.font(30, tablet: 34),
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sign in to your account',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: r.font(14, tablet: 16),
+                              ),
+                        ),
+                        const SizedBox(height: 28),
+                        if (_errorMessage != null) ...[
+                          InlineErrorWidget(message: _errorMessage!),
                           const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            focusNode: _passwordFocusNode,
-                            obscureText: !_isPasswordVisible,
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => _handleLogin(),
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              hintText: 'Enter your password',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _isPasswordVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                ),
-                                onPressed: () => setState(
-                                  () =>
-                                      _isPasswordVisible = !_isPasswordVisible,
-                                ),
+                        ],
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          onChanged: (_) {
+                            if (_errorMessage != null) {
+                              setState(() => _errorMessage = null);
+                            }
+                          },
+                          onFieldSubmitted: (_) =>
+                              _passwordFocusNode.requestFocus(),
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'Enter your email',
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocusNode,
+                          obscureText: !_isPasswordVisible,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _handleLogin(),
+                          onChanged: (_) {
+                            if (_passwordError != null) {
+                              setState(() => _passwordError = null);
+                            }
+                            if (_errorMessage != null) {
+                              setState(() => _errorMessage = null);
+                            }
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            hintText: 'Enter your password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            errorText: _passwordError,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () => setState(
+                                () => _isPasswordVisible = !_isPasswordVisible,
                               ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              return null;
-                            },
                           ),
-                          const SizedBox(height: 24),
-                          AppButton(
-                            text: _isLoading ? 'Signing in...' : 'Sign In',
-                            onPressed: _handleLogin,
-                            isLoading: _isLoading,
-                            icon: _isLoading ? null : Icons.login,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        AppButton(
+                          text: _isLoading ? 'Signing in...' : 'Sign In',
+                          onPressed: _handleLogin,
+                          isLoading: _isLoading,
+                          icon: _isLoading ? null : Icons.login,
+                        ),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: TextButton(
+                            onPressed: () => context.go('/forgot-password'),
+                            child: const Text('Forgot Password?'),
                           ),
-                          const SizedBox(height: 16),
-                          Center(
-                            child: TextButton(
-                              onPressed: () => context.go('/forgot-password'),
-                              child: const Text('Forgot Password?'),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+
+            // Full-screen loading overlay
             IgnorePointer(
               ignoring: !_isLoading,
               child: AnimatedOpacity(

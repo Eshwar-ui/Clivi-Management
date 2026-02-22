@@ -115,7 +115,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF4F6FA),
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _showLogMaterialSheet(context),
         style: ElevatedButton.styleFrom(

@@ -63,7 +63,7 @@ class ProjectModel {
     this.description,
     this.location,
     this.projectType,
-    this.status = ProjectStatus.planning,
+    this.status = ProjectStatus.inProgress,
     this.progress = 0,
     this.startDate,
     this.endDate,
@@ -202,10 +202,10 @@ enum ProjectStatus {
   const ProjectStatus(this.value);
 
   static ProjectStatus fromString(String? status) {
-    if (status == null) return ProjectStatus.planning;
+    if (status == null) return ProjectStatus.inProgress;
     return ProjectStatus.values.firstWhere(
       (s) => s.value == status,
-      orElse: () => ProjectStatus.planning,
+      orElse: () => ProjectStatus.inProgress,
     );
   }
 
