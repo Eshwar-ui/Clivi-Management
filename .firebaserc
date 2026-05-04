@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "clivi-management"
+  },
+  "targets": {
+    "clivi-management": {
+      "hosting": {
+        "clivi-management": [
+          "clivi-management"
+        ]
+      }
+    }
+  }
+}

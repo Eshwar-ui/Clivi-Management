@@ -1,0 +1,3 @@
+class VendorModel {
+  // Placeholder
+}

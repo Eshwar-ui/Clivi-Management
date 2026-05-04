@@ -1,0 +1,3 @@
+class ConsumptionsRepository {
+  // Placeholder
+}
