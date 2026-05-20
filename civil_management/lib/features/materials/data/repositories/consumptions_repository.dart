@@ -1,3 +1,0 @@
-class ConsumptionsRepository {
-  // Placeholder
-}

@@ -1,3 +1,0 @@
-class MaterialModel {
-  // Placeholder
-}

@@ -280,7 +280,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withOpacity(0.08),
+                    color: AppColors.info.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Row(

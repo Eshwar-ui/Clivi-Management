@@ -1,3 +1,0 @@
-class VendorsRepository {
-  // Placeholder
-}
