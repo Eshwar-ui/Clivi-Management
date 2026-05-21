@@ -1,4 +1,4 @@
-import 'package:civil_management/core/config/app_lifecycle_provider.dart';
+import 'package:clivi_management/core/config/app_lifecycle_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/env.dart';
@@ -35,7 +35,7 @@ void main() async {
     await SupabaseConfig.initialize();
 
     // Run the app
-    runApp(const ProviderScope(child: CivilManagementApp()));
+    runApp( ProviderScope(child: CliviManagementApp()));
   } catch (e, stackTrace) {
     logger.e('Failed to initialize app', error: e, stackTrace: stackTrace);
 
@@ -50,8 +50,8 @@ void main() async {
 }
 
 /// Main application widget
-class CivilManagementApp extends ConsumerWidget {
-  const CivilManagementApp({super.key});
+class CliviManagementApp extends ConsumerWidget {
+  const CliviManagementApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,7 +70,7 @@ class CivilManagementApp extends ConsumerWidget {
     });
 
     return MaterialApp.router(
-      title: 'Civil Management',
+      title: 'Clivi Management',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,

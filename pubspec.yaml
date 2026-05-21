@@ -1,5 +1,5 @@
-name: civil_management
-description: "Civil Management App with role-based access control"
+name: clivi_management
+description: "Clivi Management App with role-based access control"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -60,6 +60,13 @@ dev_dependencies:
   riverpod_generator: ^2.6.2
   freezed: ^2.5.7
   json_serializable: ^6.8.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21 # android >= 5.0
 
 flutter:
   uses-material-design: true
@@ -67,3 +74,4 @@ flutter:
   # Assets
   assets:
     - assets/env
+    - assets/images/

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/errors/app_exceptions.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/shake_transition.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -19,14 +19,12 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _shakeKey = GlobalKey<ShakeTransitionState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordFocusNode = FocusNode();
 
   bool _isPasswordVisible = false;
-  bool _isLoading = false;
-  String? _errorMessage;
-  String? _passwordError;
 
   @override
   void dispose() {
@@ -36,51 +34,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  // Returns a user-friendly message and whether it is a credential error.
-  ({String message, bool isCredential}) _parseError(dynamic e) {
-    final raw =
-        '${e.toString()} ${ExceptionHandler.getMessage(e)}'.toLowerCase();
-
-    if (raw.contains('socket') ||
-        raw.contains('network') ||
-        raw.contains('internet') ||
-        raw.contains('connection') ||
-        raw.contains('timeout')) {
-      return (
-        message: 'No internet. Check your connection and try again.',
-        isCredential: false,
-      );
-    }
-
-    if (raw.contains('invalid_credentials') ||
-        raw.contains('credential') ||
-        raw.contains('invalid login') ||
-        raw.contains('incorrect password') ||
-        raw.contains('user not found') ||
-        raw.contains('no account registered') ||
-        raw.contains('invalid email')) {
-      return (message: 'Incorrect email or password.', isCredential: true);
-    }
-
-    return (message: 'Login failed. Please try again.', isCredential: false);
-  }
-
   Future<void> _handleLogin() async {
-    if (_isLoading) return;
+    final authState = ref.read(authProvider);
+    if (authState.isLoading) return;
+
     FocusScope.of(context).unfocus();
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _passwordError = null;
-    });
-
-    // Yield to the event loop so Flutter renders the loading state
-    // before the network call starts. Without this, a fast-completing
-    // Future can cause both setState(true) and setState(false) to land
-    // in the same frame, making the loading bar never appear.
-    await Future.delayed(Duration.zero);
+    if (!_formKey.currentState!.validate()) {
+      _shakeKey.currentState?.shake();
+      return;
+    }
 
     try {
       await ref.read(authProvider.notifier).signIn(
@@ -103,264 +65,302 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      final (:message, :isCredential) = _parseError(e);
-      setState(() {
-        if (isCredential) {
-          _passwordError = message;
-        } else {
-          _errorMessage = message;
-        }
-      });
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      _shakeKey.currentState?.shake();
+      // Error is handled by the provider and displayed in the UI via authProvider.error
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      // resizeToAvoidBottomInset keeps the form above the keyboard
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final r = R(Size(constraints.maxWidth, constraints.maxHeight));
 
-            return Column(
+            return Stack(
               children: [
-                // ── Loading bar ───────────────────────────────────────────────
-                // First child of the Column so it is always painted above the
-                // scroll view.  It cannot scroll away and no overlay can cover it.
-                if (_isLoading)
-                  LinearProgressIndicator(
-                    minHeight: 4,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-
-                // ── Scrollable form ───────────────────────────────────────────
-                Expanded(
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: ConstrainedBox(
-                      // Keeps the form vertically centred on tall screens.
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Padding(
-                        padding: r.pad.copyWith(top: 32, bottom: 32),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 460),
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // App icon
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Container(
-                                      padding: EdgeInsets.all(
-                                        r.isTablet ? 20 : 16,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary,
-                                        borderRadius:
-                                            BorderRadius.circular(16),
-                                      ),
-                                      child: Icon(
-                                        Icons.construction,
-                                        size: r.font(40, tablet: 48),
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 28),
-
-                                  // Heading
-                                  Text(
-                                    'Welcome Back',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displaySmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.textPrimary,
-                                          fontSize: r.font(28, tablet: 34),
-                                        ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Sign in to your account',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: AppColors.textSecondary,
-                                          fontSize: r.font(14, tablet: 16),
-                                        ),
-                                  ),
-                                  const SizedBox(height: 32),
-
-                                  // Network / generic error banner
-                                  if (_errorMessage != null) ...[
-                                    InlineErrorWidget(
-                                      message: _errorMessage!,
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-
-                                  // Email field
-                                  TextFormField(
-                                    controller: _emailController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    textInputAction: TextInputAction.next,
-                                    enabled: !_isLoading,
-                                    onChanged: (_) {
-                                      if (_errorMessage != null) {
-                                        setState(() => _errorMessage = null);
-                                      }
-                                    },
-                                    onFieldSubmitted: (_) =>
-                                        _passwordFocusNode.requestFocus(),
-                                    decoration: const InputDecoration(
-                                      labelText: 'Email',
-                                      hintText: 'you@example.com',
-                                      prefixIcon: Icon(Icons.email_outlined),
-                                    ),
-                                    validator: (v) {
-                                      if (v == null || v.trim().isEmpty) {
-                                        return 'Email is required';
-                                      }
-                                      if (!v.contains('@')) {
-                                        return 'Enter a valid email';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Password field
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    focusNode: _passwordFocusNode,
-                                    obscureText: !_isPasswordVisible,
-                                    textInputAction: TextInputAction.done,
-                                    enabled: !_isLoading,
-                                    onFieldSubmitted: (_) => _handleLogin(),
-                                    onChanged: (_) {
-                                      if (_passwordError != null) {
-                                        setState(() => _passwordError = null);
-                                      }
-                                      if (_errorMessage != null) {
-                                        setState(() => _errorMessage = null);
-                                      }
-                                    },
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      hintText: 'Enter your password',
-                                      prefixIcon:
-                                          const Icon(Icons.lock_outline),
-                                      errorText: _passwordError,
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _isPasswordVisible
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                        ),
-                                        onPressed: () => setState(
-                                          () => _isPasswordVisible =
-                                              !_isPasswordVisible,
-                                        ),
-                                      ),
-                                    ),
-                                    validator: (v) {
-                                      if (v == null || v.isEmpty) {
-                                        return 'Password is required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-
-                                  // Forgot password link
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      onPressed: _isLoading
-                                          ? null
-                                          : () =>
-                                              context.go('/forgot-password'),
-                                      child: const Text('Forgot Password?'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-
-                                  // Sign In button
-                                  AppButton(
-                                    text: _isLoading
-                                        ? 'Signing in…'
-                                        : 'Sign In',
-                                    onPressed:
-                                        _isLoading ? null : _handleLogin,
-                                    isLoading: _isLoading,
-                                    icon: _isLoading ? null : Icons.login,
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  // Progress bar — shown below the button
-                                  // where the user's eyes are after tapping.
-                                  AnimatedCrossFade(
-                                    duration:
-                                        const Duration(milliseconds: 200),
-                                    crossFadeState: _isLoading
-                                        ? CrossFadeState.showFirst
-                                        : CrossFadeState.showSecond,
-                                    firstChild: Column(
+                Column(
+                  children: [
+                    // ── Scrollable form ───────────────────────────────────────────
+                    Expanded(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Padding(
+                            padding: r.pad.copyWith(top: 32, bottom: 32),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 460),
+                                child: ShakeTransition(
+                                  key: _shakeKey,
+                                  child: Form(
+                                    key: _formKey,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            minHeight: 6,
-                                            backgroundColor: AppColors.primary
-                                                .withValues(alpha: 0.15),
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                              AppColors.primary,
+                                        // App icon
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Container(
+                                            padding: EdgeInsets.all(
+                                              r.isTablet ? 12 : 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: AppColors.shadow,
+                                                  blurRadius: 10,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Image.asset(
+                                              'assets/images/logo.png',
+                                              height: r.font(60, tablet: 80),
+                                              fit: BoxFit.contain,
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 28),
+
+                                        // Heading
                                         Text(
-                                          'Signing in, please wait…',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
+                                          'Welcome to Clivi',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.textPrimary,
+                                                fontSize: r.font(28, tablet: 34),
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Sign in to manage your projects',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: AppColors.textSecondary,
+                                                fontSize: r.font(14, tablet: 16),
+                                              ),
+                                        ),
+                                        const SizedBox(height: 32),
+
+                                        // Error banner from provider
+                                        AnimatedSwitcher(
+                                          duration: const Duration(milliseconds: 300),
+                                          child: authState.error != null
+                                              ? Padding(
+                                                  padding: const EdgeInsets.only(bottom: 16),
+                                                  child: InlineErrorWidget(
+                                                    message: authState.error!,
+                                                  ),
+                                                )
+                                              : const SizedBox.shrink(),
+                                        ),
+
+                                        // Email field
+                                        TextFormField(
+                                          controller: _emailController,
+                                          keyboardType: TextInputType.emailAddress,
+                                          textInputAction: TextInputAction.next,
+                                          enabled: !isLoading,
+                                          onChanged: (_) {
+                                            if (authState.error != null) {
+                                              ref
+                                                  .read(authProvider.notifier)
+                                                  .clearError();
+                                            }
+                                          },
+                                          onFieldSubmitted: (_) =>
+                                              _passwordFocusNode.requestFocus(),
+                                          decoration: const InputDecoration(
+                                            labelText: 'Email',
+                                            hintText: 'you@example.com',
+                                            prefixIcon: Icon(Icons.email_outlined),
+                                          ),
+                                          validator: (v) {
+                                            if (v == null || v.trim().isEmpty) {
+                                              return 'Email is required';
+                                            }
+                                            if (!v.contains('@')) {
+                                              return 'Enter a valid email';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                        const SizedBox(height: 16),
+
+                                        // Password field
+                                        TextFormField(
+                                          controller: _passwordController,
+                                          focusNode: _passwordFocusNode,
+                                          obscureText: !_isPasswordVisible,
+                                          textInputAction: TextInputAction.done,
+                                          enabled: !isLoading,
+                                          onFieldSubmitted: (_) => _handleLogin(),
+                                          onChanged: (_) {
+                                            if (authState.error != null) {
+                                              ref
+                                                  .read(authProvider.notifier)
+                                                  .clearError();
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            labelText: 'Password',
+                                            hintText: 'Enter your password',
+                                            prefixIcon:
+                                                const Icon(Icons.lock_outline),
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                _isPasswordVisible
+                                                    ? Icons.visibility_off
+                                                    : Icons.visibility,
+                                              ),
+                                              onPressed: () => setState(
+                                                () => _isPasswordVisible =
+                                                    !_isPasswordVisible,
+                                              ),
+                                            ),
+                                          ),
+                                          validator: (v) {
+                                            if (v == null || v.isEmpty) {
+                                              return 'Password is required';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+
+                                        // Forgot password link
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed: isLoading
+                                                ? null
+                                                : () => context
+                                                    .go('/forgot-password'),
+                                            child: const Text('Forgot Password?'),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+
+                                        // Sign In button
+                                        Hero(
+                                          tag: 'auth_button',
+                                          child: AppButton(
+                                            text: 'Sign In',
+                                            onPressed: isLoading ? null : _handleLogin,
+                                            isLoading: isLoading,
+                                            icon: Icons.login,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        
+                                        // Bottom info
+                                        Center(
+                                          child: Text(
+                                            '© ${DateTime.now().year} Clivi Management',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.textSecondary.withValues(alpha: 0.6),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    secondChild: const SizedBox.shrink(),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            );
-          },
+                
+                // ── Loading Overlay ───────────────────────────────────────────
+                if (isLoading)
+                  Positioned.fill(
+                    child: AnimatedOpacity(
+                      opacity: isLoading ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Container(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.1),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    const SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      authState.statusMessage ?? 'Authenticating...',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Please do not close the app',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
   }
 }

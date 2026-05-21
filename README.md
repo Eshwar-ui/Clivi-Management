@@ -1,5 +1,5 @@
 # Clivi Management 🏗️📊  
-A role-based **Civil Construction Project Management App** built using **Flutter + Supabase**, designed to manage construction projects, site operations, staff, material stock, bills, and reports — all in one place.
+A role-based **Construction Project Management App** built using **Flutter + Supabase**, designed to manage construction projects, site operations, staff, material stock, bills, and reports — all in one place.
 
 ---
 
@@ -146,7 +146,7 @@ lib/
 ### ✅ 1. Clone Repository
 ```bash
 git clone https://github.com/kalyan1421/Clivi-Management.git
-cd Clivi-Management/civil_management
+cd Clivi-Management
 ```
 
 ### ✅ 2. Install Dependencies

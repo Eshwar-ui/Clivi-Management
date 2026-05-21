@@ -55,6 +55,7 @@ class AppAuthState {
   final UserRole? role;
   final UserProfileModel? profile;
   final bool isLoading;
+  final String? statusMessage;
   final String? error;
   final bool isInitialized;
 
@@ -63,6 +64,7 @@ class AppAuthState {
     this.role,
     this.profile,
     this.isLoading = false,
+    this.statusMessage,
     this.error,
     this.isInitialized = false,
   });
@@ -93,16 +95,19 @@ class AppAuthState {
     UserRole? role,
     UserProfileModel? profile,
     bool? isLoading,
+    String? statusMessage,
     String? error,
     bool? isInitialized,
     bool clearUser = false,
     bool clearError = false,
+    bool clearStatus = false,
   }) {
     return AppAuthState(
       user: clearUser ? null : (user ?? this.user),
       role: clearUser ? null : (role ?? this.role),
       profile: clearUser ? null : (profile ?? this.profile),
       isLoading: isLoading ?? this.isLoading,
+      statusMessage: clearStatus ? null : (statusMessage ?? this.statusMessage),
       error: clearError ? null : (error ?? this.error),
       isInitialized: isInitialized ?? this.isInitialized,
     );
@@ -110,7 +115,7 @@ class AppAuthState {
 
   @override
   String toString() {
-    return 'AppAuthState(user: ${user?.email}, role: ${role?.value}, isLoading: $isLoading, isAuthenticated: $isAuthenticated)';
+    return 'AppAuthState(user: ${user?.email}, role: ${role?.value}, isLoading: $isLoading, statusMessage: $statusMessage, isAuthenticated: $isAuthenticated)';
   }
 }
 
@@ -208,7 +213,14 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   /// Sign in with email and password
   Future<void> signIn({required String email, required String password}) async {
     try {
-      state = state.copyWith(isLoading: true, clearError: true);
+      state = state.copyWith(
+        isLoading: true,
+        clearError: true,
+        statusMessage: 'Verifying credentials...',
+      );
+
+      // Add a slight delay for better UX visibility of the first step
+      await Future.delayed(const Duration(milliseconds: 500));
 
       final result = await _repository.signIn(
         SignInRequest(email: email, password: password),
@@ -218,7 +230,13 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         throw AppAuthException(result.error ?? 'Sign in failed');
       }
 
+      state = state.copyWith(statusMessage: 'Fetching user profile...');
+      await Future.delayed(const Duration(milliseconds: 300));
+
       final role = UserRole.fromString(result.profile?.role);
+
+      state = state.copyWith(statusMessage: 'Finalizing session...');
+      await Future.delayed(const Duration(milliseconds: 200));
 
       state = AppAuthState(
         user: result.user,
@@ -226,16 +244,22 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         profile: result.profile,
         isLoading: false,
         isInitialized: true,
+        statusMessage: null,
       );
 
       logger.i('User signed in: ${result.user!.email}');
     } on AppAuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      state = state.copyWith(
+        isLoading: false,
+        error: e.message,
+        clearStatus: true,
+      );
       rethrow;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: 'An unexpected error occurred',
+        clearStatus: true,
       );
       rethrow;
     }
@@ -249,7 +273,13 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     String? phone,
   }) async {
     try {
-      state = state.copyWith(isLoading: true, clearError: true);
+      state = state.copyWith(
+        isLoading: true,
+        clearError: true,
+        statusMessage: 'Creating your account...',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
 
       final result = await _repository.signUp(
         SignUpRequest(
@@ -263,6 +293,9 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
       if (!result.isSuccess) {
         throw AppAuthException(result.error ?? 'Sign up failed');
       }
+
+      state = state.copyWith(statusMessage: 'Setting up your workspace...');
+      await Future.delayed(const Duration(milliseconds: 400));
 
       state = AppAuthState(
         user: result.user,
@@ -346,12 +379,16 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   /// Send password reset email
   Future<void> resetPassword(String email) async {
     try {
-      state = state.copyWith(isLoading: true, clearError: true);
+      state = state.copyWith(
+        isLoading: true,
+        clearError: true,
+        statusMessage: 'Sending reset link...',
+      );
       await _repository.resetPassword(PasswordResetRequest(email: email));
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, clearStatus: true);
       logger.i('Password reset email sent');
     } on AppAuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      state = state.copyWith(isLoading: false, error: e.message, clearStatus: true);
       rethrow;
     }
   }

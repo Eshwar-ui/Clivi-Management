@@ -1,4 +1,4 @@
-import 'package:civil_management/features/blueprints/widgets/folder_grid_tile.dart';
+import 'package:clivi_management/features/blueprints/widgets/folder_grid_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

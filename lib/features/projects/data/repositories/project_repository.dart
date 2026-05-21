@@ -1,4 +1,4 @@
-import 'package:civil_management/core/utils/cached_repository.dart';
+import 'package:clivi_management/core/utils/cached_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_client.dart';
 import '../../../../core/errors/app_exceptions.dart';

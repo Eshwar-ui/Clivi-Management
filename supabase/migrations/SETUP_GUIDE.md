@@ -22,7 +22,7 @@ This guide walks you through setting up the Supabase backend for the Clivi Manag
 
 ## Step 2: Create `.env` File
 
-In the `civil_management` folder, create a `.env` file:
+In the project root folder, create a `.env` file:
 
 ```env
 # Supabase Configuration
@@ -161,7 +161,6 @@ Go to **Storage** and verify buckets:
 ## Step 8: Run the App
 
 ```bash
-cd civil_management
 flutter pub get
 flutter run
 ```

@@ -9,7 +9,7 @@ class AppConstants {
   // ============================================================
 
   /// Application name
-  static const String appName = 'Civil Management';
+  static const String appName = 'Clivi Management';
 
   /// Application version
   static const String appVersion = '1.0.0';

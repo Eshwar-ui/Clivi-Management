@@ -96,7 +96,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
           ),
         ),
         showBackButton: false,
-       
+
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(84),
           child: Padding(
@@ -129,16 +129,17 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                           const SizedBox(width: 8),
                           Text(
                             _selectedFilterDate != null
-                                ? DateFormat('dd-MM-yyyy').format(
-                                    _selectedFilterDate!,
-                                  )
+                                ? DateFormat(
+                                    'dd-MM-yyyy',
+                                  ).format(_selectedFilterDate!)
                                 : 'Select Date',
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           if (_selectedFilterDate != null) ...[
                             const SizedBox(width: 8),
                             GestureDetector(
-                              onTap: () => setState(() => _selectedFilterDate = null),
+                              onTap: () =>
+                                  setState(() => _selectedFilterDate = null),
                               child: Icon(
                                 Icons.close,
                                 size: 16,
@@ -156,8 +157,10 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEF2F8),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: TabBar(
+                    indicatorSize: TabBarIndicatorSize.tab,
                     controller: _tabController,
                     indicator: BoxDecoration(
                       color: Colors.white,
@@ -182,11 +185,12 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
           final filteredBills = bills.where((bill) {
             bool matchesDate = true;
             if (_selectedFilterDate != null) {
-              matchesDate = bill.billDate.year == _selectedFilterDate!.year &&
+              matchesDate =
+                  bill.billDate.year == _selectedFilterDate!.year &&
                   bill.billDate.month == _selectedFilterDate!.month &&
                   bill.billDate.day == _selectedFilterDate!.day;
             }
-            
+
             if (_showCompletedTab) {
               return bill.status.isCompleted && matchesDate;
             }
@@ -849,7 +853,11 @@ class _BillCard extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: bill.vendorName ?? bill.createdByName ?? bill.raisedBy ?? '-',
+                      text:
+                          bill.vendorName ??
+                          bill.createdByName ??
+                          bill.raisedBy ??
+                          '-',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ],

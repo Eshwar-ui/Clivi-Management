@@ -1,6 +1,6 @@
 # Project CRUD Test Suite
 
-Comprehensive test coverage for project CRUD operations in the Civil Management application.
+Comprehensive test coverage for project CRUD operations in the Clivi Management application.
 
 ## 📋 Overview
 

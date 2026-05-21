@@ -1,11 +1,11 @@
 {
-    "name": "Civil",
-    "short_name": "Civil",
+    "name": "Clivi Management",
+    "short_name": "Clivi",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Clivi Management App with role-based access control",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

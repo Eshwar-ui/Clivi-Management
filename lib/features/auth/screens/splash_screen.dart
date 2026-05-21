@@ -20,15 +20,17 @@ class SplashScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const Icon(
-                Icons.construction,
-                size: 64,
-                color: AppColors.primary,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             const SizedBox(height: 24),
             const Text(
-              'Civil Management',
+              'Clivi Management',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

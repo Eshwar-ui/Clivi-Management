@@ -6,6 +6,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool showBackButton;
   final Color? backgroundColor;
+  final bool showLogo;
   final PreferredSizeWidget? bottom;
 
   const CustomAppBar({
@@ -13,6 +14,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.actions,
     this.showBackButton = true,
+    this.showLogo = false,
     this.backgroundColor,
     this.bottom,
   });
@@ -43,8 +45,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
             )
-          : null,
-      leadingWidth: showBackButton ? 56 + 16 : 0, // 56 is default leading width
+          : (showLogo
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 20, top: 12, bottom: 12),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : null),
+      leadingWidth: showBackButton ? 72 : (showLogo ? 60 : 0),
       title: title,
       actions: actions != null
           ? [...actions!, const SizedBox(width: 20)]

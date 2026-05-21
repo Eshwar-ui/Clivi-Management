@@ -1,13 +1,13 @@
-# Civil Manager App - Technical Documentation
+# Clivi Management App - Technical Documentation
 
-This document provides a comprehensive technical overview of the Civil Manager Flutter application and its Supabase backend. It is intended for developers, architects, and project stakeholders.
+This document provides a comprehensive technical overview of the Clivi Management Flutter application and its Supabase backend. It is intended for developers, architects, and project stakeholders.
 
 ---
 
 ## 1️⃣ System Overview
 
 ### Purpose
-The Civil Manager application is a comprehensive tool designed for construction project management. It facilitates real-time tracking of site operations, resource management, and reporting for civil engineering projects.
+The Clivi Management application is a comprehensive tool designed for construction project management. It facilitates real-time tracking of site operations, resource management, and reporting for construction projects.
 
 ### Roles Supported
 The system is built around two primary user roles with distinct responsibilities:

@@ -110,6 +110,7 @@ class SiteManagerDashboard extends ConsumerWidget {
     UserProfileModel? profile,
   ) {
     return CustomAppBar(
+      showLogo: true,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
