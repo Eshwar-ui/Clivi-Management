@@ -40,6 +40,7 @@ migrate_working_dir/
 /build/
 **/build/
 /coverage/
+android/.kotlin/
 
 # Symbolication related
 app.*.symbols

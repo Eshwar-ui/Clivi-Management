@@ -75,6 +75,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isSplashRoute || isPublicRoute) {
           return _getRoleBasedRoute(userRole ?? UserRole.siteManager);
         }
+
+        if (userRole == null) {
+          return null;
+        }
+
+        final path = state.uri.path;
+
+        if (_requiresSuperAdmin(path) && userRole != UserRole.superAdmin) {
+          return _getRoleBasedRoute(userRole);
+        }
+
+        if (_requiresAdmin(path) && !_isAdminRole(userRole)) {
+          return _getRoleBasedRoute(userRole);
+        }
+
+        if (path == '/site-manager/dashboard' &&
+            userRole != UserRole.siteManager) {
+          return _getRoleBasedRoute(userRole);
+        }
       }
 
       // 5. Default: No redirect needed
@@ -386,32 +405,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               final projectId = state.pathParameters['id'];
               return ReportsScreen(projectId: projectId);
             },
-            routes: [
-              GoRoute(
-                path: 'stock',
-                name: 'report-stock',
-                builder: (context, state) => const _ComingSoonScreen(
-                  title: 'Stock Report',
-                  icon: Icons.inventory_2_outlined,
-                ),
-              ),
-              GoRoute(
-                path: 'machinery',
-                name: 'report-machinery',
-                builder: (context, state) => const _ComingSoonScreen(
-                  title: 'Machinery Report',
-                  icon: Icons.construction_outlined,
-                ),
-              ),
-              GoRoute(
-                path: 'labour',
-                name: 'report-labour',
-                builder: (context, state) => const _ComingSoonScreen(
-                  title: 'Labour Report',
-                  icon: Icons.people_outline,
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -466,6 +459,31 @@ String _getRoleBasedRoute(UserRole role) {
   }
 }
 
+bool _isAdminRole(UserRole role) {
+  return role == UserRole.admin || role == UserRole.superAdmin;
+}
+
+bool _requiresSuperAdmin(String path) {
+  return path.startsWith('/super-admin');
+}
+
+bool _requiresAdmin(String path) {
+  if (path.startsWith('/admin')) return true;
+  if (path.startsWith('/master')) return true;
+
+  const adminOnlyRoutes = {
+    '/machinery',
+    '/reports',
+    '/suppliers',
+    '/vendors',
+    '/bills/approval-queue',
+    '/projects/create',
+  };
+  if (adminOnlyRoutes.contains(path)) return true;
+
+  return path.startsWith('/projects/') && path.endsWith('/edit');
+}
+
 /// Auth state listener for router refresh
 class _AuthStateNotifier extends ChangeNotifier {
   _AuthStateNotifier(this._ref) {
@@ -479,43 +497,4 @@ class _AuthStateNotifier extends ChangeNotifier {
   }
 
   final Ref _ref;
-}
-
-/// Generic "coming soon" screen for routes not yet fully implemented.
-/// Provides a back button so users are never stranded on a dead-end screen.
-class _ComingSoonScreen extends StatelessWidget {
-  final String title;
-  final IconData icon;
-
-  const _ComingSoonScreen({required this.title, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 72, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'This report is coming soon.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 32),
-            FilledButton.tonal(
-              onPressed: () => context.pop(),
-              child: const Text('Go Back'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

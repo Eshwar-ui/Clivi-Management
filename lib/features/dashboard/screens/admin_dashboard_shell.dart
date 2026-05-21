@@ -36,17 +36,23 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
-    final role = profile?.role ?? 'admin';
+    final authState = ref.watch(authProvider);
+    final role = profile?.role ?? authState.role?.value;
+
+    if (role == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final Widget homeScreen = role == 'site_manager'
         ? const SiteManagerDashboard()
         : const AdminDashboard();
+    final isAdminRole = role == 'admin' || role == 'super_admin';
 
     final List<Widget> pages = [
       homeScreen,
       const ProjectListScreen(),
       const BillsScreen(),
-      if (role == 'admin') const VendorAnalyticsDashboard(),
+      if (isAdminRole) const VendorAnalyticsDashboard(),
       const ProfileScreen(),
     ];
 
@@ -85,7 +91,7 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
             icon: Icon(Icons.receipt_long),
             label: 'Bills',
           ),
-          if (role == 'admin')
+          if (isAdminRole)
             const BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart),
               label: 'Reports',
@@ -99,4 +105,3 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     );
   }
 }
-

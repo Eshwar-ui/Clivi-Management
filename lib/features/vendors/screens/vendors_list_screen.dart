@@ -22,13 +22,10 @@ class VendorsListScreen extends ConsumerWidget {
             onSelected: (value) async {
               if (value == 'refresh') {
                 ref.invalidate(vendorOverviewProvider);
-              } else if (value == 'delete_all') {
-                _confirmBulkDelete(context, ref);
               }
             },
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'refresh', child: Text('Refresh')),
-              PopupMenuItem(value: 'delete_all', child: Text('Delete All')),
             ],
           ),
         ],
@@ -40,13 +37,15 @@ class VendorsListScreen extends ConsumerWidget {
       body: overviewAsync.when(
         data: (vendors) => vendors.isEmpty
             ? const EmptyStateWidget(
-                message: 'No vendors added yet.\nTap + to add your first vendor.',
+                message:
+                    'No vendors added yet.\nTap + to add your first vendor.',
                 icon: Icons.store_outlined,
               )
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: vendors.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final v = vendors[index];
                   return _VendorCard(
@@ -200,7 +199,9 @@ class VendorsListScreen extends ConsumerWidget {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Failed to save vendor: $e'),
+                                      content: Text(
+                                        'Failed to save vendor: $e',
+                                      ),
                                     ),
                                   );
                                 }
@@ -227,59 +228,6 @@ class VendorsListScreen extends ConsumerWidget {
         );
       },
     );
-  }
-
-  Future<void> _confirmBulkDelete(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete ALL vendors'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('This will deactivate all vendors.'),
-            const SizedBox(height: 8),
-            const Text('Type DELETE to confirm.'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(labelText: 'Confirmation text'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(ctx, controller.text.trim() == 'DELETE'),
-            child: const Text('Delete All'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      try {
-        await ref.read(inventoryRepositoryProvider).deleteAllSuppliers();
-        ref.invalidate(vendorOverviewProvider);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('All vendors deactivated')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Bulk delete failed: $e')));
-        }
-      }
-    }
   }
 
   Future<void> _confirmDelete(

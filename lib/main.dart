@@ -35,7 +35,7 @@ void main() async {
     await SupabaseConfig.initialize();
 
     // Run the app
-    runApp( ProviderScope(child: CliviManagementApp()));
+    runApp(ProviderScope(child: CliviManagementApp()));
   } catch (e, stackTrace) {
     logger.e('Failed to initialize app', error: e, stackTrace: stackTrace);
 
@@ -73,6 +73,8 @@ class CliviManagementApp extends ConsumerWidget {
       title: 'Clivi Management',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }

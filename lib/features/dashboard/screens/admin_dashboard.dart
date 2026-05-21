@@ -102,22 +102,6 @@ class AdminDashboard extends ConsumerWidget {
       ),
       showBackButton: false,
       actions: [
-        Container(
-          height: 40,
-          width: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () {},
-            padding: EdgeInsets.zero,
-          ),
-        ),
-        const SizedBox(width: 12),
         CircleAvatar(
           radius: 20,
           backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -141,7 +125,6 @@ class AdminDashboard extends ConsumerWidget {
               icon: Icons.show_chart,
               value: stats.activeProjects.toString().padLeft(2, '0'),
               label: 'Active Projects',
-              badgeText: '+12%',
               textColor: Colors.white,
               badgeColor: Colors.white.withValues(alpha: 0.15),
               isLoading: state.isLoading,

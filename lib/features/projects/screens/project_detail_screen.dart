@@ -11,8 +11,7 @@ import '../data/models/project_model.dart';
 import '../providers/project_provider.dart';
 import 'widgets/assign_manager_sheet.dart';
 
-/// Redesigned Project Detail Screen
-/// Reference: Skyline Towers Mockup
+/// Project detail screen with project summary and module navigation.
 class ProjectDetailScreen extends ConsumerStatefulWidget {
   final String projectId;
 
@@ -44,62 +43,62 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         }
       },
       child: ResponsiveScaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            if (userRole == UserRole.superAdmin) {
-              context.go('/super-admin/dashboard');
-            } else if (userRole == UserRole.admin) {
-              context.go('/admin/dashboard');
-            } else {
-              context.go('/site-manager/dashboard');
-            }
-          },
-        ),
-        title: Text(
-          projectState.project?.name ?? 'Project Details',
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {
+              if (userRole == UserRole.superAdmin) {
+                context.go('/super-admin/dashboard');
+              } else if (userRole == UserRole.admin) {
+                context.go('/admin/dashboard');
+              } else {
+                context.go('/site-manager/dashboard');
+              }
+            },
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.black),
-              onPressed: () => context.pushNamed(
-                'edit-project',
-                pathParameters: {'id': widget.projectId},
+          title: Text(
+            projectState.project?.name ?? 'Project Details',
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
+            if (isAdmin)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.black),
+                onPressed: () => context.pushNamed(
+                  'edit-project',
+                  pathParameters: {'id': widget.projectId},
+                ),
               ),
-            ),
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: _confirmDelete,
-              tooltip: 'Delete project',
-            ),
-        ],
-      ),
-      builder: (context, r) {
-        if (projectState.isLoading) {
-          return const LoadingWidget();
-        }
-        if (projectState.error != null) {
-          return AppErrorWidget(message: projectState.error!);
-        }
-        if (projectState.project == null) {
-          return const Center(child: Text('Project not found'));
-        }
+            if (isAdmin)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: _confirmDelete,
+                tooltip: 'Delete project',
+              ),
+          ],
+        ),
+        builder: (context, r) {
+          if (projectState.isLoading) {
+            return const LoadingWidget();
+          }
+          if (projectState.error != null) {
+            return AppErrorWidget(message: projectState.error!);
+          }
+          if (projectState.project == null) {
+            return const Center(child: Text('Project not found'));
+          }
 
-        return ConstrainedBox(
+          return ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1100),
             child: Padding(
               padding: r.pad.copyWith(bottom: 24),
@@ -114,19 +113,19 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       'edit-project',
                       pathParameters: {'id': widget.projectId},
                     ),
-                    onUpdateStatus: () => _showStatusUpdateSheet(context, projectState.project!),
+                    onUpdateStatus: () =>
+                        _showStatusUpdateSheet(context, projectState.project!),
                   ),
                   const SizedBox(height: 24),
                   _ModuleNavigation(projectId: widget.projectId),
                 ],
               ),
             ),
-        
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   void _showAssignManagerSheet(BuildContext context) {
     showModalBottomSheet(
@@ -149,18 +148,14 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Update Project Status',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               ...ProjectStatus.values.map((status) {
                 return ListTile(
-                  leading: Icon(
-                    Icons.circle,
-                    color: status.color,
-                    size: 16,
-                  ),
+                  leading: Icon(Icons.circle, color: status.color, size: 16),
                   title: Text(status.displayName),
                   trailing: project.status == status
                       ? const Icon(Icons.check, color: AppColors.primary)
@@ -189,9 +184,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                                   .read(projectDetailProvider(widget.projectId))
                                   .error ??
                               'Failed to update status';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error)),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(error)));
                         }
                       }
                     }
@@ -419,7 +414,6 @@ class _HeroSection extends StatelessWidget {
               ),
             ],
           ),
-
         ],
       ),
     );
@@ -432,12 +426,6 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Custom labels for the design
-    String label = status.displayName;
-    if (status == ProjectStatus.inProgress) {
-      label = 'PHASE 2 WORK'; // Matching mockup vibe
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -445,7 +433,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        label.toUpperCase(),
+        status.displayName.toUpperCase(),
         style: TextStyle(
           color: status.color,
           fontSize: 11,

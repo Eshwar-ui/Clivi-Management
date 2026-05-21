@@ -19,7 +19,6 @@ class SiteManagerDashboard extends ConsumerWidget {
     final statsState = ref.watch(dashboardStatsProvider);
     final activityState = ref.watch(recentActivityProvider);
     final projectsState = ref.watch(activeProjectsProvider);
-    final operationsCounts = ref.watch(operationsLiveCountsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
@@ -42,7 +41,7 @@ class SiteManagerDashboard extends ConsumerWidget {
                       const SizedBox(height: 20),
 
                       // Operations section
-                      _buildOperationsSection(context, operationsCounts),
+                      _buildOperationsSection(context),
 
                       const SizedBox(height: 20),
 
@@ -135,22 +134,6 @@ class SiteManagerDashboard extends ConsumerWidget {
       ),
       showBackButton: false,
       actions: [
-        Container(
-          height: 40,
-          width: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () {},
-            padding: EdgeInsets.zero,
-          ),
-        ),
-        const SizedBox(width: 12),
         CircleAvatar(
           radius: 20,
           backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -283,54 +266,21 @@ class SiteManagerDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildOperationsSection(
-    BuildContext context,
-    AsyncValue<OperationsLiveCounts> operationsCounts,
-  ) {
-    String subtitleFor({
-      required int count,
-      required String singular,
-      required String plural,
-    }) {
-      return '$count ${count == 1 ? singular : plural}';
-    }
-
-    final liveCounts = operationsCounts.valueOrNull;
+  Widget _buildOperationsSection(BuildContext context) {
     final operations = [
       _OperationTile(
-        label: 'Materials',
-        subtitle: liveCounts == null
-            ? 'Loading...'
-            : subtitleFor(
-                count: liveCounts.vendors,
-                singular: 'Vendor',
-                plural: 'Vendors',
-              ),
-        icon: Icons.inventory_2_outlined,
+        label: 'Projects',
+        subtitle: 'Open assigned sites',
+        icon: Icons.business_outlined,
         bg: Colors.blue[50],
-        onTap: () => context.push('/master/vendors'),
+        onTap: () => context.push('/projects'),
       ),
       _OperationTile(
-        label: 'Machinery',
-        subtitle: liveCounts == null
-            ? 'Loading...'
-            : subtitleFor(
-                count: liveCounts.machinery,
-                singular: 'Machine',
-                plural: 'Machines',
-              ),
-        icon: Icons.build_outlined,
+        label: 'Bills',
+        subtitle: 'Track bill requests',
+        icon: Icons.receipt_long_outlined,
         bg: Colors.orange[50],
-        onTap: () => context.push('/master/machinery'),
-      ),
-      _OperationTile(
-        label: 'Material Master List',
-        subtitle: 'Manage Materials',
-        icon: Icons.list_alt,
-        bg: Colors.green[50],
-        onTap: () {
-          context.push('/master/materials');
-        },
+        onTap: () => context.push('/bills'),
       ),
     ];
 

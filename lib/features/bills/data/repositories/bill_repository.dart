@@ -92,10 +92,6 @@ class BillRepository {
       // Upload receipt if provided
       if (receiptBytes != null && receiptName != null) {
         try {
-          final fileExt = receiptName.contains('.')
-              ? receiptName.split('.').last
-              : 'pdf';
-          final contentType = 'application/$fileExt';
           // bills bucket RLS expects first path segment to be project UUID.
           final relativePath = UploadHelper.generateUniquePath(
             'receipts',
@@ -107,13 +103,11 @@ class BillRepository {
             bucket: AppConstants.bucketBills,
             path: filePath,
             bytes: Uint8List.fromList(receiptBytes),
-            contentType: contentType,
+            contentType: _contentTypeForFile(receiptName),
           );
         } catch (e) {
-          debugPrint(
-            'Receipt upload failed, proceeding without attachment: $e',
-          );
-          receiptUrl = null;
+          debugPrint('Receipt upload failed: $e');
+          throw Exception('Receipt upload failed. Please retry the upload.');
         }
       }
 
@@ -188,7 +182,7 @@ class BillRepository {
       }
 
       String selectQuery = _billSelectQuery;
-      
+
       if (onlyAssignedProjects && userId != null) {
         selectQuery = '''
           *,
@@ -203,7 +197,7 @@ class BillRepository {
       }
 
       var query = _client.from('bills').select(selectQuery);
-      
+
       if (onlyAssignedProjects && userId != null) {
         query = query.eq('project.project_assignments.user_id', userId);
       }
@@ -406,7 +400,9 @@ class BillRepository {
             .from('project_assignments')
             .select('project_id')
             .eq('user_id', userId);
-        assignedProjectIds = (assignments as List).map((a) => a['project_id'] as String).toSet();
+        assignedProjectIds = (assignments as List)
+            .map((a) => a['project_id'] as String)
+            .toSet();
       } catch (e) {
         debugPrint('Failed to fetch project assignments for stream: $e');
       }
@@ -425,5 +421,25 @@ class BillRepository {
               .where((bill) => assignedProjectIds.contains(bill.projectId))
               .toList();
         });
+  }
+}
+
+String _contentTypeForFile(String fileName) {
+  final extension = fileName.contains('.')
+      ? fileName.split('.').last.toLowerCase()
+      : 'pdf';
+
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'pdf':
+      return 'application/pdf';
+    default:
+      return 'application/octet-stream';
   }
 }
