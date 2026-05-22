@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../auth/data/models/user_profile_model.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -19,7 +20,6 @@ class SiteManagerDashboard extends ConsumerWidget {
     final statsState = ref.watch(dashboardStatsProvider);
     final activityState = ref.watch(recentActivityProvider);
     final projectsState = ref.watch(activeProjectsProvider);
-    final operationsCounts = ref.watch(operationsLiveCountsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
@@ -29,63 +29,53 @@ class SiteManagerDashboard extends ConsumerWidget {
           onRefresh: () => _refreshAll(ref),
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Gradient stats card
-                      _buildStatsCard(context, statsState),
-
-                      const SizedBox(height: 20),
-
-                      // Operations section
-                      _buildOperationsSection(context, operationsCounts),
-
-                      const SizedBox(height: 20),
-
-                      // Active Projects section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Active Projects',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            TextButton(
-                              onPressed: () => context.push('/projects'),
-                              child: Text(
-                                'View All',
-                                style: TextStyle(color: AppColors.primary),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                      maxWidth: r.maxContentWidth,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatsCard(context, statsState),
+                        const SizedBox(height: 20),
+                        _buildOperationsSection(context),
+                        const SizedBox(height: 20),
+                        if (r.isDesktop)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 6,
+                                child: _buildActiveProjectsBlock(
+                                  context,
+                                  projectsState,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildProjectsList(context, projectsState),
-
-                      const SizedBox(height: 20),
-
-                      // Recent Operations section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'Recent Operations',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildRecentOperations(context, activityState),
-
-                      const SizedBox(height: 20),
-                    ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 5,
+                                child: _buildRecentOperationsBlock(
+                                  context,
+                                  activityState,
+                                ),
+                              ),
+                            ],
+                          )
+                        else ...[
+                          _buildActiveProjectsBlock(context, projectsState),
+                          const SizedBox(height: 20),
+                          _buildRecentOperationsBlock(context, activityState),
+                        ],
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -93,6 +83,61 @@ class SiteManagerDashboard extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActiveProjectsBlock(
+    BuildContext context,
+    ActiveProjectsState projectsState,
+  ) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Active Projects',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () => context.push('/projects'),
+                child: Text(
+                  'View All',
+                  style: TextStyle(color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildProjectsList(context, projectsState),
+      ],
+    );
+  }
+
+  Widget _buildRecentOperationsBlock(
+    BuildContext context,
+    RecentActivityState activityState,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Recent Operations',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildRecentOperations(context, activityState),
+      ],
     );
   }
 
@@ -135,22 +180,6 @@ class SiteManagerDashboard extends ConsumerWidget {
       ),
       showBackButton: false,
       actions: [
-        Container(
-          height: 40,
-          width: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 20),
-            color: AppColors.textPrimary,
-            onPressed: () {},
-            padding: EdgeInsets.zero,
-          ),
-        ),
-        const SizedBox(width: 12),
         CircleAvatar(
           radius: 20,
           backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -283,54 +312,21 @@ class SiteManagerDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildOperationsSection(
-    BuildContext context,
-    AsyncValue<OperationsLiveCounts> operationsCounts,
-  ) {
-    String subtitleFor({
-      required int count,
-      required String singular,
-      required String plural,
-    }) {
-      return '$count ${count == 1 ? singular : plural}';
-    }
-
-    final liveCounts = operationsCounts.valueOrNull;
+  Widget _buildOperationsSection(BuildContext context) {
     final operations = [
       _OperationTile(
-        label: 'Materials',
-        subtitle: liveCounts == null
-            ? 'Loading...'
-            : subtitleFor(
-                count: liveCounts.vendors,
-                singular: 'Vendor',
-                plural: 'Vendors',
-              ),
-        icon: Icons.inventory_2_outlined,
+        label: 'Projects',
+        subtitle: 'Open assigned sites',
+        icon: Icons.business_outlined,
         bg: Colors.blue[50],
-        onTap: () => context.push('/master/vendors'),
+        onTap: () => context.push('/projects'),
       ),
       _OperationTile(
-        label: 'Machinery',
-        subtitle: liveCounts == null
-            ? 'Loading...'
-            : subtitleFor(
-                count: liveCounts.machinery,
-                singular: 'Machine',
-                plural: 'Machines',
-              ),
-        icon: Icons.build_outlined,
+        label: 'Bills',
+        subtitle: 'Track bill requests',
+        icon: Icons.receipt_long_outlined,
         bg: Colors.orange[50],
-        onTap: () => context.push('/master/machinery'),
-      ),
-      _OperationTile(
-        label: 'Material Master List',
-        subtitle: 'Manage Materials',
-        icon: Icons.list_alt,
-        bg: Colors.green[50],
-        onTap: () {
-          context.push('/master/materials');
-        },
+        onTap: () => context.push('/bills'),
       ),
     ];
 

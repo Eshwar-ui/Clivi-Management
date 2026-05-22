@@ -42,13 +42,10 @@ class LabourRosterScreen extends ConsumerWidget {
             onSelected: (value) {
               if (value == 'refresh') {
                 ref.invalidate(projectLabourProvider(projectId));
-              } else if (value == 'delete_all') {
-                _confirmDeleteAll(context, ref);
               }
             },
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'refresh', child: Text('Refresh')),
-              PopupMenuItem(value: 'delete_all', child: Text('Delete All')),
             ],
           ),
         ],
@@ -226,53 +223,6 @@ class LabourRosterScreen extends ConsumerWidget {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Worker removed')));
-      }
-    }
-  }
-
-  Future<void> _confirmDeleteAll(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete all workers'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('This marks all workers inactive for this project.'),
-            const SizedBox(height: 8),
-            const Text('Type DELETE to confirm.'),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(labelText: 'Confirmation'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(ctx, controller.text.trim() == 'DELETE'),
-            child: const Text('Delete All'),
-          ),
-        ],
-      ),
-    );
-
-    if (ok == true) {
-      await ref
-          .read(labourRepositoryProvider)
-          .deleteAllLabourForProject(projectId);
-      ref.invalidate(projectLabourProvider(projectId));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All workers marked inactive')),
-        );
       }
     }
   }

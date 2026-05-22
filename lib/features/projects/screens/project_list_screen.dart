@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../../core/widgets/error_widget.dart';
@@ -85,8 +86,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         children: [
           // Search Bar
           if (isAdmin)
-            Padding(
-              padding: const EdgeInsets.all(16),
+            ResponsiveContent(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
@@ -103,6 +104,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       : null,
                 ),
                 onChanged: (value) {
+                  setState(() {});
                   ref.read(projectListProvider.notifier).search(value);
                 },
               ),
@@ -169,27 +171,71 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => ref.read(projectListProvider.notifier).refresh(),
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
-        itemCount: state.projects.length + (state.isLoadingMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= state.projects.length) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+        final columns = r.w >= 1180
+            ? 3
+            : r.w >= 760
+            ? 2
+            : 1;
 
-          final project = state.projects[index];
-          return _ProjectCard(
-            project: project,
-            onTap: () => context.push('/projects/${project.id}'),
-          );
-        },
-      ),
+        return RefreshIndicator(
+          onRefresh: () => ref.read(projectListProvider.notifier).refresh(),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+              child: columns == 1
+                  ? ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount:
+                          state.projects.length + (state.isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= state.projects.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+
+                        final project = state.projects[index];
+                        return _ProjectCard(
+                          project: project,
+                          onTap: () => context.push('/projects/${project.id}'),
+                        );
+                      },
+                    )
+                  : GridView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        mainAxisExtent: 220,
+                      ),
+                      itemCount:
+                          state.projects.length + (state.isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= state.projects.length) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        final project = state.projects[index];
+                        return _ProjectCard(
+                          project: project,
+                          onTap: () => context.push('/projects/${project.id}'),
+                        );
+                      },
+                    ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -395,7 +441,6 @@ class _ProjectCard extends StatelessWidget {
 }
 
 /// Status chip widget
-
 
 /// Filter bottom sheet
 class _FilterSheet extends StatelessWidget {

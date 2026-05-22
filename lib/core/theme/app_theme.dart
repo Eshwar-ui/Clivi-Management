@@ -114,7 +114,9 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-          disabledForegroundColor: AppColors.textOnPrimary.withValues(alpha: 0.7),
+          disabledForegroundColor: AppColors.textOnPrimary.withValues(
+            alpha: 0.7,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: GoogleFonts.inter(
@@ -344,83 +346,6 @@ class AppTheme {
 
       // Primary Text Theme
       primaryTextTheme: AppTextStyles.textTheme,
-    );
-  }
-
-  /// Dark theme
-  static ThemeData get darkTheme {
-    // Dark theme colors
-    const darkBackground = Color(0xFF121212);
-    const darkSurface = Color(0xFF1E1E1E);
-    const darkSurfaceVariant = Color(0xFF2C2C2C);
-    const darkTextPrimary = Color(0xFFE0E0E0);
-    const darkTextSecondary = Color(0xFF9E9E9E);
-    const darkBorder = Color(0xFF424242);
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-
-      colorScheme: ColorScheme.dark(
-        primary: AppColors.primary,
-        onPrimary: AppColors.textOnPrimary,
-        primaryContainer: AppColors.primaryDark,
-        secondary: AppColors.secondary,
-        onSecondary: AppColors.textOnSecondary,
-        secondaryContainer: AppColors.secondaryDark,
-        error: AppColors.errorLight,
-        onError: Colors.black,
-        surface: darkSurface,
-        onSurface: darkTextPrimary,
-        surfaceContainerHighest: darkSurfaceVariant,
-        outline: darkBorder,
-      ),
-
-      scaffoldBackgroundColor: darkBackground,
-
-      appBarTheme: AppBarTheme(
-        elevation: 0,
-        backgroundColor: darkSurface,
-        foregroundColor: darkTextPrimary,
-        iconTheme: const IconThemeData(color: darkTextPrimary),
-        titleTextStyle: GoogleFonts.poppins(
-          color: darkTextPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: darkBorder, width: 1),
-        ),
-        color: darkSurface,
-      ),
-
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: darkSurfaceVariant,
-        hintStyle: GoogleFonts.inter(color: darkTextSecondary, fontSize: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: darkBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: darkBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-      ),
-
-      textTheme: AppTextStyles.textTheme.apply(
-        bodyColor: darkTextPrimary,
-        displayColor: darkTextPrimary,
-      ),
     );
   }
 }
