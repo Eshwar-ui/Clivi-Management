@@ -853,11 +853,7 @@ class _BillCard extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text:
-                          bill.vendorName ??
-                          bill.createdByName ??
-                          bill.raisedBy ??
-                          '-',
+                      text: bill.raisedByName ?? bill.createdByName ?? bill.vendorName ?? 'Staff',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ],

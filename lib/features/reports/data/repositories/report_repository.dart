@@ -20,18 +20,95 @@ class ReportRepository {
         params: {'p_period': period.value, 'p_project_id_text': projectId},
       );
 
-      if (response == null) {
-        return FinancialStats.empty;
+      if (response != null) {
+        final stats = FinancialStats.fromJson(response as Map<String, dynamic>);
+        // If RPC returned real data, use it
+        if (stats.totalExpenses > 0 || stats.chartData.isNotEmpty) {
+          return stats;
+        }
       }
 
-      return FinancialStats.fromJson(response as Map<String, dynamic>);
+      // Fallback: compute directly from bills table when RPC returns zeros
+      return _computeFinancialStatsFromBills(period: period, projectId: projectId);
     } on PostgrestException catch (e) {
       logger.e('Failed to fetch financial metrics: ${e.message}');
-      throw DatabaseException.fromPostgrest(e);
+      // Try fallback before surfacing error
+      try {
+        return _computeFinancialStatsFromBills(period: period, projectId: projectId);
+      } catch (_) {
+        throw DatabaseException.fromPostgrest(e);
+      }
     } catch (e) {
       logger.e('Unexpected error fetching financial metrics: $e');
       throw Exception('Failed to load reports: $e');
     }
+  }
+
+  /// Fallback: compute FinancialStats by querying bills directly
+  Future<FinancialStats> _computeFinancialStatsFromBills({
+    required TimePeriod period,
+    String? projectId,
+  }) async {
+    final now = DateTime.now();
+    final DateTime startDate;
+    switch (period) {
+      case TimePeriod.monthly:
+        startDate = DateTime(now.year, now.month - 1, now.day);
+        break;
+      case TimePeriod.quarterly:
+        startDate = DateTime(now.year, now.month - 3, now.day);
+        break;
+      case TimePeriod.yearly:
+        startDate = DateTime(now.year - 1, now.month, now.day);
+        break;
+    }
+
+    var query = _client
+        .from('bills')
+        .select('amount, bill_type, bill_date, status')
+        .gte('bill_date', startDate.toIso8601String().split('T').first)
+        .neq('status', 'rejected');
+
+    if (projectId != null) {
+      query = query.eq('project_id', projectId);
+    }
+
+    final rows = await query;
+
+    double laborCost = 0;
+    double materialCost = 0;
+    double machineryCost = 0;
+    double otherCost = 0;
+
+    for (final row in rows as List) {
+      final amount = (row['amount'] as num?)?.toDouble() ?? 0;
+      final type = row['bill_type'] as String? ?? '';
+      switch (type) {
+        case 'workers':
+          laborCost += amount;
+          break;
+        case 'materials':
+          materialCost += amount;
+          break;
+        case 'equipment_rent':
+          machineryCost += amount;
+          break;
+        default:
+          otherCost += amount;
+      }
+    }
+
+    final totalExpenses = laborCost + materialCost + machineryCost + otherCost;
+
+    return FinancialStats(
+      totalExpenses: totalExpenses,
+      laborCost: laborCost,
+      materialCost: materialCost,
+      machineryCost: machineryCost,
+      otherCost: otherCost,
+      growthPercentage: 0,
+      chartData: const [],
+    );
   }
 
   /// Material receipts grouped by vendor and project (inward only).

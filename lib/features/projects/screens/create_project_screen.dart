@@ -13,6 +13,7 @@ import '../data/models/project_model.dart';
 import '../providers/project_provider.dart';
 import '../widgets/site_manager_selection_sheet.dart';
 
+
 /// Create/Edit Project Screen
 class CreateProjectScreen extends ConsumerStatefulWidget {
   final String? projectId; // null for create, id for edit
@@ -37,6 +38,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final _endDateController = TextEditingController();
 
   ProjectStatus _selectedStatus = ProjectStatus.inProgress;
+  ProjectType? _selectedProjectType;
   DateTime? _startDate = DateTime.now();
   DateTime? _endDate = DateTime.now().add(const Duration(days: 90));
 
@@ -100,6 +102,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
 
         setState(() {
           _selectedStatus = project.status;
+          _selectedProjectType = project.projectType;
           _startDate = project.startDate;
           _endDate = project.endDate;
           if (_startDate != null) {
@@ -186,6 +189,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
             ? null
             : _locationController.text.trim(),
         status: _selectedStatus,
+        projectType: _selectedProjectType,
         startDate: _startDate,
         endDate: _endDate,
         budget: _budgetController.text.trim().isEmpty
@@ -357,6 +361,52 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       hintText: 'Rs. 3,00,000',
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildLabel('Project Type *'),
+                    DropdownButtonFormField<ProjectType>(
+                      initialValue: _selectedProjectType,
+                      decoration: InputDecoration(
+                        hintText: 'Select project type',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      items: ProjectType.values
+                          .map(
+                            (t) => DropdownMenuItem(
+                              value: t,
+                              child: Text(t.value),
+                            ),
+                          )
+                          .toList(),
+                      validator: (v) =>
+                          v == null ? 'Project type is required' : null,
+                      onChanged: (v) =>
+                          setState(() => _selectedProjectType = v),
                     ),
                     const SizedBox(height: 16),
 

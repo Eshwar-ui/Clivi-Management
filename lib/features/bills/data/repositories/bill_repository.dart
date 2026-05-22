@@ -11,6 +11,7 @@ class BillRepository {
   static const String _billSelectQuery = '''
     *,
     creator:user_profiles!bills_created_by_fkey(id, full_name, email),
+    raiser:user_profiles!bills_raised_by_fkey(id, full_name, email),
     approver:user_profiles!bills_approved_by_fkey(id, full_name, email),
     project:projects!bills_project_id_fkey(id, name)
   ''';
@@ -139,7 +140,8 @@ class BillRepository {
 
       final response = await _client.from('bills').insert(data).select('''
             *,
-            creator:user_profiles!bills_created_by_fkey(id, full_name, email)
+            creator:user_profiles!bills_created_by_fkey(id, full_name, email),
+            raiser:user_profiles!bills_raised_by_fkey(id, full_name, email)
           ''').single();
 
       final bill = BillModel.fromJson(response);

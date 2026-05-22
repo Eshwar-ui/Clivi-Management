@@ -675,33 +675,61 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
             ),
             const SizedBox(height: 16),
 
-            // 3. VENDOR DROPDOWN (master suppliers)
+            // 3. VENDOR DROPDOWN (filtered by selected material category)
             ref
                 .watch(suppliersProvider)
                 .when(
                   loading: () => const LinearProgressIndicator(),
                   error: (e, _) => Text('Error loading suppliers: $e'),
-                  data: (suppliers) => Row(
+                  data: (suppliers) {
+                    // Filter suppliers by the selected material name/category.
+                    // A supplier with no category or matching category is shown.
+                    final materialName = entry.selectedMaterial?.name.toLowerCase();
+                    final filtered = materialName == null
+                        ? suppliers
+                        : suppliers.where((s) {
+                            if (s.category == null) return true;
+                            return s.category!.toLowerCase().contains(
+                                  materialName,
+                                ) ||
+                                materialName.contains(
+                                  s.category!.toLowerCase(),
+                                );
+                          }).toList();
+
+                    // Reset selection if current supplier is no longer in list.
+                    if (entry.selectedSupplier != null &&
+                        !filtered.contains(entry.selectedSupplier)) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        setState(() => entry.selectedSupplier = null);
+                      });
+                    }
+
+                    return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<SupplierModel>(
                           isExpanded: true,
-                          initialValue: entry.selectedSupplier,
-                          decoration: const InputDecoration(
-                            labelText: 'Vendor / Supplier',
+                          initialValue: filtered.contains(entry.selectedSupplier)
+                              ? entry.selectedSupplier
+                              : null,
+                          decoration: InputDecoration(
+                            labelText: materialName != null
+                                ? 'Vendor / Supplier (${entry.selectedMaterial!.name})'
+                                : 'Vendor / Supplier',
                             hintText: 'Select vendor',
-                            border: OutlineInputBorder(
+                            border: const OutlineInputBorder(
                               borderRadius: BorderRadius.all(
                                 Radius.circular(8),
                               ),
                             ),
-                            contentPadding: EdgeInsets.symmetric(
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 16,
                             ),
                           ),
-                          items: suppliers.map((s) {
+                          items: filtered.map((s) {
                             return DropdownMenuItem<SupplierModel>(
                               value: s,
                               child: Text(s.name),
@@ -733,7 +761,8 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                         tooltip: 'Add New Vendor',
                       ),
                     ],
-                  ),
+                    );
+                  },
                 ),
 
             const SizedBox(height: 16),

@@ -93,6 +93,19 @@ class MaterialMasterRepository {
     }
   }
 
+  /// Delete a grade by ID
+  Future<void> deleteGrade(String gradeId) async {
+    await _client.from('material_grades').delete().eq('id', gradeId);
+  }
+
+  /// Update a grade name
+  Future<void> updateGrade(String gradeId, String newName) async {
+    await _client
+        .from('material_grades')
+        .update({'grade_name': newName.trim()})
+        .eq('id', gradeId);
+  }
+
   /// Add new grade (handles 409 conflicts with generated grade_key)
   Future<Map<String, dynamic>> addMaterialGrade({
     required String materialId,

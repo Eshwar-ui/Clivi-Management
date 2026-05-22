@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../auth/data/models/user_profile_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../materials/screens/material_master_list_screen.dart';
 import '../providers/dashboard_provider.dart';
 import '../data/models/dashboard_models.dart';
 
@@ -23,7 +24,7 @@ class AdminDashboard extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
-      appBar: _buildAppBar(context, profile),
+      appBar: _buildAppBar(context, ref, profile),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -37,7 +38,13 @@ class AdminDashboard extends ConsumerWidget {
         ),
         child: FloatingActionButton(
           backgroundColor: AppColors.primary,
-          onPressed: () => context.push('/projects/create'),
+          onPressed: () async {
+            await context.push('/projects/create');
+            if (context.mounted) {
+              ref.invalidate(activeProjectsProvider);
+              ref.read(dashboardStatsProvider.notifier).refresh();
+            }
+          },
           child: const Icon(Icons.add, size: 30, color: Colors.white),
         ),
       ),
@@ -76,6 +83,7 @@ class AdminDashboard extends ConsumerWidget {
 
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
+    WidgetRef ref,
     UserProfileModel? profile,
   ) {
     return CustomAppBar(
@@ -113,7 +121,7 @@ class AdminDashboard extends ConsumerWidget {
           child: IconButton(
             icon: const Icon(Icons.notifications_outlined, size: 20),
             color: AppColors.textPrimary,
-            onPressed: () {},
+            onPressed: () => _showNotificationsPanel(context, ref),
             padding: EdgeInsets.zero,
           ),
         ),
@@ -127,6 +135,114 @@ class AdminDashboard extends ConsumerWidget {
     );
   }
 
+  void _showNotificationsPanel(BuildContext context, WidgetRef ref) {
+    final activityState = ref.read(recentActivityProvider);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Recent Activity',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: activityState.activities.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.notifications_none,
+                                size: 48, color: Colors.grey[400]),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No recent activity',
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: controller,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemCount: activityState.activities.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final activity = activityState.activities[index];
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  AppColors.primary.withValues(alpha: 0.1),
+                              child: Icon(
+                                _getOperationIcon(activity.entityType),
+                                color: AppColors.primary,
+                                size: 18,
+                              ),
+                            ),
+                            title: Text(
+                              activity.title,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              activity.description ??
+                                  activity.projectName ??
+                                  '',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey[600]),
+                            ),
+                            trailing: Text(
+                              activity.relativeTime,
+                              style: TextStyle(
+                                  fontSize: 11, color: Colors.grey[500]),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatsRow(BuildContext context, DashboardStatsState state) {
     final stats = state.stats;
 
@@ -135,16 +251,19 @@ class AdminDashboard extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: _statCard(
-              background: AppColors.primary,
-              shadowColor: AppColors.primary.withValues(alpha: 0.35),
-              icon: Icons.show_chart,
-              value: stats.activeProjects.toString().padLeft(2, '0'),
-              label: 'Active Projects',
-              badgeText: '+12%',
-              textColor: Colors.white,
-              badgeColor: Colors.white.withValues(alpha: 0.15),
-              isLoading: state.isLoading,
+            child: GestureDetector(
+              onTap: () => context.push('/projects'),
+              child: _statCard(
+                background: AppColors.primary,
+                shadowColor: AppColors.primary.withValues(alpha: 0.35),
+                icon: Icons.show_chart,
+                value: stats.activeProjects.toString().padLeft(2, '0'),
+                label: 'Active Projects',
+                badgeText: '+12%',
+                textColor: Colors.white,
+                badgeColor: Colors.white.withValues(alpha: 0.15),
+                isLoading: state.isLoading,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -366,7 +485,11 @@ class AdminDashboard extends ConsumerWidget {
         icon: Icons.list_alt,
         bg: Colors.green[50],
         onTap: () {
-          context.push('/master/materials');
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const MaterialMasterListScreen(),
+            ),
+          );
         },
       ),
     ];

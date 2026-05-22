@@ -6,11 +6,25 @@ import '../data/models/supplier_model.dart';
 import '../providers/inventory_provider.dart';
 
 /// Supplier List Screen - Manage material vendors
-class SupplierListScreen extends ConsumerWidget {
+class SupplierListScreen extends ConsumerStatefulWidget {
   const SupplierListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SupplierListScreen> createState() => _SupplierListScreenState();
+}
+
+class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final suppliersAsync = ref.watch(suppliersProvider);
 
     return Scaffold(
@@ -22,13 +36,57 @@ class SupplierListScreen extends ConsumerWidget {
             onPressed: () => _showAddSupplierDialog(context, ref),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name or category...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+                isDense: true,
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+            ),
+          ),
+        ),
       ),
       body: suppliersAsync.when(
         loading: () => const LoadingWidget(message: 'Loading suppliers...'),
         error: (error, _) => Center(child: Text('Error: $error')),
-        data: (suppliers) => suppliers.isEmpty
-            ? _buildEmptyState(context)
-            : _buildSupplierList(context, ref, suppliers),
+        data: (suppliers) {
+          final filtered = _searchQuery.isEmpty
+              ? suppliers
+              : suppliers.where((s) {
+                  final name = s.name.toLowerCase();
+                  final cat = s.category?.toLowerCase() ?? '';
+                  final phone = s.phone?.toLowerCase() ?? '';
+                  return name.contains(_searchQuery) ||
+                      cat.contains(_searchQuery) ||
+                      phone.contains(_searchQuery);
+                }).toList();
+
+          return filtered.isEmpty
+              ? _buildEmptyState(context)
+              : _buildSupplierList(context, ref, filtered);
+        },
       ),
     );
   }
@@ -41,12 +99,14 @@ class SupplierListScreen extends ConsumerWidget {
           Icon(Icons.business_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No suppliers yet',
+            _searchQuery.isEmpty ? 'No suppliers yet' : 'No results found',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Add material vendors for better tracking',
+            _searchQuery.isEmpty
+                ? 'Add material vendors for better tracking'
+                : 'Try a different search term',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
@@ -72,9 +132,28 @@ class SupplierListScreen extends ConsumerWidget {
           final supplier = suppliers[index];
           return _SupplierCard(
             supplier: supplier,
+            onTap: () => _showSupplierDetail(context, ref, supplier),
             onEdit: () => _showEditSupplierDialog(context, ref, supplier),
             onDelete: () => _confirmDelete(context, ref, supplier),
           );
+        },
+      ),
+    );
+  }
+
+  void _showSupplierDetail(
+    BuildContext context,
+    WidgetRef ref,
+    SupplierModel supplier,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _SupplierDetailSheet(
+        supplier: supplier,
+        onEdit: () {
+          Navigator.pop(ctx);
+          _showEditSupplierDialog(context, ref, supplier);
         },
       ),
     );
@@ -144,13 +223,119 @@ class SupplierListScreen extends ConsumerWidget {
   }
 }
 
+class _SupplierDetailSheet extends StatelessWidget {
+  final SupplierModel supplier;
+  final VoidCallback? onEdit;
+
+  const _SupplierDetailSheet({required this.supplier, this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.business,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        supplier.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (supplier.category != null)
+                        Text(
+                          supplier.category!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (onEdit != null)
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: onEdit,
+                    tooltip: 'Edit',
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 12),
+            _detailRow(Icons.person_outline, 'Contact', supplier.contactPerson),
+            _detailRow(Icons.phone_outlined, 'Phone', supplier.phone),
+            _detailRow(Icons.email_outlined, 'Email', supplier.email),
+            _detailRow(
+              Icons.location_on_outlined,
+              'Address',
+              supplier.address,
+            ),
+            _detailRow(Icons.notes_outlined, 'Notes', supplier.notes),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String? value) {
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: Colors.grey[600]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SupplierCard extends StatelessWidget {
   final SupplierModel supplier;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _SupplierCard({
     required this.supplier,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
@@ -160,6 +345,7 @@ class _SupplierCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
+        onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: Colors.blue.withValues(alpha: 0.1),
           child: Icon(

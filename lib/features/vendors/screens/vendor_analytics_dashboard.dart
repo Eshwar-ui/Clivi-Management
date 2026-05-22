@@ -1194,7 +1194,7 @@ String _compactCurrency(double value) {
   if (value.abs() >= 100000) {
     return '₹${(value / 100000).toStringAsFixed(1)}L';
   }
-  if (value.abs() >= 1000) {
+  if (value.abs() >= 10000) {
     return '₹${(value / 1000).toStringAsFixed(0)}K';
   }
   return '₹${value.toStringAsFixed(0)}';

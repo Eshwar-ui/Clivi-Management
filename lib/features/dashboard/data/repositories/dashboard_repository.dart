@@ -60,8 +60,8 @@ class DashboardRepository {
   }
 
   /// Fetch active projects summary for dashboard cards
-  /// [limit] - Number of projects to fetch (default: 3)
-  Future<List<ProjectSummary>> getActiveProjectsSummary({int limit = 3}) async {
+  /// [limit] - Number of projects to fetch (default: 10)
+  Future<List<ProjectSummary>> getActiveProjectsSummary({int limit = 10}) async {
     try {
       final response = await _client.rpc(
         'get_active_projects_summary',

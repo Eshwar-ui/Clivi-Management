@@ -78,7 +78,7 @@ final vendorChartMetricProvider = StateProvider<VendorChartMetric>(
 
 final vendorAnalyticsDateRangeProvider = StateProvider<DateTimeRange>((ref) {
   final now = DateTime.now();
-  return DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now);
+  return DateTimeRange(start: now.subtract(const Duration(days: 30)), end: now);
 });
 
 class MaterialVendorAggregatesRequest {

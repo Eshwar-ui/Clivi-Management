@@ -866,17 +866,32 @@ class _OperationsReports extends StatelessWidget {
           child: machineryRows.isEmpty
               ? const _EmptyRow(message: 'No machinery logs yet')
               : Column(
-                  children: machineryRows.take(6).map((row) {
-                    return _TwoLineTile(
-                      title:
-                          '${row.machineryName}${row.machineryType.isNotEmpty ? ' (${row.machineryType})' : ''}',
-                      subtitle:
-                          '${row.projectName} • ${row.totalHours.toStringAsFixed(1)} hrs',
-                      trailing: row.lastWorkedAt != null
-                          ? _dateLabel(row.lastWorkedAt!)
-                          : '',
-                    );
-                  }).toList(),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _OperationsBarChart(
+                      items: machineryRows.take(6).map((r) {
+                        return _BarItem(
+                          label:
+                              '${r.machineryName}${r.machineryType.isNotEmpty ? ' (${r.machineryType})' : ''}',
+                          value: r.totalHours,
+                          unit: 'hrs',
+                        );
+                      }).toList(),
+                      barColor: Colors.blue[700]!,
+                    ),
+                    const SizedBox(height: 8),
+                    ...machineryRows.take(6).map((row) {
+                      return _TwoLineTile(
+                        title:
+                            '${row.machineryName}${row.machineryType.isNotEmpty ? ' (${row.machineryType})' : ''}',
+                        subtitle:
+                            '${row.projectName} • ${row.totalHours.toStringAsFixed(1)} hrs',
+                        trailing: row.lastWorkedAt != null
+                            ? _dateLabel(row.lastWorkedAt!)
+                            : '',
+                      );
+                    }),
+                  ],
                 ),
         ),
         const SizedBox(height: 12),
@@ -886,17 +901,32 @@ class _OperationsReports extends StatelessWidget {
           child: labourRows.isEmpty
               ? const _EmptyRow(message: 'No active labour found')
               : Column(
-                  children: labourRows.take(6).map((row) {
-                    final wage = row.dailyWage > 0
-                        ? '₹${row.dailyWage.toStringAsFixed(0)} /day'
-                        : '';
-                    return _TwoLineTile(
-                      title:
-                          '${row.labourName}${row.skillType.isNotEmpty ? ' • ${row.skillType}' : ''}',
-                      subtitle:
-                          '${row.projectName}${wage.isNotEmpty ? ' • $wage' : ''}',
-                    );
-                  }).toList(),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _OperationsBarChart(
+                      items: labourRows.take(6).map((r) {
+                        return _BarItem(
+                          label:
+                              '${r.labourName}${r.skillType.isNotEmpty ? ' • ${r.skillType}' : ''}',
+                          value: r.dailyWage,
+                          unit: '₹/day',
+                        );
+                      }).toList(),
+                      barColor: Colors.teal[600]!,
+                    ),
+                    const SizedBox(height: 8),
+                    ...labourRows.take(6).map((row) {
+                      final wage = row.dailyWage > 0
+                          ? '₹${row.dailyWage.toStringAsFixed(0)} /day'
+                          : '';
+                      return _TwoLineTile(
+                        title:
+                            '${row.labourName}${row.skillType.isNotEmpty ? ' • ${row.skillType}' : ''}',
+                        subtitle:
+                            '${row.projectName}${wage.isNotEmpty ? ' • $wage' : ''}',
+                      );
+                    }),
+                  ],
                 ),
         ),
       ],
@@ -905,6 +935,73 @@ class _OperationsReports extends StatelessWidget {
 
   String _dateLabel(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _BarItem {
+  final String label;
+  final double value;
+  final String unit;
+  const _BarItem({required this.label, required this.value, required this.unit});
+}
+
+class _OperationsBarChart extends StatelessWidget {
+  final List<_BarItem> items;
+  final Color barColor;
+
+  const _OperationsBarChart({required this.items, required this.barColor});
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    final maxValue = items.map((i) => i.value).reduce((a, b) => a > b ? a : b);
+    final safeMax = maxValue > 0 ? maxValue : 1.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.map((item) {
+        final ratio = item.value / safeMax;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 90,
+                child: Text(
+                  item.label,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 14,
+                    backgroundColor: barColor.withValues(alpha: 0.12),
+                    valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                item.value > 0
+                    ? '${item.value.toStringAsFixed(item.value == item.value.roundToDouble() ? 0 : 1)} ${item.unit}'
+                    : '-',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: barColor,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
   }
 }
 

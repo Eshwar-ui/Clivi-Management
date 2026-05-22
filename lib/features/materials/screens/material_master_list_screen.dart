@@ -189,22 +189,38 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: grades.map((g) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            g.gradeName,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onLongPress: () => _showGradeOptions(context, g),
+                          onTap: () => _showGradeOptions(context, g),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    g.gradeName,
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.more_horiz,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                              ],
                             ),
                           ),
                         );
@@ -228,6 +244,127 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                 ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showGradeOptions(BuildContext context, MaterialGrade grade) async {
+    await showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Rename Grade'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showEditGradeDialog(context, grade);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete Grade', style: TextStyle(color: Colors.red)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (d) => AlertDialog(
+                    title: const Text('Delete Grade?'),
+                    content: Text('Remove "${grade.gradeName}" from ${widget.material.name}?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(d, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () => Navigator.pop(d, true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  try {
+                    await ref.read(materialMasterRepositoryProvider).deleteGrade(grade.id);
+                    ref.invalidate(materialGradesProvider(widget.material.id));
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                    }
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditGradeDialog(BuildContext context, MaterialGrade grade) async {
+    final controller = TextEditingController(text: grade.gradeName);
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Rename Grade'),
+          content: Form(
+            key: formKey,
+            child: CustomTextField(
+              controller: controller,
+              label: 'Grade Name',
+              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setState(() => saving = true);
+                      try {
+                        await ref.read(materialMasterRepositoryProvider).updateGrade(
+                          grade.id,
+                          controller.text.trim(),
+                        );
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          ref.invalidate(materialGradesProvider(widget.material.id));
+                        }
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      } finally {
+                        if (ctx.mounted) setState(() => saving = false);
+                      }
+                    },
+              child: saving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }

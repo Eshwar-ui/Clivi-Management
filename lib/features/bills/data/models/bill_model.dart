@@ -181,6 +181,7 @@ class BillModel {
   // Joined data (optional)
   final String? projectName;
   final String? createdByName;
+  final String? raisedByName;
   final String? approvedByName;
 
   const BillModel({
@@ -204,6 +205,7 @@ class BillModel {
     this.paymentStatus = PaymentStatus.needToPay,
     this.projectName,
     this.createdByName,
+    this.raisedByName,
     this.approvedByName,
   });
 
@@ -247,6 +249,10 @@ class BillModel {
           : (json['user_profiles'] != null
                 ? json['user_profiles']['full_name'] as String?
                 : null),
+
+      raisedByName: json['raiser'] != null
+          ? json['raiser']['full_name'] as String?
+          : null,
 
       approvedByName: json['approver'] != null
           ? json['approver']['full_name'] as String?
@@ -295,6 +301,7 @@ class BillModel {
     PaymentStatus? paymentStatus,
     String? projectName,
     String? createdByName,
+    String? raisedByName,
     String? approvedByName,
   }) {
     return BillModel(
@@ -318,6 +325,7 @@ class BillModel {
       paymentStatus: paymentStatus ?? this.paymentStatus,
       projectName: projectName ?? this.projectName,
       createdByName: createdByName ?? this.createdByName,
+      raisedByName: raisedByName ?? this.raisedByName,
       approvedByName: approvedByName ?? this.approvedByName,
     );
   }

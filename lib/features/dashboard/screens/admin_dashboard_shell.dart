@@ -20,6 +20,7 @@ class DashboardShell extends ConsumerStatefulWidget {
 
 class _DashboardShellState extends ConsumerState<DashboardShell> {
   late int _selectedIndex;
+  final GlobalKey<NavigatorState> _homeNavKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -33,6 +34,8 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     });
   }
 
+  int _pageCount(String role) => role == 'admin' ? 5 : 4;
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
@@ -42,59 +45,122 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         ? const SiteManagerDashboard()
         : const AdminDashboard();
 
+    // Ensure index is valid
+    if (_selectedIndex >= _pageCount(role)) {
+      _selectedIndex = _pageCount(role) - 1;
+    }
+
+    // Wrap home tab in a nested Navigator so screens pushed from home
+    // (e.g. Material Master List) preserve the bottom navigation bar.
+    final homeNavigator = Navigator(
+      key: _homeNavKey,
+      onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => homeScreen),
+    );
+
     final List<Widget> pages = [
-      homeScreen,
+      homeNavigator,
       const ProjectListScreen(),
       const BillsScreen(),
       if (role == 'admin') const VendorAnalyticsDashboard(),
       const ProfileScreen(),
     ];
 
-    // Ensure index is valid
-    if (_selectedIndex >= pages.length) {
-      _selectedIndex = pages.length - 1;
-    }
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selectedIndex == 0) {
+          _homeNavKey.currentState?.maybePop();
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(index: _selectedIndex, children: pages),
+        bottomNavigationBar: _buildBottomNav(context, _selectedIndex, role),
+      ),
+    );
+  }
 
-    return Scaffold(
-      body: pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.normal,
-        ),
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled),
-            label: 'Home',
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            size: 24,
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.business),
-            label: 'Projects',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
-            label: 'Bills',
-          ),
-          if (role == 'admin')
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: 'Reports',
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context, int currentIndex, String role) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                icon: Icons.home_filled,
+                label: 'Home',
+                isSelected: currentIndex == 0,
+                onTap: () => _onItemTapped(0),
+              ),
+              _buildNavItem(
+                icon: Icons.business,
+                label: 'Projects',
+                isSelected: currentIndex == 1,
+                onTap: () => _onItemTapped(1),
+              ),
+              _buildNavItem(
+                icon: Icons.receipt_long,
+                label: 'Bills',
+                isSelected: currentIndex == 2,
+                onTap: () => _onItemTapped(2),
+              ),
+              if (role == 'admin')
+                _buildNavItem(
+                  icon: Icons.bar_chart,
+                  label: 'Reports',
+                  isSelected: currentIndex == 3,
+                  onTap: () => _onItemTapped(3),
+                ),
+              _buildNavItem(
+                icon: Icons.person_outline,
+                label: 'Profile',
+                isSelected: currentIndex == (role == 'admin' ? 4 : 3),
+                onTap: () => _onItemTapped(role == 'admin' ? 4 : 3),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

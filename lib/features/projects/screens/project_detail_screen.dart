@@ -115,6 +115,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                       pathParameters: {'id': widget.projectId},
                     ),
                     onUpdateStatus: () => _showStatusUpdateSheet(context, projectState.project!),
+                    onUpdateProgress: isAdmin
+                        ? () => _showProgressUpdateDialog(context, projectState.project!)
+                        : null,
                   ),
                   const SizedBox(height: 24),
                   _ModuleNavigation(projectId: widget.projectId),
@@ -205,6 +208,81 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     );
   }
 
+  Future<void> _showProgressUpdateDialog(
+    BuildContext context,
+    ProjectModel project,
+  ) async {
+    double sliderValue = project.progress.toDouble();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Update Completion %'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${sliderValue.round()}%',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Slider(
+                value: sliderValue,
+                min: 0,
+                max: 100,
+                divisions: 20,
+                label: '${sliderValue.round()}%',
+                onChanged: (v) => setState(() => sliderValue = v),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text('0%', style: TextStyle(color: Colors.grey)),
+                  Text('100%', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final notifier = ref.read(
+                  projectDetailProvider(widget.projectId).notifier,
+                );
+                final success = await notifier.updateProject({
+                  'progress': sliderValue.round(),
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Progress updated to ${sliderValue.round()}%'
+                            : 'Failed to update progress',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _confirmDelete() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -260,6 +338,7 @@ class _HeroSection extends StatelessWidget {
   final VoidCallback onEditManager;
   final VoidCallback onEditProject;
   final VoidCallback onUpdateStatus;
+  final VoidCallback? onUpdateProgress;
 
   const _HeroSection({
     required this.project,
@@ -267,6 +346,7 @@ class _HeroSection extends StatelessWidget {
     required this.onEditManager,
     required this.onEditProject,
     required this.onUpdateStatus,
+    this.onUpdateProgress,
   });
 
   @override
@@ -418,6 +498,63 @@ class _HeroSection extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Completion progress bar
+          GestureDetector(
+            onTap: onUpdateProgress,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Completion',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          '${project.progress}%',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        if (onUpdateProgress != null) ...[
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.edit,
+                            size: 12,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: project.progress / 100,
+                    minHeight: 8,
+                    backgroundColor: Colors.grey[200],
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
         ],
