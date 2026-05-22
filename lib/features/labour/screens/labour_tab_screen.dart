@@ -36,7 +36,7 @@ class LabourTabScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: const Color(0xFFF4F6FA),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogLaborSheet(context, projectId),
         backgroundColor: const Color(0xFF1E293B),
@@ -80,9 +80,7 @@ backgroundColor: const Color(0xFFF4F6FA),
                                 return Theme(
                                   data: Theme.of(context).copyWith(
                                     colorScheme: ColorScheme.light(
-                                      primary: const Color(
-                                        0xFF1E293B,
-                                      ), // Match dark theme tone
+                                      primary: const Color(0xFF1E293B),
                                       onPrimary: Colors.white,
                                       onSurface: Colors.black,
                                     ),
@@ -329,10 +327,7 @@ class _LaborHistoryCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   DateFormat('MMM dd, yyyy').format(date),
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 if (phone != null) ...[
                   const SizedBox(height: 2),

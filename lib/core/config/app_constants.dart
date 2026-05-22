@@ -64,6 +64,9 @@ class AppConstants {
   /// Bills storage bucket
   static const String bucketBills = 'bills';
 
+  /// Material receipts storage bucket
+  static const String bucketReceipts = 'receipts';
+
   /// Project images storage bucket
   static const String bucketProjectImages = 'project-images';
 

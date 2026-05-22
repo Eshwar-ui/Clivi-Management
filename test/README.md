@@ -38,9 +38,6 @@ Backend tests are best run using Supabase MCP tools directly. See the [walkthrou
 
 #### UI Integration Tests
 ```bash
-# Run on macOS
-flutter test integration_test/project_crud_integration_test.dart -d macos
-
 # Run on Android emulator
 flutter test integration_test/project_crud_integration_test.dart -d android
 
@@ -124,7 +121,7 @@ Password: Admin123
 
 ## 📝 Next Steps
 
-1. Run integration tests on mobile/desktop platform
+1. Run integration tests on Android and iOS
 2. Expand edge case coverage as needed
 3. Add performance testing for large datasets
 4. Implement automated CI/CD test runs

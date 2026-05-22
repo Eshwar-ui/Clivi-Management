@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/config/app_constants.dart';
 import '../models/material_receipt_model.dart';
 
 class ReceiptsRepository {
@@ -30,6 +31,11 @@ class ReceiptsRepository {
     String? notes,
     required List<MaterialReceiptItemModel> items,
   }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('User not authenticated');
+    }
+
     // 1. Generate receipt number
     final receiptNumber = await generateReceiptNumber(projectId);
 
@@ -47,7 +53,7 @@ class ReceiptsRepository {
       'attachment_type': attachmentType,
       'notes': notes,
       'status': 'confirmed', // Auto-confirm or use 'draft'
-      'created_by': _client.auth.currentUser!.id,
+      'created_by': userId,
     };
 
     final receiptResponse = await _client
@@ -138,13 +144,13 @@ class ReceiptsRepository {
         '$projectId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
 
     await _client.storage
-        .from('material-receipts')
+        .from(AppConstants.bucketReceipts)
         .uploadBinary(
           path,
           fileBytes,
           fileOptions: FileOptions(contentType: mimeType),
         );
 
-    return _client.storage.from('material-receipts').getPublicUrl(path);
+    return _client.storage.from(AppConstants.bucketReceipts).getPublicUrl(path);
   }
 }

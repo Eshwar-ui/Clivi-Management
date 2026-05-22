@@ -6,6 +6,7 @@ import 'package:clivi_management/features/bills/screens/bills_screen.dart';
 import 'package:clivi_management/features/dashboard/screens/admin_dashboard.dart';
 import 'package:clivi_management/features/dashboard/screens/site_manager_dashboard.dart';
 import 'package:clivi_management/core/theme/app_colors.dart';
+import 'package:clivi_management/core/ui/responsive.dart';
 import 'package:clivi_management/features/auth/providers/auth_provider.dart';
 import 'package:clivi_management/features/vendors/screens/vendor_analytics_dashboard.dart';
 
@@ -34,23 +35,21 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
     });
   }
 
-  int _pageCount(String role) => role == 'admin' ? 5 : 4;
-
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider);
-    final role = profile?.role ?? 'admin';
+    final authState = ref.watch(authProvider);
+    final role = profile?.role ?? authState.role?.value;
+
+    if (role == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final Widget homeScreen = role == 'site_manager'
         ? const SiteManagerDashboard()
         : const AdminDashboard();
+    final isAdminRole = role == 'admin' || role == 'super_admin';
 
-    // Clamp without mutating _selectedIndex inside build() — use a local
-    // variable to avoid untracked state changes.
-    final safeIndex = _selectedIndex.clamp(0, _pageCount(role) - 1);
-
-    // Wrap home tab in a nested Navigator so screens pushed from home
-    // (e.g. Material Master List) preserve the bottom navigation bar.
     final homeNavigator = Navigator(
       key: _homeNavKey,
       onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => homeScreen),
@@ -60,102 +59,147 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
       homeNavigator,
       const ProjectListScreen(),
       const BillsScreen(),
-      if (role == 'admin') const VendorAnalyticsDashboard(),
+      if (isAdminRole) const VendorAnalyticsDashboard(),
       const ProfileScreen(),
+    ];
+
+    final safeIndex = _selectedIndex.clamp(0, pages.length - 1);
+
+    final destinations = [
+      const _ShellDestination(Icons.home_filled, 'Home'),
+      const _ShellDestination(Icons.business, 'Projects'),
+      const _ShellDestination(Icons.receipt_long, 'Bills'),
+      if (isAdminRole) const _ShellDestination(Icons.bar_chart, 'Reports'),
+      const _ShellDestination(Icons.person_outline, 'Profile'),
     ];
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _selectedIndex == 0) {
+        if (!didPop && safeIndex == 0) {
           _homeNavKey.currentState?.maybePop();
         }
       },
-      child: Scaffold(
-        body: IndexedStack(index: safeIndex, children: pages),
-        bottomNavigationBar: _buildBottomNav(context, safeIndex, role),
-      ),
-    );
-  }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final r = R(Size(constraints.maxWidth, constraints.maxHeight));
 
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          if (r.useRail) {
+            final isExtended = constraints.maxWidth >= 1180;
+
+            return Scaffold(
+              body: Row(
+                children: [
+                  _DesktopSidebar(
+                    destinations: destinations,
+                    selectedIndex: safeIndex,
+                    extended: isExtended,
+                    onSelected: _onItemTapped,
+                  ),
+                  Expanded(child: pages[safeIndex]),
+                ],
+              ),
+            );
+          }
+
+          return Scaffold(
+            body: IndexedStack(index: safeIndex, children: pages),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: safeIndex,
+              onTap: _onItemTapped,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: AppColors.textSecondary,
+              selectedLabelStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
+              ),
+              items: destinations
+                  .map(
+                    (item) => BottomNavigationBarItem(
+                      icon: Icon(item.icon),
+                      label: item.label,
+                    ),
+                  )
+                  .toList(),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _buildBottomNav(BuildContext context, int currentIndex, String role) {
-    return Container(
+class _ShellDestination {
+  const _ShellDestination(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+}
+
+class _DesktopSidebar extends StatelessWidget {
+  const _DesktopSidebar({
+    required this.destinations,
+    required this.selectedIndex,
+    required this.extended,
+    required this.onSelected,
+  });
+
+  final List<_ShellDestination> destinations;
+  final int selectedIndex;
+  final bool extended;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = extended ? 244.0 : 88.0;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      width: width,
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppColors.surface,
+        border: Border(
+          right: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
+        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          padding: EdgeInsets.fromLTRB(
+            extended ? 16 : 12,
+            16,
+            extended ? 16 : 12,
+            16,
+          ),
+          child: Column(
+            crossAxisAlignment: extended
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
-              _buildNavItem(
-                icon: Icons.home_filled,
-                label: 'Home',
-                isSelected: currentIndex == 0,
-                onTap: () => _onItemTapped(0),
-              ),
-              _buildNavItem(
-                icon: Icons.business,
-                label: 'Projects',
-                isSelected: currentIndex == 1,
-                onTap: () => _onItemTapped(1),
-              ),
-              _buildNavItem(
-                icon: Icons.receipt_long,
-                label: 'Bills',
-                isSelected: currentIndex == 2,
-                onTap: () => _onItemTapped(2),
-              ),
-              if (role == 'admin')
-                _buildNavItem(
-                  icon: Icons.bar_chart,
-                  label: 'Reports',
-                  isSelected: currentIndex == 3,
-                  onTap: () => _onItemTapped(3),
+              _SidebarHeader(extended: extended),
+              const SizedBox(height: 22),
+              Expanded(
+                child: ListView.separated(
+                  padding: EdgeInsets.zero,
+                  itemCount: destinations.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    final item = destinations[index];
+                    return _DesktopNavItem(
+                      icon: item.icon,
+                      label: item.label,
+                      selected: index == selectedIndex,
+                      extended: extended,
+                      onTap: () => onSelected(index),
+                    );
+                  },
                 ),
-              _buildNavItem(
-                icon: Icons.person_outline,
-                label: 'Profile',
-                isSelected: currentIndex == (role == 'admin' ? 4 : 3),
-                onTap: () => _onItemTapped(role == 'admin' ? 4 : 3),
               ),
             ],
           ),
@@ -165,3 +209,114 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
   }
 }
 
+class _SidebarHeader extends StatelessWidget {
+  const _SidebarHeader({required this.extended});
+
+  final bool extended;
+
+  @override
+  Widget build(BuildContext context) {
+    final logo = ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.asset(
+        'assets/images/logo.png',
+        width: 38,
+        height: 38,
+        fit: BoxFit.contain,
+      ),
+    );
+
+    if (!extended) {
+      return SizedBox(width: 56, height: 44, child: Center(child: logo));
+    }
+
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          logo,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Clivi',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopNavItem extends StatelessWidget {
+  const _DesktopNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.extended,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final bool extended;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = selected ? AppColors.primary : AppColors.textSecondary;
+    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: foreground,
+      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+    );
+
+    final navItem = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          height: 46,
+          padding: EdgeInsets.symmetric(horizontal: extended ? 12 : 0),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primary.withValues(alpha: 0.18)
+                  : Colors.transparent,
+            ),
+          ),
+          child: extended
+              ? Row(
+                  children: [
+                    Icon(icon, size: 21, color: foreground),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textStyle,
+                      ),
+                    ),
+                  ],
+                )
+              : Center(child: Icon(icon, size: 22, color: foreground)),
+        ),
+      ),
+    );
+
+    return extended ? navItem : Tooltip(message: label, child: navItem);
+  }
+}
