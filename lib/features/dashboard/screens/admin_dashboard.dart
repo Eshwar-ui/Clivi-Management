@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../auth/data/models/user_profile_model.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -44,21 +45,62 @@ class AdminDashboard extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => _refreshAll(ref),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatsRow(context, statsState),
-                const SizedBox(height: 20),
-                _buildOperationsSection(context, operationsCounts),
-                const SizedBox(height: 18),
-                _buildActiveProjectsSection(context, ref, projectsState),
-                const SizedBox(height: 18),
-                _buildRecentOpsSection(context, ref, activityState),
-                const SizedBox(height: 24),
-              ],
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatsRow(context, statsState),
+                        const SizedBox(height: 20),
+                        _buildOperationsSection(context, operationsCounts),
+                        const SizedBox(height: 18),
+                        if (r.isDesktop)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 6,
+                                child: _buildActiveProjectsSection(
+                                  context,
+                                  ref,
+                                  projectsState,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 5,
+                                child: _buildRecentOpsSection(
+                                  context,
+                                  ref,
+                                  activityState,
+                                ),
+                              ),
+                            ],
+                          )
+                        else ...[
+                          _buildActiveProjectsSection(
+                            context,
+                            ref,
+                            projectsState,
+                          ),
+                          const SizedBox(height: 18),
+                          _buildRecentOpsSection(context, ref, activityState),
+                        ],
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -366,67 +408,73 @@ class AdminDashboard extends ConsumerWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 14),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: operations.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              mainAxisExtent: 140,
-            ),
-            itemBuilder: (context, index) {
-              final op = operations[index];
-              return InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: op.onTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: op.bg,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(op.icon, color: AppColors.primary),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        op.label,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        op.subtitle,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 900 ? 4 : 2;
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: operations.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  mainAxisExtent: 140,
                 ),
+                itemBuilder: (context, index) {
+                  final op = operations[index];
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: op.onTap,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: op.bg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(op.icon, color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            op.label,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            op.subtitle,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),

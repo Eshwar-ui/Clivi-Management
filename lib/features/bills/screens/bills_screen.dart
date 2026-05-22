@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
@@ -96,86 +97,34 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
           ),
         ),
         showBackButton: false,
+        constrainContent: true,
+        actions: [_buildDateFilterButton()],
 
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(84),
+          preferredSize: const Size.fromHeight(56),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: InkWell(
-                    onTap: _pickDate,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 16,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _selectedFilterDate != null
-                                ? DateFormat(
-                                    'dd-MM-yyyy',
-                                  ).format(_selectedFilterDate!)
-                                : 'Select Date',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          if (_selectedFilterDate != null) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () =>
-                                  setState(() => _selectedFilterDate = null),
-                              child: Icon(
-                                Icons.close,
-                                size: 16,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF2F8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TabBar(
+                indicatorSize: TabBarIndicatorSize.tab,
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2F8),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: TabBar(
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    controller: _tabController,
-                    indicator: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    dividerColor: Colors.transparent,
-                    tabs: [
-                      _buildTab('Pending', pendingCount),
-                      _buildTab('Completed', completedCount),
-                    ],
-                  ),
-                ),
-              ],
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                dividerColor: Colors.transparent,
+                tabs: [
+                  _buildTab('Pending', pendingCount),
+                  _buildTab('Completed', completedCount),
+                ],
+              ),
             ),
           ),
         ),
@@ -228,6 +177,50 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
     return Tab(child: Text('$label($count)'));
   }
 
+  Widget _buildDateFilterButton() {
+    return InkWell(
+      onTap: _pickDate,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 16,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _selectedFilterDate != null
+                  ? DateFormat('dd-MM-yyyy').format(_selectedFilterDate!)
+                  : 'Select Date',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            if (_selectedFilterDate != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => setState(() => _selectedFilterDate = null),
+                child: Icon(
+                  Icons.close,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBillList({
     required List<BillModel> bills,
     required bool isAdmin,
@@ -260,49 +253,97 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
       groupedBills[dateKey]!.add(bill);
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: groupedBills.length,
-      itemBuilder: (context, index) {
-        final dateKey = groupedBills.keys.elementAt(index);
-        final dateBills = groupedBills[dateKey]!;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+        final columns = r.w >= 1180
+            ? 3
+            : r.w >= 760
+            ? 2
+            : 1;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                dateKey.toUpperCase(),
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: groupedBills.length,
+              itemBuilder: (context, index) {
+                final dateKey = groupedBills.keys.elementAt(index);
+                final dateBills = groupedBills[dateKey]!;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        dateKey.toUpperCase(),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    if (columns == 1)
+                      ...dateBills.map(
+                        (bill) => _buildBillCard(
+                          bill,
+                          isAdmin: isAdmin,
+                          isSiteManager: isSiteManager,
+                        ),
+                      )
+                    else
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: dateBills.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 238,
+                        ),
+                        itemBuilder: (context, billIndex) => _buildBillCard(
+                          dateBills[billIndex],
+                          isAdmin: isAdmin,
+                          isSiteManager: isSiteManager,
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                  ],
+                );
+              },
             ),
-            ...dateBills.map(
-              (bill) => _BillCard(
-                bill: bill,
-                onTap: isAdmin && !bill.status.isCompleted
-                    ? () => _showAdminApprovalDialog(bill)
-                    : null,
-                canEdit: (isSiteManager && !bill.status.isCompleted) || isAdmin,
-                canDelete: isAdmin,
-                onMenuAction: (action) {
-                  switch (action) {
-                    case _BillMenuAction.edit:
-                      _showEditBillDialog(bill);
-                      break;
-                    case _BillMenuAction.delete:
-                      _confirmDeleteBill(bill);
-                      break;
-                  }
-                },
-              ),
-            ),
-          ],
+          ),
         );
+      },
+    );
+  }
+
+  Widget _buildBillCard(
+    BillModel bill, {
+    required bool isAdmin,
+    required bool isSiteManager,
+  }) {
+    return _BillCard(
+      bill: bill,
+      onTap: isAdmin && !bill.status.isCompleted
+          ? () => _showAdminApprovalDialog(bill)
+          : null,
+      canEdit: (isSiteManager && !bill.status.isCompleted) || isAdmin,
+      canDelete: isAdmin,
+      onMenuAction: (action) {
+        switch (action) {
+          case _BillMenuAction.edit:
+            _showEditBillDialog(bill);
+            break;
+          case _BillMenuAction.delete:
+            _confirmDeleteBill(bill);
+            break;
+        }
       },
     );
   }
@@ -786,131 +827,161 @@ class _BillCard extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 360;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 14,
-                    color: AppColors.textSecondary,
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            DateFormat('dd-MM-yyyy').format(bill.billDate),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '₹${bill.amount.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: isNarrow ? 24 : 30,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    DateFormat('dd-MM-yyyy').format(bill.billDate),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '₹${bill.amount.toStringAsFixed(0)}',
+                    bill.title,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 30,
-                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 10),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Payment Type : ',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextSpan(
+                          text: bill.paymentStatus.label,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Raised By : ',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextSpan(
+                          text:
+                              bill.vendorName ??
+                              bill.createdByName ??
+                              bill.raisedBy ??
+                              '-',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _StatusChip(
+                              label: bill.status.isCompleted
+                                  ? 'Completed'
+                                  : 'Pending',
+                              color: bill.status.isCompleted
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                            ),
+                            _StatusChip(
+                              label: bill.paymentStatus.label,
+                              color: AppColors.info,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (canEdit || canDelete)
+                        PopupMenuButton<_BillMenuAction>(
+                          icon: Icon(
+                            Icons.more_vert,
+                            color: AppColors.textSecondary,
+                          ),
+                          onSelected: onMenuAction,
+                          itemBuilder: (context) {
+                            final items = <PopupMenuEntry<_BillMenuAction>>[];
+                            if (canEdit) {
+                              items.add(
+                                const PopupMenuItem(
+                                  value: _BillMenuAction.edit,
+                                  child: Text('Edit'),
+                                ),
+                              );
+                            }
+                            if (canDelete) {
+                              items.add(
+                                const PopupMenuItem(
+                                  value: _BillMenuAction.delete,
+                                  child: Text('Delete'),
+                                ),
+                              );
+                            }
+                            return items;
+                          },
+                        ),
+                      if (onTap != null)
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.textSecondary,
+                        ),
+                    ],
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                bill.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Payment Type : ',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    TextSpan(
-                      text: bill.paymentStatus.label,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Raised By : ',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    TextSpan(
-                      text:
-                          bill.vendorName ??
-                          bill.createdByName ??
-                          bill.raisedBy ??
-                          '-',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _StatusChip(
-                    label: bill.status.isCompleted ? 'Completed' : 'Pending',
-                    color: bill.status.isCompleted
-                        ? AppColors.success
-                        : AppColors.warning,
-                  ),
-                  const SizedBox(width: 8),
-                  _StatusChip(
-                    label: bill.paymentStatus.label,
-                    color: AppColors.info,
-                  ),
-                  const Spacer(),
-                  if (canEdit || canDelete)
-                    PopupMenuButton<_BillMenuAction>(
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: AppColors.textSecondary,
-                      ),
-                      onSelected: onMenuAction,
-                      itemBuilder: (context) {
-                        final items = <PopupMenuEntry<_BillMenuAction>>[];
-                        if (canEdit) {
-                          items.add(
-                            const PopupMenuItem(
-                              value: _BillMenuAction.edit,
-                              child: Text('Edit'),
-                            ),
-                          );
-                        }
-                        if (canDelete) {
-                          items.add(
-                            const PopupMenuItem(
-                              value: _BillMenuAction.delete,
-                              child: Text('Delete'),
-                            ),
-                          );
-                        }
-                        return items;
-                      },
-                    ),
-                  if (onTap != null)
-                    Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                ],
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

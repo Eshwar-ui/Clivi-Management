@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../../auth/data/models/user_profile_model.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -28,63 +29,53 @@ class SiteManagerDashboard extends ConsumerWidget {
           onRefresh: () => _refreshAll(ref),
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+
               return SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Gradient stats card
-                      _buildStatsCard(context, statsState),
-
-                      const SizedBox(height: 20),
-
-                      // Operations section
-                      _buildOperationsSection(context),
-
-                      const SizedBox(height: 20),
-
-                      // Active Projects section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Active Projects',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            TextButton(
-                              onPressed: () => context.push('/projects'),
-                              child: Text(
-                                'View All',
-                                style: TextStyle(color: AppColors.primary),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                      maxWidth: r.maxContentWidth,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatsCard(context, statsState),
+                        const SizedBox(height: 20),
+                        _buildOperationsSection(context),
+                        const SizedBox(height: 20),
+                        if (r.isDesktop)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 6,
+                                child: _buildActiveProjectsBlock(
+                                  context,
+                                  projectsState,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildProjectsList(context, projectsState),
-
-                      const SizedBox(height: 20),
-
-                      // Recent Operations section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'Recent Operations',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildRecentOperations(context, activityState),
-
-                      const SizedBox(height: 20),
-                    ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 5,
+                                child: _buildRecentOperationsBlock(
+                                  context,
+                                  activityState,
+                                ),
+                              ),
+                            ],
+                          )
+                        else ...[
+                          _buildActiveProjectsBlock(context, projectsState),
+                          const SizedBox(height: 20),
+                          _buildRecentOperationsBlock(context, activityState),
+                        ],
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -92,6 +83,61 @@ class SiteManagerDashboard extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActiveProjectsBlock(
+    BuildContext context,
+    ActiveProjectsState projectsState,
+  ) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Active Projects',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () => context.push('/projects'),
+                child: Text(
+                  'View All',
+                  style: TextStyle(color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildProjectsList(context, projectsState),
+      ],
+    );
+  }
+
+  Widget _buildRecentOperationsBlock(
+    BuildContext context,
+    RecentActivityState activityState,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Recent Operations',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildRecentOperations(context, activityState),
+      ],
     );
   }
 

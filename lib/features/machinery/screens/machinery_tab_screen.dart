@@ -64,9 +64,7 @@ class MachineryTabScreen extends ConsumerWidget {
                               return Theme(
                                 data: Theme.of(context).copyWith(
                                   colorScheme: ColorScheme.light(
-                                    primary: const Color(
-                                      0xFF1E293B,
-                                    ), // Match dark theme tone
+                                    primary: const Color(0xFF1E293B),
                                     onPrimary: Colors.white,
                                     onSurface: Colors.black,
                                   ),

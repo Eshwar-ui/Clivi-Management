@@ -98,27 +98,32 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             return const Center(child: Text('Project not found'));
           }
 
-          return ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: Padding(
-              padding: r.pad.copyWith(bottom: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _HeroSection(
-                    project: projectState.project!,
-                    isAdmin: isAdmin,
-                    onEditManager: () => _showAssignManagerSheet(context),
-                    onEditProject: () => context.pushNamed(
-                      'edit-project',
-                      pathParameters: {'id': widget.projectId},
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+              child: Padding(
+                padding: r.pad.copyWith(bottom: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _HeroSection(
+                      project: projectState.project!,
+                      isAdmin: isAdmin,
+                      onEditManager: () => _showAssignManagerSheet(context),
+                      onEditProject: () => context.pushNamed(
+                        'edit-project',
+                        pathParameters: {'id': widget.projectId},
+                      ),
+                      onUpdateStatus: () => _showStatusUpdateSheet(
+                        context,
+                        projectState.project!,
+                      ),
                     ),
-                    onUpdateStatus: () =>
-                        _showStatusUpdateSheet(context, projectState.project!),
-                  ),
-                  const SizedBox(height: 24),
-                  _ModuleNavigation(projectId: widget.projectId),
-                ],
+                    const SizedBox(height: 24),
+                    _ModuleNavigation(projectId: widget.projectId),
+                  ],
+                ),
               ),
             ),
           );
@@ -486,45 +491,70 @@ class _ModuleNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _ModuleNavCard(
-          title: 'Blueprints',
-          subtitle: 'Project Documents / Drawings',
-          icon: Icons.description_outlined,
-          color: const Color(0xFFE8F0FE), // Light Blue
-          iconColor: const Color(0xFF1967D2),
-          onTap: () => context.goNamed(
-            'project-blueprints',
-            pathParameters: {'id': projectId},
-          ),
+    final modules = [
+      _ModuleNavCard(
+        title: 'Blueprints',
+        subtitle: 'Project documents / drawings',
+        icon: Icons.description_outlined,
+        color: const Color(0xFFE8F0FE),
+        iconColor: const Color(0xFF1967D2),
+        onTap: () => context.goNamed(
+          'project-blueprints',
+          pathParameters: {'id': projectId},
         ),
-        const SizedBox(height: 16),
-        _ModuleNavCard(
-          title: 'Operations',
-          subtitle: 'Consumption And Expenses',
-          icon: Icons.engineering_outlined,
-          color: const Color(0xFFE3F2FD),
-          iconColor: const Color(0xFF1565C0),
-          // Note: Mockup shows specific design, we map to existing Operations screen
-          onTap: () => context.goNamed(
-            'project-operations',
-            pathParameters: {'id': projectId},
-          ),
+      ),
+      _ModuleNavCard(
+        title: 'Operations',
+        subtitle: 'Consumption and expenses',
+        icon: Icons.engineering_outlined,
+        color: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1565C0),
+        onTap: () => context.goNamed(
+          'project-operations',
+          pathParameters: {'id': projectId},
         ),
-        const SizedBox(height: 16),
-        _ModuleNavCard(
-          title: 'Reports / Insights',
-          subtitle: 'Bills And Reports',
-          icon: Icons.analytics_outlined,
-          color: const Color(0xFFF3E5F5), // Light purple tone
-          iconColor: const Color(0xFF7B1FA2),
-          onTap: () => context.goNamed(
-            'project-reports',
-            pathParameters: {'id': projectId},
-          ),
+      ),
+      _ModuleNavCard(
+        title: 'Reports / Insights',
+        subtitle: 'Bills and reports',
+        icon: Icons.analytics_outlined,
+        color: const Color(0xFFF3E5F5),
+        iconColor: const Color(0xFF7B1FA2),
+        onTap: () => context.goNamed(
+          'project-reports',
+          pathParameters: {'id': projectId},
         ),
-      ],
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useGrid = constraints.maxWidth >= 820;
+
+        if (!useGrid) {
+          return Column(
+            children: [
+              for (var i = 0; i < modules.length; i++) ...[
+                modules[i],
+                if (i != modules.length - 1) const SizedBox(height: 16),
+              ],
+            ],
+          );
+        }
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: modules.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            mainAxisExtent: 150,
+          ),
+          itemBuilder: (context, index) => modules[index],
+        );
+      },
     );
   }
 }
