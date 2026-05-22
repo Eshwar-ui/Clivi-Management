@@ -45,10 +45,9 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         ? const SiteManagerDashboard()
         : const AdminDashboard();
 
-    // Ensure index is valid
-    if (_selectedIndex >= _pageCount(role)) {
-      _selectedIndex = _pageCount(role) - 1;
-    }
+    // Clamp without mutating _selectedIndex inside build() — use a local
+    // variable to avoid untracked state changes.
+    final safeIndex = _selectedIndex.clamp(0, _pageCount(role) - 1);
 
     // Wrap home tab in a nested Navigator so screens pushed from home
     // (e.g. Material Master List) preserve the bottom navigation bar.
@@ -73,8 +72,8 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
         }
       },
       child: Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: pages),
-        bottomNavigationBar: _buildBottomNav(context, _selectedIndex, role),
+        body: IndexedStack(index: safeIndex, children: pages),
+        bottomNavigationBar: _buildBottomNav(context, safeIndex, role),
       ),
     );
   }

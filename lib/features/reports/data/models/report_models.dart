@@ -39,6 +39,27 @@ class FinancialStats {
 
   /// Empty state
   static const empty = FinancialStats();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FinancialStats &&
+          totalExpenses == other.totalExpenses &&
+          growthPercentage == other.growthPercentage &&
+          laborCost == other.laborCost &&
+          materialCost == other.materialCost &&
+          machineryCost == other.machineryCost &&
+          otherCost == other.otherCost;
+
+  @override
+  int get hashCode => Object.hash(
+        totalExpenses,
+        growthPercentage,
+        laborCost,
+        materialCost,
+        machineryCost,
+        otherCost,
+      );
 }
 
 /// Data point for charts

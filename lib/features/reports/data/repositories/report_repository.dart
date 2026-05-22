@@ -28,7 +28,12 @@ class ReportRepository {
         }
       }
 
-      // Fallback: compute directly from bills table when RPC returns zeros
+      // Fallback: compute directly from bills table when RPC returns zeros.
+      // Log so we know when the RPC is silent in production.
+      logger.w(
+        'get_financial_metrics RPC returned empty/zero — falling back to '
+        'direct bills query (period: ${period.value}, project: $projectId)',
+      );
       return _computeFinancialStatsFromBills(period: period, projectId: projectId);
     } on PostgrestException catch (e) {
       logger.e('Failed to fetch financial metrics: ${e.message}');
@@ -51,12 +56,14 @@ class ReportRepository {
   }) async {
     final now = DateTime.now();
     final DateTime startDate;
+    // Use Duration subtraction to avoid month-overflow edge cases
+    // (e.g. Jan 31 minus 1 month would normalise to March 2 with DateTime).
     switch (period) {
       case TimePeriod.monthly:
-        startDate = DateTime(now.year, now.month - 1, now.day);
+        startDate = now.subtract(const Duration(days: 30));
         break;
       case TimePeriod.quarterly:
-        startDate = DateTime(now.year, now.month - 3, now.day);
+        startDate = now.subtract(const Duration(days: 90));
         break;
       case TimePeriod.yearly:
         startDate = DateTime(now.year - 1, now.month, now.day);

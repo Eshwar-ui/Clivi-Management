@@ -206,21 +206,9 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
         loading: () => const LoadingWidget(message: 'Loading bills...'),
         error: (err, stack) => AppErrorWidget(
           message: err.toString(),
-          onRetry: () =>
-              ref.refresh(dashboardBillsStreamProvider(isSiteManager)),
+          onRetry: _refreshBillData,
         ),
       ),
-      // floatingActionButton: isSiteManager
-      //     ? FloatingActionButton(
-      //         onPressed: () => context.push('/bills/create'),
-      //         child: const Icon(Icons.add),
-      //       )
-      //     : isAdmin
-      //         ? FloatingActionButton(
-      //             onPressed: () => context.push('/bills/approval-queue'),
-      //             child: const Icon(Icons.playlist_add_check_circle_outlined),
-      //           )
-      //         : null,
     );
   }
 
@@ -344,6 +332,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
     DateTime selectedBillDate = bill.billDate;
     bool isSaving = false;
 
+    try {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -592,6 +581,13 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
         );
       },
     );
+    } finally {
+      // Dispose controllers regardless of how the sheet is dismissed
+      titleController.dispose();
+      amountController.dispose();
+      vendorController.dispose();
+      descriptionController.dispose();
+    }
   }
 
   Future<void> _confirmDeleteBill(BillModel bill) async {

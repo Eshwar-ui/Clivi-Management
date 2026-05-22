@@ -102,7 +102,7 @@ class MaterialVendorAggregatesRequest {
           toDate == other.toDate;
 
   @override
-  int get hashCode => tab.hashCode ^ fromDate.hashCode ^ toDate.hashCode;
+  int get hashCode => Object.hash(tab, fromDate, toDate);
 }
 
 final materialVendorAggregatesProvider =
@@ -142,8 +142,7 @@ class VendorProjectAggregatesRequest {
           toDate == other.toDate;
 
   @override
-  int get hashCode =>
-      vendorId.hashCode ^ tab.hashCode ^ fromDate.hashCode ^ toDate.hashCode;
+  int get hashCode => Object.hash(vendorId, tab, fromDate, toDate);
 }
 
 final vendorProjectAggregatesProvider =
@@ -187,12 +186,7 @@ class VendorProjectDailyLogsRequest {
           toDate == other.toDate;
 
   @override
-  int get hashCode =>
-      vendorId.hashCode ^
-      projectId.hashCode ^
-      tab.hashCode ^
-      fromDate.hashCode ^
-      toDate.hashCode;
+  int get hashCode => Object.hash(vendorId, projectId, tab, fromDate, toDate);
 }
 
 final vendorProjectDailyLogsProvider =

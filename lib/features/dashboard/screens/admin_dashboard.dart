@@ -377,54 +377,6 @@ class AdminDashboard extends ConsumerWidget {
     );
   }
 
-  // ignore: unused_element
-  Widget _buildStatItem(
-    BuildContext context, {
-    required IconData icon,
-    required String value,
-    required String label,
-    required bool isLoading,
-  }) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: Colors.white, size: 24),
-        ),
-        const SizedBox(height: 12),
-        if (isLoading)
-          Container(
-            width: 40,
-            height: 28,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          )
-        else
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.8),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildOperationsSection(
     BuildContext context,
@@ -895,14 +847,14 @@ class AdminDashboard extends ConsumerWidget {
       );
     }
 
+    final displayed = state.activities.take(5).toList();
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 5),
-      itemCount: state.activities.take(5).length,
+      itemCount: displayed.length,
       itemBuilder: (context, index) {
-        final activity = state.activities[index];
-        return _buildOperationItem2(context, activity);
+        return _buildOperationItem2(context, displayed[index]);
       },
     );
   }

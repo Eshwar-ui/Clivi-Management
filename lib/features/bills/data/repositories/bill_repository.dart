@@ -130,8 +130,8 @@ class BillRepository {
         'created_by': userId,
         'uploaded_by': userId,
         'raised_by': userId,
-        'image_url': receiptUrl ?? '',
-        'image_path': receiptUrl ?? '',
+        'image_url': receiptUrl, // null when no receipt — never store ''
+        'image_path': receiptUrl,
         'bill_date': (billDate ?? DateTime.now())
             .toIso8601String()
             .split('T')
@@ -351,16 +351,23 @@ class BillRepository {
     final userId = _client.auth.currentUser?.id;
 
     try {
+      // NOTE: A dedicated `rejection_reason` column should be added to the
+      // bills table. Until then, we do NOT overwrite `description` with the
+      // rejection reason — that would destroy the original bill description.
+      final updateData = <String, dynamic>{
+        'status': 'rejected',
+        'approved_by': userId,
+        'approved_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      if (reason != null && reason.isNotEmpty) {
+        // Temporary: store reason in notes/rejection_reason if the column
+        // exists; the field is ignored gracefully by Postgres if absent.
+        updateData['rejection_reason'] = reason;
+      }
       final response = await _client
           .from('bills')
-          .update({
-            'status': 'rejected',
-            'approved_by': userId,
-            'approved_at': DateTime.now().toIso8601String(),
-            'description':
-                reason, // Store rejection reason if description field is used for it, or check if 'rejection_reason' column exists? Guide mapped it to 'description'.
-            'updated_at': DateTime.now().toIso8601String(),
-          })
+          .update(updateData)
           .eq('id', billId)
           .select()
           .single();

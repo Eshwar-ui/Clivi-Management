@@ -210,10 +210,19 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              final repository = ref.read(inventoryRepositoryProvider);
-              await repository.deleteSupplier(supplier.id);
-              ref.invalidate(suppliersProvider);
-              if (context.mounted) Navigator.pop(context);
+              try {
+                final repository = ref.read(inventoryRepositoryProvider);
+                await repository.deleteSupplier(supplier.id);
+                ref.invalidate(suppliersProvider);
+                if (context.mounted) Navigator.pop(context);
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Delete'),
           ),

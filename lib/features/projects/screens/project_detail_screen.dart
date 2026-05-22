@@ -569,11 +569,7 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Custom labels for the design
-    String label = status.displayName;
-    if (status == ProjectStatus.inProgress) {
-      label = 'PHASE 2 WORK'; // Matching mockup vibe
-    }
+    final label = status.displayName;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

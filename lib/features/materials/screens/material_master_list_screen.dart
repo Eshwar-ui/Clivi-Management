@@ -192,7 +192,6 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                         return InkWell(
                           borderRadius: BorderRadius.circular(8),
                           onLongPress: () => _showGradeOptions(context, g),
-                          onTap: () => _showGradeOptions(context, g),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(

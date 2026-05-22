@@ -46,11 +46,12 @@ class DashboardRepository {
         },
       );
 
-      if (response.isEmpty) {
+      final list = response as List<dynamic>? ?? [];
+      if (list.isEmpty) {
         return [];
       }
 
-      return (response as List<dynamic>)
+      return list
           .map<OperationLog>((json) => OperationLog.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
@@ -68,11 +69,12 @@ class DashboardRepository {
         params: {'p_limit': limit},
       );
 
-      if (response.isEmpty) {
+      final list = response as List<dynamic>? ?? [];
+      if (list.isEmpty) {
         return [];
       }
 
-      return (response as List<dynamic>)
+      return list
           .map<ProjectSummary>((json) => ProjectSummary.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
@@ -105,11 +107,12 @@ class DashboardRepository {
           .order('created_at', ascending: false)
           .limit(limit);
 
-      if (response.isEmpty) {
+      final list = response as List<dynamic>? ?? [];
+      if (list.isEmpty) {
         return [];
       }
 
-      return (response as List<dynamic>)
+      return list
           .map<ProjectSummary>((json) => ProjectSummary.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {

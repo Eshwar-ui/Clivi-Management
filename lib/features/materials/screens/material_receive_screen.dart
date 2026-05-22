@@ -10,6 +10,7 @@ import '../../inventory/data/models/supplier_model.dart';
 import '../../inventory/providers/inventory_provider.dart'
     show suppliersProvider, inventoryRepositoryProvider;
 import '../data/models/material_master_model.dart';
+import 'material_master_list_screen.dart' show allMaterialsProvider;
 
 // Model to hold form state for each entry
 class MaterialEntryForm {
@@ -314,13 +315,8 @@ class _EntryCard extends ConsumerStatefulWidget {
 }
 
 class _EntryCardState extends ConsumerState<_EntryCard> {
-  // Local state for async fetches in dropdowns
-  List<MaterialMaster> _masterMaterials = [];
+  // Grades are per-material; materials are shared via allMaterialsProvider
   List<MaterialGrade> _availableGrades = [];
-  // ignore: unused_field
-  bool _loadingMaterials = false;
-  // ignore: unused_field
-  bool _loadingGrades = false;
 
   final List<String> _unitItems = const [
     'Bags',
@@ -335,30 +331,9 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
   @override
   void initState() {
     super.initState();
-    _fetchInitialData();
-  }
-
-  Future<void> _fetchInitialData() async {
-    _fetchMaterials();
-  }
-
-  Future<void> _fetchMaterials() async {
-    setState(() => _loadingMaterials = true);
-    try {
-      final materials = await ref
-          .read(materialMasterRepositoryProvider)
-          .getAllMaterials();
-
-      if (mounted) setState(() => _masterMaterials = materials);
-    } catch (e) {
-      debugPrint('Error fetching master materials: $e');
-    } finally {
-      if (mounted) setState(() => _loadingMaterials = false);
-    }
   }
 
   Future<void> _fetchGrades(String materialName) async {
-    setState(() => _loadingGrades = true);
     try {
       final grades = await ref
           .read(materialMasterRepositoryProvider)
@@ -367,8 +342,6 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
     } catch (e) {
       debugPrint('Error fetching grades: $e');
       if (mounted) setState(() => _availableGrades = []);
-    } finally {
-      if (mounted) setState(() => _loadingGrades = false);
     }
   }
 
@@ -542,6 +515,9 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
   @override
   Widget build(BuildContext context) {
     final entry = widget.entry;
+    // Use the shared provider so all entry cards reuse one fetch, not N.
+    final materialsAsync = ref.watch(allMaterialsProvider);
+    final masterMaterials = materialsAsync.valueOrNull ?? <MaterialMaster>[];
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -582,7 +558,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                   vertical: 16,
                 ),
               ),
-              items: _masterMaterials.map((item) {
+              items: masterMaterials.map((item) {
                 return DropdownMenuItem<MaterialMaster>(
                   value: item,
                   child: Text(item.name),

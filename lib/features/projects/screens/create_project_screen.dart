@@ -67,6 +67,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   void _loadProjectData() {
     // Load existing project data for editing
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       final state = ref.read(projectDetailProvider(widget.projectId!));
       final project = state.project;
 
@@ -339,7 +340,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                     _buildLabel('Client Name'),
                     _buildTextField(
                       controller: _clientNameController,
-                      hintText: 'Mr.Narashima', // Example from design
+                      hintText: 'Client / owner name',
                     ),
                     const SizedBox(height: 16),
 
