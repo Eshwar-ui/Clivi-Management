@@ -383,25 +383,34 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                           .first,
                     },
                   );
-              if (!mounted) return;
-
-              setModalState(() => isSaving = false);
+              // Use sheetContext.mounted for modal state, outer mounted for
+              // ScaffoldMessenger — prevents setState on a disposed widget
+              // when the outer screen is popped while the save is in flight.
+              // sheetContext.mounted guards the modal setState;
+              // this.mounted + this.context guards the outer Scaffold snackbar.
+              if (sheetContext.mounted) {
+                setModalState(() => isSaving = false);
+              }
               if (success) {
                 _refreshBillData();
                 if (sheetContext.mounted) {
                   Navigator.of(sheetContext).pop();
                 }
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(content: Text('Bill updated successfully')),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(content: Text('Bill updated successfully')),
+                  );
+                }
               } else {
-                final state = ref.read(billControllerProvider);
-                final errorMessage = state.hasError
-                    ? state.error.toString()
-                    : 'Failed to update bill';
-                ScaffoldMessenger.of(
-                  this.context,
-                ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                if (mounted) {
+                  final state = ref.read(billControllerProvider);
+                  final errorMessage = state.hasError
+                      ? state.error.toString()
+                      : 'Failed to update bill';
+                  ScaffoldMessenger.of(
+                    this.context,
+                  ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                }
               }
             }
 
@@ -645,25 +654,34 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     paymentStatus: selectedPaymentStatus,
                     markCompleted: markCompleted,
                   );
-              if (!mounted) return;
-
-              setModalState(() => isSaving = false);
+              // Use sheetContext.mounted for modal state, outer mounted for
+              // ScaffoldMessenger — prevents setState on a disposed widget
+              // when the outer screen is popped while the save is in flight.
+              // sheetContext.mounted guards the modal setState;
+              // this.mounted + this.context guards the outer Scaffold snackbar.
+              if (sheetContext.mounted) {
+                setModalState(() => isSaving = false);
+              }
               if (success) {
                 _refreshBillData();
                 if (sheetContext.mounted) {
                   Navigator.of(sheetContext).pop();
                 }
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(content: Text('Bill updated successfully')),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(content: Text('Bill updated successfully')),
+                  );
+                }
               } else {
-                final state = ref.read(billControllerProvider);
-                final errorMessage = state.hasError
-                    ? state.error.toString()
-                    : 'Failed to update bill';
-                ScaffoldMessenger.of(
-                  this.context,
-                ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                if (mounted) {
+                  final state = ref.read(billControllerProvider);
+                  final errorMessage = state.hasError
+                      ? state.error.toString()
+                      : 'Failed to update bill';
+                  ScaffoldMessenger.of(
+                    this.context,
+                  ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                }
               }
             }
 

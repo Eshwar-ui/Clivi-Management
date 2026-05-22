@@ -214,7 +214,9 @@ class BillRepository {
         query = query.eq('status', status);
       }
 
-      final response = await query.order('created_at', ascending: false);
+      final response = await query
+          .order('created_at', ascending: false)
+          .limit(500); // safety cap — prevents full-table fetch on large datasets
       return (response as List)
           .map((json) => BillModel.fromJson(json))
           .toList();

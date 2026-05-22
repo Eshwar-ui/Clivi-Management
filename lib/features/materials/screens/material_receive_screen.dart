@@ -630,7 +630,10 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
               onChanged: (g) {
                 setState(() => entry.selectedGrade = g);
               },
-              validator: (val) => val == null ? 'Required' : null,
+              // Grade is optional when the material has no grades defined —
+              // requiring it would permanently block submission.
+              validator: (val) =>
+                  val == null && _availableGrades.isNotEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
 
