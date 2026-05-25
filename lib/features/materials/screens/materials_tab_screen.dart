@@ -34,6 +34,7 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
+          tooltip: 'Back',
           onPressed: () => Navigator.pop(context),
         ),
         titleTextStyle: const TextStyle(

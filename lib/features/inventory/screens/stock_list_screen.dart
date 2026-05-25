@@ -25,12 +25,14 @@ class StockListScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text('Stock - $projectName'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
+            tooltip: 'Add stock',
             onPressed: () => _showAddStockDialog(context, ref),
           ),
         ],

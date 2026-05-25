@@ -19,6 +19,7 @@ class LabourMasterScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(masterLabourProvider),
           ),
         ],

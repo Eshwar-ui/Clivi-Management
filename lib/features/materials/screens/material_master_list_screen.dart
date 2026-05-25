@@ -168,7 +168,7 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                 Icons.add_circle_outline,
                 color: AppColors.primary,
               ),
-              tooltip: 'Add Grade',
+              tooltip: 'Add grade',
               onPressed: () => _showAddGradeDialog(context),
             ),
           ),

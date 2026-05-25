@@ -480,6 +480,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
+                    tooltip: 'Close',
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(

@@ -125,6 +125,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(

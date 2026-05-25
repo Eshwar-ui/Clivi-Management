@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../theme/app_colors.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/dashboard/screens/site_manager_management_screen.dart';
@@ -428,25 +429,49 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
 
     errorBuilder: (context, state) => Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(Icons.error_outline_rounded,
+                  size: 36, color: AppColors.error),
+            ),
+            const SizedBox(height: 20),
             Text(
-              '404 - Page Not Found',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Page Not Found',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               state.uri.toString(),
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textHint,
+                  ),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.go('/login'),
-              child: const Text('Go to Login'),
+            ElevatedButton.icon(
+              onPressed: () {
+                final authState = ProviderScope.containerOf(context)
+                    .read(authProvider);
+                if (authState.isAuthenticated && authState.role != null) {
+                  context.go(
+                      _getRoleBasedRoute(authState.role!));
+                } else {
+                  context.go('/login');
+                }
+              },
+              icon: const Icon(Icons.home_rounded, size: 18),
+              label: const Text('Go Home'),
             ),
           ],
         ),

@@ -23,6 +23,17 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
+  void _navigateBack(UserRole? role) {
+    switch (role) {
+      case UserRole.superAdmin:
+        context.go('/super-admin/dashboard');
+      case UserRole.admin:
+        context.go('/admin/dashboard');
+      default:
+        context.go('/site-manager/dashboard');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectState = ref.watch(projectDetailProvider(widget.projectId));
@@ -33,14 +44,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (userRole == UserRole.superAdmin) {
-          context.go('/super-admin/dashboard');
-        } else if (userRole == UserRole.admin) {
-          context.go('/admin/dashboard');
-        } else {
-          context.go('/site-manager/dashboard');
-        }
+        if (!didPop) _navigateBack(userRole);
       },
       child: ResponsiveScaffold(
         backgroundColor: AppColors.scaffoldBackground,
@@ -50,15 +54,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () {
-              if (userRole == UserRole.superAdmin) {
-                context.go('/super-admin/dashboard');
-              } else if (userRole == UserRole.admin) {
-                context.go('/admin/dashboard');
-              } else {
-                context.go('/site-manager/dashboard');
-              }
-            },
+            tooltip: 'Back',
+            onPressed: () => _navigateBack(userRole),
           ),
           title: Text(
             projectState.project?.name ?? 'Project Details',
@@ -74,6 +71,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             if (isAdmin)
               IconButton(
                 icon: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
+                tooltip: 'Edit project',
                 onPressed: () => context.pushNamed(
                   'edit-project',
                   pathParameters: {'id': widget.projectId},

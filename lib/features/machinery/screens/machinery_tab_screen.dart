@@ -304,6 +304,7 @@ class _MachineryCard extends ConsumerWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
+                tooltip: 'Delete log',
                 onPressed: () async {
                   final noteController = TextEditingController();
                   final confirmed = await showDialog<bool>(
@@ -581,6 +582,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
+                    tooltip: 'Close',
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -988,13 +990,6 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           return;
         }
 
-        debugPrint('[MACHINERY LOG] Logging time-based...');
-        debugPrint('[MACHINERY LOG] Machine: ${_selectedMachine!.name}');
-        debugPrint(
-          '[MACHINERY LOG] Start: ${_startTime!.format(context)}, End: ${_endTime!.format(context)}',
-        );
-        debugPrint('[MACHINERY LOG] Duration: $_calculatedDuration hrs');
-
         success = await controller.logTimeBased(
           projectId: widget.projectId,
           machineryId: _selectedMachine!.id,
@@ -1016,10 +1011,6 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           return;
         }
 
-        debugPrint('[MACHINERY LOG] Logging reading-based...');
-        debugPrint('[MACHINERY LOG] Machine: ${_selectedMachine!.name}');
-        debugPrint('[MACHINERY LOG] Start: $start, End: $end');
-
         success = await controller.logUsage(
           projectId: widget.projectId,
           machineryId: _selectedMachine!.id,
@@ -1029,8 +1020,6 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           endReading: end,
         );
       }
-
-      debugPrint('[MACHINERY LOG] Success: $success');
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -1053,9 +1042,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           );
         }
       }
-    } catch (e, stackTrace) {
-      debugPrint('[MACHINERY LOG ERROR] $e');
-      debugPrint('[MACHINERY LOG STACK] $stackTrace');
+    } catch (e, _) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

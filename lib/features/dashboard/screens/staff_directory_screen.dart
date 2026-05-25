@@ -21,13 +21,14 @@ class StaffDirectoryScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Staff Directory'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add),
-            tooltip: 'Add Site Manager',
+            tooltip: 'Add site manager',
             onPressed: () =>
                 Navigator.pushNamed(context, '/admin/site-managers/add'),
           ),

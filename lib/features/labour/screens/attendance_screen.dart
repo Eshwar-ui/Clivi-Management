@@ -42,6 +42,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
@@ -60,6 +61,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month),
+            tooltip: 'Pick date',
             onPressed: _pickDate,
           ),
         ],

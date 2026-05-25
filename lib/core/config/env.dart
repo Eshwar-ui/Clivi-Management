@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:clivi_management/core/config/supabase_client.dart' show logger;
 
 /// Environment configuration for the app
 /// Loads values from .env file
@@ -12,12 +13,12 @@ class Env {
     try {
       await dotenv.load(fileName: 'assets/env');
       if (kDebugMode) {
-        debugPrint('ENV: Loaded ${dotenv.env.length} environment variables');
-        debugPrint('ENV: Keys found: ${dotenv.env.keys.toList()}');
+        logger.d('ENV: Loaded ${dotenv.env.length} environment variables');
+        logger.d('ENV: Keys found: ${dotenv.env.keys.toList()}');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('ENV: Failed to load .env file: $e');
+        logger.d('ENV: Failed to load .env file: $e');
       }
       rethrow;
     }
@@ -65,31 +66,31 @@ class Env {
       final key = dotenv.env['SUPABASE_ANON_KEY'];
 
       if (kDebugMode) {
-        debugPrint(
+        logger.d(
           'ENV Validate: SUPABASE_URL = ${url != null ? "present (${url.length} chars)" : "MISSING"}',
         );
-        debugPrint(
+        logger.d(
           'ENV Validate: SUPABASE_ANON_KEY = ${key != null ? "present (${key.length} chars)" : "MISSING"}',
         );
       }
 
       if (url == null || url.isEmpty) {
         if (kDebugMode) {
-          debugPrint('ENV Validate: FAILED - SUPABASE_URL missing or empty');
+          logger.d('ENV Validate: FAILED - SUPABASE_URL missing or empty');
         }
         return false;
       }
       if (key == null || key.isEmpty) {
         if (kDebugMode) {
-          debugPrint('ENV Validate: FAILED - SUPABASE_ANON_KEY missing or empty');
+          logger.d('ENV Validate: FAILED - SUPABASE_ANON_KEY missing or empty');
         }
         return false;
       }
 
-      if (kDebugMode) debugPrint('ENV Validate: SUCCESS');
+      if (kDebugMode) logger.d('ENV Validate: SUCCESS');
       return true;
     } catch (e) {
-      if (kDebugMode) debugPrint('ENV Validate: EXCEPTION - $e');
+      if (kDebugMode) logger.d('ENV Validate: EXCEPTION - $e');
       return false;
     }
   }

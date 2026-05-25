@@ -1,8 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_client.dart';
 import '../../../../core/errors/app_exceptions.dart';
 import '../models/bill_model.dart';
-import 'package:flutter/foundation.dart'; // For debugPrint
 import '../../../../core/config/app_constants.dart';
 import '../../../../core/utils/upload_helper.dart';
 
@@ -107,7 +108,7 @@ class BillRepository {
             contentType: _contentTypeForFile(receiptName),
           );
         } catch (e) {
-          debugPrint('Receipt upload failed: $e');
+          logger.d('Receipt upload failed: $e');
           throw Exception('Receipt upload failed. Please retry the upload.');
         }
       }
@@ -154,14 +155,14 @@ class BillRepository {
           },
         );
       } catch (e) {
-        debugPrint('log_operation failed for bill: $e');
+        logger.d('log_operation failed for bill: $e');
       }
 
       return bill;
     } on PostgrestException catch (e) {
       throw DatabaseException.fromPostgrest(e);
     } catch (e) {
-      debugPrint('Bill insert failed: $e');
+      logger.d('Bill insert failed: $e');
       throw Exception('Failed to create bill: $e');
     }
   }
@@ -300,7 +301,7 @@ class BillRepository {
           },
         );
       } catch (e) {
-        debugPrint('log_operation failed for bill update: $e');
+        logger.d('log_operation failed for bill update: $e');
       }
 
       return bill;
@@ -415,7 +416,7 @@ class BillRepository {
             .map((a) => a['project_id'] as String)
             .toSet();
       } catch (e) {
-        debugPrint('Failed to fetch project assignments for stream: $e');
+        logger.d('Failed to fetch project assignments for stream: $e');
       }
     }
 

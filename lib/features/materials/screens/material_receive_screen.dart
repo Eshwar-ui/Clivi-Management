@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:clivi_management/core/config/supabase_client.dart' show logger;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -340,7 +341,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
           .getGradesForMaterialName(materialName);
       if (mounted) setState(() => _availableGrades = grades);
     } catch (e) {
-      debugPrint('Error fetching grades: $e');
+      logger.d('Error fetching grades: $e');
       if (mounted) setState(() => _availableGrades = []);
     }
   }

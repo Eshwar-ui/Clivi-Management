@@ -34,6 +34,7 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
+            tooltip: 'Add supplier',
             onPressed: () => _showAddSupplierDialog(context, ref),
           ),
         ],
@@ -49,6 +50,7 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, size: 18),
+                        tooltip: 'Clear search',
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');

@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:clivi_management/core/config/supabase_client.dart' show logger;
 import '../data/models/project_model.dart';
 import 'project_provider.dart';
 
@@ -102,7 +102,7 @@ class RealtimeProjectsNotifier
           final refreshed = await repository.getProjects(forceRefresh: true);
           state = AsyncValue.data(refreshed);
         } catch (e, st) {
-          debugPrint('Failed to refresh after realtime event: $e');
+          logger.d('Failed to refresh after realtime event: $e');
           state = AsyncValue.error(e, st);
         }
         break;

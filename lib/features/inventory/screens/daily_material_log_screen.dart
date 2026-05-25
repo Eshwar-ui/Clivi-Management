@@ -50,6 +50,7 @@ class _DailyMaterialLogScreenState extends ConsumerState<DailyMaterialLogScreen>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -399,6 +400,7 @@ class _MaterialLogCard extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  tooltip: 'Delete log',
                   onPressed: () async {
                     final noteController = TextEditingController();
                     final requireNote = role == UserRole.siteManager;
