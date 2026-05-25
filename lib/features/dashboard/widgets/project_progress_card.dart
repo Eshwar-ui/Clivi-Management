@@ -14,12 +14,11 @@ class ProjectProgressCard extends StatelessWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -52,7 +51,7 @@ class ProjectProgressCard extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(
                     _getProgressColor(project.progress),
                   ),
-                  minHeight: 8,
+                  minHeight: 6,
                 ),
               ),
               const SizedBox(height: 8),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 import '../data/models/vendor_summary_models.dart';
 import '../providers/vendor_analytics_provider.dart';
@@ -25,20 +26,7 @@ class VendorAnalyticsDashboard extends ConsumerWidget {
     final vendorsAsync = ref.watch(materialVendorAggregatesProvider(request));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
-      appBar: CustomAppBar(
-        backgroundColor: const Color(0xFFF3F5F9),
-        title: Text(
-          'Material Suppliers',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        showBackButton: false,
-      ),
-
+      backgroundColor: AppColors.scaffoldBackground,
       body: vendorsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
@@ -50,146 +38,175 @@ class VendorAnalyticsDashboard extends ConsumerWidget {
             );
           final topFive = sorted.take(5).toList();
 
-          return RefreshIndicator(
-            onRefresh: () async =>
-                ref.invalidate(materialVendorAggregatesProvider(request)),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _MaterialTabs(
-                    selected: tab,
-                    onChange: (selected) {
-                      ref.read(materialAnalyticsTabProvider.notifier).state =
-                          selected;
-                    },
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+
+              return RefreshIndicator(
+                onRefresh: () async =>
+                    ref.invalidate(materialVendorAggregatesProvider(request)),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: r.isDesktop ? 32 : 20,
+                    vertical: r.isDesktop ? 28 : 16,
                   ),
-                  const SizedBox(height: 12),
-                  _MetricToggle(
-                    selected: metric,
-                    onChange: (m) =>
-                        ref.read(vendorChartMetricProvider.notifier).state = m,
-                  ),
-                  const SizedBox(height: 8),
-                  _MainDateRangePicker(
-                    range: range,
-                    dateLabel: _rangeLabel(range),
-                    onPickFrom: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: range.start,
-                        firstDate: DateTime(DateTime.now().year - 5),
-                        lastDate: DateTime(DateTime.now().year + 2),
-                      );
-                      if (picked == null || !context.mounted) return;
-                      final normalized = DateTime(
-                        picked.year,
-                        picked.month,
-                        picked.day,
-                      );
-                      final nextEnd = normalized.isAfter(range.end)
-                          ? normalized
-                          : range.end;
-                      ref
-                          .read(vendorAnalyticsDateRangeProvider.notifier)
-                          .state = DateTimeRange(
-                        start: normalized,
-                        end: nextEnd,
-                      );
-                    },
-                    onPickTo: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: range.end,
-                        firstDate: DateTime(DateTime.now().year - 5),
-                        lastDate: DateTime(DateTime.now().year + 2),
-                      );
-                      if (picked == null || !context.mounted) return;
-                      final normalized = DateTime(
-                        picked.year,
-                        picked.month,
-                        picked.day,
-                      );
-                      final nextStart = normalized.isBefore(range.start)
-                          ? normalized
-                          : range.start;
-                      ref
-                          .read(vendorAnalyticsDateRangeProvider.notifier)
-                          .state = DateTimeRange(
-                        start: nextStart,
-                        end: normalized,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _SupplierChartCard(
-                    vendors: topFive,
-                    metric: metric,
-                    yTitle: metric == VendorChartMetric.amount
-                        ? 'Amount (Rs)'
-                        : 'Quantity',
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text(
-                        '${tab.label} Supply Details',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () async {
-                          await VendorReportService.generateReport(
-                            vendors: sorted,
-                            tab: tab,
-                            fromDate: range.start,
-                            toDate: range.end,
-                          );
-                        },
-                        child: const Text(
-                          'Export',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (sorted.isEmpty)
-                    const _EmptyState(
-                      'No inward logs found for selected material',
-                    )
-                  else
-                    ...sorted.map(
-                      (vendor) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _VendorTile(
-                          aggregate: vendor,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SupplyDetailsScreen(
-                                  vendorId: vendor.vendorId,
-                                  vendorName: vendor.vendorName,
-                                  tab: tab,
-                                  fromDate: range.start,
-                                  toDate: range.end,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: r.maxContentWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Text(
+                            'Material Suppliers',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Material tabs
+                          _MaterialTabs(
+                            selected: tab,
+                            onChange: (selected) => ref
+                                .read(materialAnalyticsTabProvider.notifier)
+                                .state = selected,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Metric toggle + date range
+                          Row(
+                            children: [
+                              _MetricToggle(
+                                selected: metric,
+                                onChange: (m) => ref
+                                    .read(vendorChartMetricProvider.notifier)
+                                    .state = m,
+                              ),
+                              const Spacer(),
+                              _DateRangeLabel(range: range),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Date pickers
+                          _MainDateRangePicker(
+                            range: range,
+                            onPickFrom: () =>
+                                _pickFromDate(context, ref, range),
+                            onPickTo: () =>
+                                _pickToDate(context, ref, range),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Chart
+                          _SupplierChartCard(
+                            vendors: topFive,
+                            metric: metric,
+                            yTitle: metric == VendorChartMetric.amount
+                                ? 'Amount (Rs)'
+                                : 'Quantity',
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Supply details header
+                          Row(
+                            children: [
+                              Text(
+                                '${tab.label} Supply Details',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const Spacer(),
+                              Material(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                child: InkWell(
+                                  onTap: () async {
+                                    await VendorReportService.generateReport(
+                                      vendors: sorted,
+                                      tab: tab,
+                                      fromDate: range.start,
+                                      toDate: range.end,
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                      border: Border.all(
+                                          color: AppColors.border),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.download_rounded,
+                                            size: 15,
+                                            color: AppColors.textPrimary),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Export',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Vendor list
+                          if (sorted.isEmpty)
+                            const _EmptyState(
+                              'No inward logs found for selected material',
+                            )
+                          else
+                            ...sorted.map(
+                              (vendor) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _VendorTile(
+                                  aggregate: vendor,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            SupplyDetailsScreen(
+                                          vendorId: vendor.vendorId,
+                                          vendorName: vendor.vendorName,
+                                          tab: tab,
+                                          fromDate: range.start,
+                                          toDate: range.end,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+                        ],
                       ),
                     ),
-                ],
-              ),
-            ),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -204,81 +221,177 @@ class VendorAnalyticsDashboard extends ConsumerWidget {
     return aggregate.quantityForChart;
   }
 
-  static String _rangeLabel(DateTimeRange range) {
-    final days = range.end.difference(range.start).inDays;
-    return days <= 7 ? 'Last 7 days' : DateFormat('dd MMM').format(range.start);
+  void _pickFromDate(
+      BuildContext context, WidgetRef ref, DateTimeRange range) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: range.start,
+      firstDate: DateTime(DateTime.now().year - 5),
+      lastDate: DateTime(DateTime.now().year + 2),
+    );
+    if (picked == null || !context.mounted) return;
+    final normalized = DateTime(picked.year, picked.month, picked.day);
+    final nextEnd = normalized.isAfter(range.end) ? normalized : range.end;
+    ref.read(vendorAnalyticsDateRangeProvider.notifier).state =
+        DateTimeRange(start: normalized, end: nextEnd);
+  }
+
+  void _pickToDate(
+      BuildContext context, WidgetRef ref, DateTimeRange range) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: range.end,
+      firstDate: DateTime(DateTime.now().year - 5),
+      lastDate: DateTime(DateTime.now().year + 2),
+    );
+    if (picked == null || !context.mounted) return;
+    final normalized = DateTime(picked.year, picked.month, picked.day);
+    final nextStart =
+        normalized.isBefore(range.start) ? normalized : range.start;
+    ref.read(vendorAnalyticsDateRangeProvider.notifier).state =
+        DateTimeRange(start: nextStart, end: normalized);
   }
 }
+
+// ── Material Tabs ──
 
 class _MaterialTabs extends StatelessWidget {
   final MaterialAnalyticsTab selected;
   final ValueChanged<MaterialAnalyticsTab> onChange;
-
   const _MaterialTabs({required this.selected, required this.onChange});
 
   @override
   Widget build(BuildContext context) {
-    final selectedColor = const Color(0xFF2F66F5);
     return Container(
+      height: 42,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
       ),
+      padding: const EdgeInsets.all(3),
       child: Row(
-        children: [
-          _TabPill(
-            label: MaterialAnalyticsTab.steel.label,
-            active: selected == MaterialAnalyticsTab.steel,
-            activeColor: selectedColor,
-            onTap: () => onChange(MaterialAnalyticsTab.steel),
-          ),
-          _TabPill(
-            label: MaterialAnalyticsTab.cement.label,
-            active: selected == MaterialAnalyticsTab.cement,
-            activeColor: selectedColor,
-            onTap: () => onChange(MaterialAnalyticsTab.cement),
-          ),
-        ],
+        children: MaterialAnalyticsTab.values.map((tab) {
+          final isActive = selected == tab;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChange(tab),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isActive ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: isActive
+                      ? const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  tab.label,
+                  style: TextStyle(
+                    fontWeight:
+                        isActive ? FontWeight.w600 : FontWeight.w500,
+                    color: isActive
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 }
 
+// ── Metric Toggle ──
+
 class _MetricToggle extends StatelessWidget {
   final VendorChartMetric selected;
   final ValueChanged<VendorChartMetric> onChange;
-
   const _MetricToggle({required this.selected, required this.onChange});
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: [
-        _ModeChip(
-          label: 'Qty',
-          active: selected == VendorChartMetric.quantity,
-          onTap: () => onChange(VendorChartMetric.quantity),
+      children: VendorChartMetric.values.map((m) {
+        final isActive = selected == m;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Material(
+            color: isActive ? AppColors.primary : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () => onChange(m),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: isActive
+                      ? null
+                      : Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  m == VendorChartMetric.quantity ? 'Qty' : 'Amount',
+                  style: TextStyle(
+                    color: isActive ? Colors.white : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ── Date Range ──
+
+class _DateRangeLabel extends StatelessWidget {
+  final DateTimeRange range;
+  const _DateRangeLabel({required this.range});
+
+  @override
+  Widget build(BuildContext context) {
+    final days = range.end.difference(range.start).inDays;
+    final label =
+        days <= 7 ? 'Last 7 days' : DateFormat('dd MMM').format(range.start);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
         ),
-        const SizedBox(width: 8),
-        _ModeChip(
-          label: 'Amount',
-          active: selected == VendorChartMetric.amount,
-          onTap: () => onChange(VendorChartMetric.amount),
-        ),
-      ],
+      ),
     );
   }
 }
 
 class _MainDateRangePicker extends StatelessWidget {
   final DateTimeRange range;
-  final String dateLabel;
   final VoidCallback onPickFrom;
   final VoidCallback onPickTo;
-
   const _MainDateRangePicker({
     required this.range,
-    required this.dateLabel,
     required this.onPickFrom,
     required this.onPickTo,
   });
@@ -287,171 +400,61 @@ class _MainDateRangePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: _MainDateChip(
-            label: 'From',
-            date: range.start,
-            onTap: onPickFrom,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _MainDateChip(label: 'To', date: range.end, onTap: onPickTo),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            dateLabel,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+        Expanded(child: _DateChip(label: 'From', date: range.start, onTap: onPickFrom)),
+        const SizedBox(width: 10),
+        Expanded(child: _DateChip(label: 'To', date: range.end, onTap: onPickTo)),
       ],
     );
   }
 }
 
-class _MainDateChip extends StatelessWidget {
-  final String label;
+class _DateChip extends StatelessWidget {
+  final String? label;
   final DateTime date;
   final VoidCallback onTap;
-
-  const _MainDateChip({
-    required this.label,
-    required this.date,
-    required this.onTap,
-  });
+  const _DateChip({this.label, required this.date, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: Colors.white,
       borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today,
-              size: 14,
-              color: Color(0xFF64748B),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '$label ${DateFormat('dd-MM-yyyy').format(date)}',
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF334155),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ModeChip extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _ModeChip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: active ? const Color(0xFF2F66F5) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : const Color(0xFF334155),
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TabPill extends StatelessWidget {
-  final String label;
-  final bool active;
-  final Color activeColor;
-  final VoidCallback onTap;
-
-  const _TabPill({
-    required this.label,
-    required this.active,
-    required this.activeColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: active ? activeColor : Colors.transparent,
-                width: 2,
-              ),
-            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: active
-                    ? const Color(0xFF111827)
-                    : const Color(0xFF8A9AB2),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today_outlined,
+                  size: 14, color: AppColors.textHint),
+              const SizedBox(width: 8),
+              Text(
+                '${label != null ? '$label ' : ''}${DateFormat('dd-MM-yyyy').format(date)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 }
+
+// ── Chart Card ──
 
 class _SupplierChartCard extends StatelessWidget {
   final List<VendorMaterialAggregate> vendors;
   final VendorChartMetric metric;
   final String yTitle;
-
   const _SupplierChartCard({
     required this.vendors,
     required this.metric,
@@ -463,33 +466,24 @@ class _SupplierChartCard extends StatelessWidget {
     final maxValue = vendors.isEmpty
         ? 1.0
         : vendors.map((e) => _metricValue(e)).reduce((a, b) => a > b ? a : b) *
-              1.2;
+            1.2;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1736),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0A1736).withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.sidebarBackground,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   yTitle,
@@ -502,28 +496,23 @@ class _SupplierChartCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.bar_chart,
-                  color: Colors.white,
-                  size: 14,
-                ),
+                child: const Icon(Icons.bar_chart_rounded,
+                    color: Colors.white, size: 14),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           SizedBox(
-            height: 210,
+            height: 200,
             child: vendors.isEmpty
                 ? const Center(
-                    child: Text(
-                      'No chart data',
-                      style: TextStyle(color: Colors.white70),
-                    ),
+                    child: Text('No chart data',
+                        style: TextStyle(color: Colors.white70)),
                   )
                 : BarChart(
                     BarChartData(
@@ -533,7 +522,7 @@ class _SupplierChartCard extends StatelessWidget {
                         drawVerticalLine: false,
                         horizontalInterval: maxValue / 5,
                         getDrawingHorizontalLine: (_) => FlLine(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: Colors.white.withValues(alpha: 0.06),
                           strokeWidth: 1,
                         ),
                       ),
@@ -545,20 +534,18 @@ class _SupplierChartCard extends StatelessWidget {
                             reservedSize: 34,
                             interval: maxValue / 5,
                             getTitlesWidget: (value, _) => Text(
-                              _axisLabel(value, metric),
-                              style: const TextStyle(
-                                color: Color(0xFF9CA3AF),
+                              _axisLabel(value),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
                                 fontSize: 10,
                               ),
                             ),
                           ),
                         ),
                         topTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
+                            sideTitles: SideTitles(showTitles: false)),
                         rightTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
+                            sideTitles: SideTitles(showTitles: false)),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -571,8 +558,9 @@ class _SupplierChartCard extends StatelessWidget {
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
                                   _shortName(vendors[i].vendorName),
-                                  style: const TextStyle(
-                                    color: Colors.white70,
+                                  style: TextStyle(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.6),
                                     fontSize: 10,
                                   ),
                                 ),
@@ -587,13 +575,14 @@ class _SupplierChartCard extends StatelessWidget {
                           barRods: [
                             BarChartRodData(
                               toY: _metricValue(entry.value),
-                              width: 14,
-                              borderRadius: BorderRadius.circular(3),
-                              color: const Color(0xFF2F66F5),
+                              width: 16,
+                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.primary,
                               backDrawRodData: BackgroundBarChartRodData(
                                 show: true,
                                 toY: maxValue,
-                                color: Colors.white.withValues(alpha: 0.07),
+                                color:
+                                    Colors.white.withValues(alpha: 0.05),
                               ),
                             ),
                           ],
@@ -609,8 +598,7 @@ class _SupplierChartCard extends StatelessWidget {
 
   String _shortName(String name) {
     final words = name.trim().split(RegExp(r'\s+'));
-    if (words.isEmpty) return name;
-    return words.first;
+    return words.isEmpty ? name : words.first;
   }
 
   double _metricValue(VendorMaterialAggregate aggregate) {
@@ -618,51 +606,54 @@ class _SupplierChartCard extends StatelessWidget {
     return aggregate.quantityForChart;
   }
 
-  String _axisLabel(double value, VendorChartMetric metric) {
-    if (metric == VendorChartMetric.amount) {
-      final inK = (value / 1000).round();
-      return '${inK}k';
-    }
-    final rounded = value.round();
-    return '$rounded';
+  String _axisLabel(double value) {
+    if (metric == VendorChartMetric.amount) return '${(value / 1000).round()}k';
+    return '${value.round()}';
   }
 }
+
+// ── Vendor Tile ──
 
 class _VendorTile extends StatelessWidget {
   final VendorMaterialAggregate aggregate;
   final VoidCallback onTap;
-
   const _VendorTile({required this.aggregate, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final trimmed = aggregate.vendorName.trim();
-    final tag = trimmed.isEmpty ? 'S' : trimmed.substring(0, 1).toUpperCase();
+    final tag = aggregate.vendorName.trim().isEmpty
+        ? 'S'
+        : aggregate.vendorName.trim().substring(0, 1).toUpperCase();
 
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+                color: AppColors.borderDark.withValues(alpha: 0.5)),
+          ),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2F66F5),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   tag,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -673,46 +664,41 @@ class _VendorTile extends StatelessWidget {
                   children: [
                     Text(
                       aggregate.vendorName,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       aggregate.quantityDisplay,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                     ),
-                    if (aggregate.topProjectName != null) ...[
-                      const SizedBox(height: 2),
+                    if (aggregate.topProjectName != null)
                       Text(
-                        'Top project: ${aggregate.topProjectName}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF94A3B8),
-                          fontWeight: FontWeight.w500,
-                        ),
+                        'Top: ${aggregate.topProjectName}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: AppColors.textHint,
+                              fontSize: 11,
+                            ),
                       ),
-                    ],
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
                 _compactCurrency(aggregate.totalAmount),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF111827),
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-              const SizedBox(width: 6),
-              const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textHint, size: 20),
             ],
           ),
         ),
@@ -720,6 +706,8 @@ class _VendorTile extends StatelessWidget {
     );
   }
 }
+
+// ── Sub-Screens ──
 
 class SupplyDetailsScreen extends ConsumerStatefulWidget {
   final String vendorId;
@@ -753,19 +741,19 @@ class _SupplyDetailsScreenState extends ConsumerState<SupplyDetailsScreen> {
       fromDate: widget.fromDate,
       toDate: widget.toDate,
     );
-    final projectsAsync = ref.watch(vendorProjectAggregatesProvider(request));
+    final projectsAsync =
+        ref.watch(vendorProjectAggregatesProvider(request));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: CustomAppBar(
-        backgroundColor: const Color(0xFFF3F5F9),
+        backgroundColor: AppColors.scaffoldBackground,
         title: Text(
           'Supply Details',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
         showBackButton: true,
       ),
@@ -780,9 +768,9 @@ class _SupplyDetailsScreenState extends ConsumerState<SupplyDetailsScreen> {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             itemCount: projects.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final project = projects[index];
               final expanded = _expandedProjectId == project.projectId;
@@ -793,7 +781,8 @@ class _SupplyDetailsScreenState extends ConsumerState<SupplyDetailsScreen> {
                 expanded: expanded,
                 onToggle: () {
                   setState(() {
-                    _expandedProjectId = expanded ? null : project.projectId;
+                    _expandedProjectId =
+                        expanded ? null : project.projectId;
                   });
                 },
                 onOpenDailyLogs: () {
@@ -867,19 +856,22 @@ class _ProjectSupplyHistoryScreenState
     final linesAsync = ref.watch(vendorProjectDailyLogsProvider(request));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF3F5F9),
+        backgroundColor: AppColors.scaffoldBackground,
         elevation: 0,
         title: Text(
           widget.projectName,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
             child: Row(
               children: [
                 Expanded(
@@ -890,9 +882,7 @@ class _ProjectSupplyHistoryScreenState
                       if (picked == null) return;
                       setState(() {
                         _fromDate = picked;
-                        if (_fromDate.isAfter(_toDate)) {
-                          _toDate = _fromDate;
-                        }
+                        if (_fromDate.isAfter(_toDate)) _toDate = _fromDate;
                       });
                     },
                   ),
@@ -906,9 +896,7 @@ class _ProjectSupplyHistoryScreenState
                       if (picked == null) return;
                       setState(() {
                         _toDate = picked;
-                        if (_toDate.isBefore(_fromDate)) {
-                          _fromDate = _toDate;
-                        }
+                        if (_toDate.isBefore(_fromDate)) _fromDate = _toDate;
                       });
                     },
                   ),
@@ -918,24 +906,23 @@ class _ProjectSupplyHistoryScreenState
           ),
           Expanded(
             child: linesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
               data: (lines) {
                 if (lines.isEmpty) {
                   return const Center(
                     child: _EmptyState(
-                      'No inward receive logs in selected range',
-                    ),
+                        'No inward receive logs in selected range'),
                   );
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
                   itemCount: lines.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    return _SupplyLineTile(line: lines[index]);
-                  },
+                  itemBuilder: (_, index) =>
+                      _SupplyLineTile(line: lines[index]),
                 );
               },
             ),
@@ -955,6 +942,8 @@ class _ProjectSupplyHistoryScreenState
     );
   }
 }
+
+// ── Project Supply Card ──
 
 class _ProjectSupplyCard extends StatelessWidget {
   final int index;
@@ -976,7 +965,9 @@ class _ProjectSupplyCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
+        border:
+            Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -985,18 +976,19 @@ class _ProjectSupplyCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2F66F5),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '$index',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w700,
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -1009,33 +1001,33 @@ class _ProjectSupplyCard extends StatelessWidget {
                         onTap: onOpenDailyLogs,
                         child: Text(
                           aggregate.projectName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Color(0xFF2F66F5),
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                                decorationColor: AppColors.primary,
+                              ),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         aggregate.quantityDisplay,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
                 Text(
                   _compactCurrency(aggregate.totalAmount),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 IconButton(
                   onPressed: onToggle,
@@ -1043,24 +1035,20 @@ class _ProjectSupplyCard extends StatelessWidget {
                     expanded
                         ? Icons.keyboard_arrow_up
                         : Icons.chevron_right_rounded,
-                    color: const Color(0xFF94A3B8),
+                    color: AppColors.textHint,
                   ),
                 ),
               ],
             ),
             if (expanded) ...[
               const SizedBox(height: 8),
-              ...aggregate.previewLines.map(
-                (line) => _SupplyLineTile(line: line),
-              ),
+              ...aggregate.previewLines.map((line) => _SupplyLineTile(line: line)),
               Align(
                 alignment: Alignment.center,
                 child: TextButton(
                   onPressed: onOpenDailyLogs,
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  child: const Text('View All',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
@@ -1071,9 +1059,10 @@ class _ProjectSupplyCard extends StatelessWidget {
   }
 }
 
+// ── Supply Line Tile ──
+
 class _SupplyLineTile extends StatelessWidget {
   final VendorSupplyLine line;
-
   const _SupplyLineTile({required this.line});
 
   @override
@@ -1082,8 +1071,8 @@ class _SupplyLineTile extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
@@ -1093,18 +1082,18 @@ class _SupplyLineTile extends StatelessWidget {
               children: [
                 Text(
                   line.materialName,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   '${_formatQuantity(line.quantity)} ${line.unit}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
                 ),
               ],
             ),
@@ -1114,15 +1103,16 @@ class _SupplyLineTile extends StatelessWidget {
             children: [
               Text(
                 DateFormat('MMM dd').format(line.loggedAt),
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                style: TextStyle(
+                    fontSize: 11, color: AppColors.textHint),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 line.amount > 0 ? _compactCurrency(line.amount) : '--',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
               ),
             ],
           ),
@@ -1132,42 +1122,7 @@ class _SupplyLineTile extends StatelessWidget {
   }
 }
 
-class _DateChip extends StatelessWidget {
-  final DateTime date;
-  final VoidCallback onTap;
-
-  const _DateChip({required this.date, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFD7DEE8)),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today,
-              size: 16,
-              color: Color(0xFF64748B),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              DateFormat('dd-MM-yyyy').format(date),
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// ── Empty State ──
 
 class _EmptyState extends StatelessWidget {
   final String message;
@@ -1177,15 +1132,17 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       message,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
-        color: Color(0xFF64748B),
+        color: AppColors.textSecondary,
         fontWeight: FontWeight.w500,
       ),
       textAlign: TextAlign.center,
     );
   }
 }
+
+// ── Helpers ──
 
 String _compactCurrency(double value) {
   if (value.abs() >= 10000000) {

@@ -114,7 +114,7 @@ class AppTextStyles {
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.15,
     height: 1.5,
   );
 
@@ -123,7 +123,7 @@ class AppTextStyles {
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
-    letterSpacing: 0.25,
+    letterSpacing: 0.1,
     height: 1.43,
   );
 
@@ -132,7 +132,7 @@ class AppTextStyles {
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
-    letterSpacing: 0.4,
+    letterSpacing: 0.2,
     height: 1.33,
   );
 
@@ -145,7 +145,7 @@ class AppTextStyles {
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
-    letterSpacing: 0.1,
+    letterSpacing: 0.05,
     height: 1.43,
   );
 
@@ -163,7 +163,7 @@ class AppTextStyles {
     fontSize: 11,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     height: 1.45,
   );
 
@@ -175,7 +175,7 @@ class AppTextStyles {
   static TextStyle get button => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.5,
+    letterSpacing: 0.25,
     height: 1.43,
   );
 
@@ -238,8 +238,8 @@ class AppTextStyles {
   // TEXT THEME
   // ============================================================
 
-  /// Get complete TextTheme for Material Theme
-  static TextTheme get textTheme => TextTheme(
+  /// Cached TextTheme for Material Theme (avoids re-creating on every access)
+  static final TextTheme textTheme = TextTheme(
     displayLarge: displayLarge,
     displayMedium: displayMedium,
     displaySmall: displaySmall,

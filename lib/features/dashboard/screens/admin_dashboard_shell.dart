@@ -1,42 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:clivi_management/features/profile/screens/profile_screen.dart';
-import 'package:clivi_management/features/projects/screens/project_list_screen.dart';
-import 'package:clivi_management/features/bills/screens/bills_screen.dart';
-import 'package:clivi_management/features/dashboard/screens/admin_dashboard.dart';
-import 'package:clivi_management/features/dashboard/screens/site_manager_dashboard.dart';
+import 'package:go_router/go_router.dart';
 import 'package:clivi_management/core/theme/app_colors.dart';
 import 'package:clivi_management/core/ui/responsive.dart';
 import 'package:clivi_management/features/auth/providers/auth_provider.dart';
-import 'package:clivi_management/features/vendors/screens/vendor_analytics_dashboard.dart';
 
-class DashboardShell extends ConsumerStatefulWidget {
-  final int initialIndex;
+class DashboardShell extends ConsumerWidget {
+  final Widget child;
 
-  const DashboardShell({super.key, this.initialIndex = 0});
-
-  @override
-  ConsumerState<DashboardShell> createState() => _DashboardShellState();
-}
-
-class _DashboardShellState extends ConsumerState<DashboardShell> {
-  late int _selectedIndex;
-  final GlobalKey<NavigatorState> _homeNavKey = GlobalKey<NavigatorState>();
+  const DashboardShell({super.key, required this.child});
 
   @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.initialIndex;
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider);
     final authState = ref.watch(authProvider);
     final role = profile?.role ?? authState.role?.value;
@@ -45,102 +20,120 @@ class _DashboardShellState extends ConsumerState<DashboardShell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final Widget homeScreen = role == 'site_manager'
-        ? const SiteManagerDashboard()
-        : const AdminDashboard();
     final isAdminRole = role == 'admin' || role == 'super_admin';
+    final location = GoRouterState.of(context).uri.path;
 
-    final homeNavigator = Navigator(
-      key: _homeNavKey,
-      onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => homeScreen),
-    );
-
-    final List<Widget> pages = [
-      homeNavigator,
-      const ProjectListScreen(),
-      const BillsScreen(),
-      if (isAdminRole) const VendorAnalyticsDashboard(),
-      const ProfileScreen(),
-    ];
-
-    final safeIndex = _selectedIndex.clamp(0, pages.length - 1);
+    final homeRoute =
+        role == 'site_manager' ? '/site-manager/dashboard' : '/admin/dashboard';
 
     final destinations = [
-      const _ShellDestination(Icons.home_filled, 'Home'),
-      const _ShellDestination(Icons.business, 'Projects'),
-      const _ShellDestination(Icons.receipt_long, 'Bills'),
-      if (isAdminRole) const _ShellDestination(Icons.bar_chart, 'Reports'),
-      const _ShellDestination(Icons.person_outline, 'Profile'),
+      _NavDestination(Icons.home_filled, 'Home', homeRoute),
+      const _NavDestination(Icons.business, 'Projects', '/projects'),
+      const _NavDestination(Icons.receipt_long, 'Bills', '/bills'),
+      if (isAdminRole)
+        const _NavDestination(Icons.bar_chart, 'Reports', '/reports'),
+      const _NavDestination(Icons.person_outline, 'Profile', '/profile'),
     ];
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && safeIndex == 0) {
-          _homeNavKey.currentState?.maybePop();
-        }
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+    final activeIndex = _resolveActiveIndex(location, destinations);
 
-          if (r.useRail) {
-            final isExtended = constraints.maxWidth >= 1180;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = R(Size(constraints.maxWidth, constraints.maxHeight));
 
-            return Scaffold(
-              body: Row(
-                children: [
-                  _DesktopSidebar(
-                    destinations: destinations,
-                    selectedIndex: safeIndex,
-                    extended: isExtended,
-                    onSelected: _onItemTapped,
-                  ),
-                  Expanded(child: pages[safeIndex]),
-                ],
-              ),
-            );
-          }
-
+        // Desktop: always show sidebar
+        if (r.useRail) {
+          final isExtended = constraints.maxWidth >= 1180;
           return Scaffold(
-            body: IndexedStack(index: safeIndex, children: pages),
-            bottomNavigationBar: BottomNavigationBar(
-              currentIndex: safeIndex,
-              onTap: _onItemTapped,
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.white,
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: AppColors.textSecondary,
-              selectedLabelStyle: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.normal,
-              ),
-              items: destinations
-                  .map(
-                    (item) => BottomNavigationBarItem(
-                      icon: Icon(item.icon),
-                      label: item.label,
-                    ),
-                  )
-                  .toList(),
+            body: Row(
+              children: [
+                RepaintBoundary(
+                  child: _DesktopSidebar(
+                    destinations: destinations,
+                    selectedIndex: activeIndex,
+                    extended: isExtended,
+                    onSelected: (i) => context.go(destinations[i].route),
+                  ),
+                ),
+                Expanded(child: child),
+              ],
             ),
           );
-        },
-      ),
+        }
+
+        // Mobile: bottom nav only for main tab routes
+        final showBottomNav = _isMainTabRoute(location);
+        return Scaffold(
+          body: child,
+          bottomNavigationBar: showBottomNav
+              ? BottomNavigationBar(
+                  currentIndex: activeIndex.clamp(0, destinations.length - 1),
+                  onTap: (i) => context.go(destinations[i].route),
+                  type: BottomNavigationBarType.fixed,
+                  backgroundColor: Colors.white,
+                  selectedItemColor: AppColors.primary,
+                  unselectedItemColor: AppColors.textSecondary,
+                  selectedLabelStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  items: destinations
+                      .map((d) => BottomNavigationBarItem(
+                            icon: Icon(d.icon),
+                            label: d.label,
+                          ))
+                      .toList(),
+                )
+              : null,
+        );
+      },
     );
+  }
+
+  int _resolveActiveIndex(String location, List<_NavDestination> dests) {
+    // Match most specific first
+    if (location.startsWith('/projects')) return 1;
+    if (location.startsWith('/bills')) return 2;
+
+    // Reports is index 3 only when it exists (admin roles)
+    final hasReports = dests.length > 4;
+    if (hasReports && location.startsWith('/reports')) return 3;
+
+    final profileIndex = hasReports ? 4 : 3;
+    if (location.startsWith('/profile')) return profileIndex;
+
+    // Everything else (dashboard, master routes, admin routes) → Home
+    return 0;
+  }
+
+  bool _isMainTabRoute(String location) {
+    const mainRoutes = {
+      '/admin/dashboard',
+      '/site-manager/dashboard',
+      '/projects',
+      '/bills',
+      '/reports',
+      '/profile',
+    };
+    return mainRoutes.contains(location);
   }
 }
 
-class _ShellDestination {
-  const _ShellDestination(this.icon, this.label);
+// ── Data ──
+
+class _NavDestination {
+  const _NavDestination(this.icon, this.label, this.route);
 
   final IconData icon;
   final String label;
+  final String route;
 }
+
+// ── Desktop Sidebar ──
 
 class _DesktopSidebar extends StatelessWidget {
   const _DesktopSidebar({
@@ -150,7 +143,7 @@ class _DesktopSidebar extends StatelessWidget {
     required this.onSelected,
   });
 
-  final List<_ShellDestination> destinations;
+  final List<_NavDestination> destinations;
   final int selectedIndex;
   final bool extended;
   final ValueChanged<int> onSelected;
@@ -163,11 +156,8 @@ class _DesktopSidebar extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
       width: width,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          right: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
-        ),
+      decoration: const BoxDecoration(
+        color: AppColors.sidebarBackground,
       ),
       child: SafeArea(
         child: Padding(
@@ -183,12 +173,12 @@ class _DesktopSidebar extends StatelessWidget {
                 : CrossAxisAlignment.center,
             children: [
               _SidebarHeader(extended: extended),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               Expanded(
                 child: ListView.separated(
                   padding: EdgeInsets.zero,
                   itemCount: destinations.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 6),
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
                   itemBuilder: (context, index) {
                     final item = destinations[index];
                     return _DesktopNavItem(
@@ -201,6 +191,9 @@ class _DesktopSidebar extends StatelessWidget {
                   },
                 ),
               ),
+              const Divider(color: AppColors.sidebarSurface, height: 1),
+              const SizedBox(height: 12),
+              _SidebarFooter(extended: extended),
             ],
           ),
         ),
@@ -208,6 +201,8 @@ class _DesktopSidebar extends StatelessWidget {
     );
   }
 }
+
+// ── Sidebar Header ──
 
 class _SidebarHeader extends StatelessWidget {
   const _SidebarHeader({required this.extended});
@@ -242,9 +237,10 @@ class _SidebarHeader extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
+                    color: AppColors.sidebarTextPrimary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
             ),
           ),
         ],
@@ -252,6 +248,8 @@ class _SidebarHeader extends StatelessWidget {
     );
   }
 }
+
+// ── Nav Item ──
 
 class _DesktopNavItem extends StatelessWidget {
   const _DesktopNavItem({
@@ -270,37 +268,42 @@ class _DesktopNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? AppColors.primary : AppColors.textSecondary;
+    final foreground = selected ? Colors.white : AppColors.sidebarTextSecondary;
     final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      color: foreground,
-      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-    );
+          color: foreground,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        );
 
     final navItem = Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
+        hoverColor: AppColors.sidebarHoverBg,
+        splashColor: AppColors.sidebarSelectedBg,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
           height: 46,
-          padding: EdgeInsets.symmetric(horizontal: extended ? 12 : 0),
+          padding: EdgeInsets.symmetric(horizontal: extended ? 4 : 0),
           decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primary.withValues(alpha: 0.10)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.18)
-                  : Colors.transparent,
-            ),
+            color: selected ? AppColors.sidebarSelectedBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: extended
               ? Row(
                   children: [
-                    Icon(icon, size: 21, color: foreground),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 3,
+                      height: selected ? 24 : 0,
+                      decoration: BoxDecoration(
+                        color: AppColors.sidebarAccent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    SizedBox(width: selected ? 10 : 12),
+                    Icon(icon, size: 22, color: foreground),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -312,11 +315,92 @@ class _DesktopNavItem extends StatelessWidget {
                     ),
                   ],
                 )
-              : Center(child: Icon(icon, size: 22, color: foreground)),
+              : Center(child: Icon(icon, size: 24, color: foreground)),
         ),
       ),
     );
 
     return extended ? navItem : Tooltip(message: label, child: navItem);
+  }
+}
+
+// ── Sidebar Footer ──
+
+class _SidebarFooter extends ConsumerWidget {
+  const _SidebarFooter({required this.extended});
+
+  final bool extended;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(userProfileProvider);
+    final name =
+        (profile?.fullName ?? '').isNotEmpty ? profile!.fullName! : 'User';
+    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+    if (!extended) {
+      return Center(
+        child: CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.sidebarSurface,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: AppColors.sidebarTextPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.sidebarSurface,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: AppColors.sidebarTextPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.sidebarTextPrimary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+              if (profile?.role != null)
+                Text(
+                  profile!.role.replaceAll('_', ' ').toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.sidebarTextSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
