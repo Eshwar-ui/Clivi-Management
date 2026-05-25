@@ -62,7 +62,7 @@ class StaffDirectoryScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+          Icon(Icons.people_outline, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
             'No site managers yet',
@@ -73,7 +73,7 @@ class StaffDirectoryScreen extends ConsumerWidget {
             'Add site managers from the button above',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

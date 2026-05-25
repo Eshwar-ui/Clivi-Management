@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_colors.dart';
 import '../providers/labour_provider.dart';
 import '../data/models/labour_model.dart';
 
@@ -38,7 +39,7 @@ class LabourMasterScreen extends ConsumerWidget {
               return ListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.shade200),
+                  side: BorderSide(color: AppColors.border),
                 ),
                 title: Text(labour.name),
                 subtitle: labour.phone != null ? Text(labour.phone!) : null,

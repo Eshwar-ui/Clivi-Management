@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive_scaffold.dart';
 
 import '../../../core/widgets/loading_widget.dart';
@@ -288,7 +289,7 @@ class _LogListTab extends ConsumerWidget {
                 ? Icons.inbox_outlined
                 : Icons.outbox_outlined,
             size: 64,
-            color: Colors.grey[400],
+            color: AppColors.textHint,
           ),
           const SizedBox(height: 16),
           Text(
@@ -465,7 +466,7 @@ class _MaterialLogCard extends ConsumerWidget {
                   const SizedBox(width: 4),
                   Text(
                     log.activity!,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -475,13 +476,13 @@ class _MaterialLogCard extends ConsumerWidget {
               log.loggedAt != null
                   ? dateFormat.format(log.loggedAt!)
                   : 'Unknown date',
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(color: AppColors.textHint, fontSize: 12),
             ),
             if (log.notes != null && log.notes!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
                 log.notes!,
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
           ],

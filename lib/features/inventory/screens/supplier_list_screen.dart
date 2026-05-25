@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../data/models/supplier_model.dart';
 import '../providers/inventory_provider.dart';
@@ -96,7 +97,7 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.business_outlined, size: 64, color: Colors.grey[400]),
+          Icon(Icons.business_outlined, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
             _searchQuery.isEmpty ? 'No suppliers yet' : 'No results found',
@@ -109,7 +110,7 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
                 : 'Try a different search term',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -315,7 +316,7 @@ class _SupplierDetailSheet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: Colors.grey[600]),
+          Icon(icon, size: 18, color: AppColors.textSecondary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -323,7 +324,7 @@ class _SupplierDetailSheet extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 11, color: AppColors.textHint),
                 ),
                 const SizedBox(height: 2),
                 Text(value, style: const TextStyle(fontSize: 14)),
@@ -374,7 +375,7 @@ class _SupplierCard extends StatelessWidget {
                 margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -392,7 +393,7 @@ class _SupplierCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   supplier.phone!,
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(color: AppColors.textSecondary),
                 ),
               ),
           ],

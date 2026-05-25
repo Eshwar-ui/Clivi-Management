@@ -449,11 +449,11 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Text(
                           'No managers assigned',
-                          style: TextStyle(color: Colors.grey[400]),
+                          style: TextStyle(color: AppColors.textHint),
                         ),
                       )
                     else
@@ -523,7 +523,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
         style: const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
-          color: Color(0xFF1E293B), // Dark Navy
+          color: AppColors.textPrimary, // Dark Navy
         ),
       ),
     );
@@ -608,7 +608,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        // border: Border.all(color: Colors.grey.shade200),
+        // border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -618,7 +618,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
-                color: Color(0xFF1E293B),
+                color: AppColors.textPrimary,
               ),
             ),
           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../data/models/stock_item_model.dart';
 import '../providers/inventory_provider.dart';
@@ -50,7 +50,7 @@ class StockListScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
+          Icon(Icons.inventory_2_outlined, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
             'No stock items yet',
@@ -61,7 +61,7 @@ class StockListScreen extends ConsumerWidget {
             'Add materials like Cement, Sand, Steel',
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

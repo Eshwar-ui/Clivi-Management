@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -117,7 +118,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
     final isAdmin = authState.isAtLeast(UserRole.admin);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -151,11 +152,11 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(color: AppColors.borderDark),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(color: AppColors.borderDark),
                 ),
                 filled: true,
                 fillColor: Colors.white,

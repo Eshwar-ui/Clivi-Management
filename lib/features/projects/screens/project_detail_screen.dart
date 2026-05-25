@@ -43,13 +43,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         }
       },
       child: ResponsiveScaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AppColors.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surface,
           elevation: 0,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
             onPressed: () {
               if (userRole == UserRole.superAdmin) {
                 context.go('/super-admin/dashboard');
@@ -63,7 +63,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           title: Text(
             projectState.project?.name ?? 'Project Details',
             style: const TextStyle(
-              color: Colors.black,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
@@ -73,7 +73,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           actions: [
             if (isAdmin)
               IconButton(
-                icon: const Icon(Icons.edit_outlined, color: Colors.black),
+                icon: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
                 onPressed: () => context.pushNamed(
                   'edit-project',
                   pathParameters: {'id': widget.projectId},
@@ -246,8 +246,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
-                  Text('0%', style: TextStyle(color: Colors.grey)),
-                  Text('100%', style: TextStyle(color: Colors.grey)),
+                  Text('0%', style: TextStyle(color: AppColors.textHint)),
+                  Text('100%', style: TextStyle(color: AppColors.textHint)),
                 ],
               ),
             ],
@@ -361,14 +361,8 @@ class _HeroSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -383,7 +377,7 @@ class _HeroSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -394,13 +388,13 @@ class _HeroSection extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
                       Icons.person_add_alt_1,
                       size: 16,
-                      color: Colors.black,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -414,7 +408,7 @@ class _HeroSection extends StatelessWidget {
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1A1C1E),
+              color: AppColors.textPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -424,7 +418,7 @@ class _HeroSection extends StatelessWidget {
             Text(
               'No site manager assigned yet',
               style: TextStyle(
-                color: Colors.grey[600],
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             )
@@ -468,14 +462,14 @@ class _HeroSection extends StatelessWidget {
                         const Icon(
                           Icons.calendar_today_outlined,
                           size: 14,
-                          color: Colors.grey,
+                          color: AppColors.textHint,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Completion by ${dateFormat.format(project.endDate!)}',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
@@ -493,7 +487,7 @@ class _HeroSection extends StatelessWidget {
                         child: Icon(
                           Icons.edit_outlined,
                           size: 16,
-                          color: Colors.grey,
+                          color: AppColors.textHint,
                         ),
                       ),
                     ),
@@ -515,7 +509,7 @@ class _HeroSection extends StatelessWidget {
                       'Completion',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -547,7 +541,7 @@ class _HeroSection extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: (project.progress.clamp(0, 100)) / 100,
                     minHeight: 8,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: AppColors.border,
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       AppColors.primary,
                     ),
@@ -612,7 +606,7 @@ class _AssignedManagerChip extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1C1E),
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -715,23 +709,17 @@ class _ModuleNavCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04), // Fixed
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -754,7 +742,7 @@ class _ModuleNavCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1C1E),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -762,14 +750,14 @@ class _ModuleNavCard extends StatelessWidget {
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.grey[400]),
+                Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
               ],
             ),
           ),

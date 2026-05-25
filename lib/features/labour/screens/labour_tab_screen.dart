@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../providers/labour_provider.dart';
 import '../data/models/daily_labour_log.dart';
@@ -36,10 +37,10 @@ class LabourTabScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.scaffoldBackground,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogLaborSheet(context, projectId),
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.sidebarBackground,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: SafeArea(
@@ -80,7 +81,7 @@ class LabourTabScreen extends ConsumerWidget {
                                 return Theme(
                                   data: Theme.of(context).copyWith(
                                     colorScheme: ColorScheme.light(
-                                      primary: const Color(0xFF1E293B),
+                                      primary: AppColors.sidebarBackground,
                                       onPrimary: Colors.white,
                                       onSurface: Colors.black,
                                     ),
@@ -103,29 +104,29 @@ class LabourTabScreen extends ConsumerWidget {
                           ),
                           side: BorderSide(
                             color: isFiltered
-                                ? const Color(0xFF1E293B)
-                                : Colors.grey.shade300,
+                                ? AppColors.sidebarBackground
+                                : AppColors.borderDark,
                           ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 0,
                           ),
                           backgroundColor: isFiltered
-                              ? const Color(0xFF1E293B).withValues(alpha: 0.05)
+                              ? AppColors.sidebarBackground.withValues(alpha: 0.05)
                               : Colors.transparent,
                         ),
                         icon: Icon(
                           isFiltered ? Icons.clear : Icons.date_range,
                           size: 16,
                           color: isFiltered
-                              ? const Color(0xFF1E293B)
+                              ? AppColors.sidebarBackground
                               : Colors.black,
                         ),
                         label: Text(
                           isFiltered ? 'Clear Filter' : 'Select Date',
                           style: TextStyle(
                             color: isFiltered
-                                ? const Color(0xFF1E293B)
+                                ? AppColors.sidebarBackground
                                 : Colors.black,
                           ),
                         ),
@@ -395,7 +396,7 @@ class _LaborHistoryCard extends StatelessWidget {
                     child: Text(
                       'Unskilled: $unskilled',
                       style: TextStyle(
-                        color: Colors.grey[700],
+                        color: AppColors.textSecondary,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -406,7 +407,7 @@ class _LaborHistoryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 8),
-          Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+          Icon(Icons.keyboard_arrow_down, color: AppColors.textHint),
         ],
       ),
     );
@@ -473,7 +474,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                       const SizedBox(height: 4),
                       Text(
                         'Add data to the site ledger',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                     ],
                   ),
@@ -483,7 +484,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.grey[100],
+                        color: AppColors.surfaceVariant,
                       ),
                       child: const Icon(Icons.close, size: 20),
                     ),
@@ -638,7 +639,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                       'Unskilled',
                       'workers',
                       _unskilledController,
-                      Icon(Icons.group, color: Colors.grey[400]),
+                      Icon(Icons.group, color: AppColors.textHint),
                     ),
                   ],
                 ),
@@ -651,7 +652,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: AppColors.sidebarBackground,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -710,7 +711,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
             decoration: InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: BorderSide(color: AppColors.border),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
