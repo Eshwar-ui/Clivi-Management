@@ -152,7 +152,7 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppColors.border),
       ),
       elevation: 0,
       child: Column(
@@ -168,7 +168,7 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                 Icons.add_circle_outline,
                 color: AppColors.primary,
               ),
-              tooltip: 'Add Grade',
+              tooltip: 'Add grade',
               onPressed: () => _showAddGradeDialog(context),
             ),
           ),

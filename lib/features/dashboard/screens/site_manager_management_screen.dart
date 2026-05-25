@@ -141,7 +141,7 @@ class _SiteManagerManagementScreenState
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF6F7FB),
+                      color: AppColors.scaffoldBackground,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
@@ -242,12 +242,12 @@ class _SiteManagerManagementScreenState
                         children: [
                           Icon(Icons.search_off,
                               size: 56,
-                              color: Colors.grey[300]),
+                              color: AppColors.borderDark),
                           const SizedBox(height: 12),
                           Text(
                             'No staff match "$_searchQuery"',
                             style: TextStyle(
-                              color: Colors.grey[500],
+                              color: AppColors.textHint,
                               fontSize: 15,
                             ),
                           ),
@@ -452,7 +452,7 @@ class _StaffCard extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF6F7FB),
+                            color: AppColors.scaffoldBackground,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: const Color(0xFFE5E7EB)),
                           ),

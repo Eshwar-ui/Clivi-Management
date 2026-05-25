@@ -27,13 +27,14 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
         .getMaterialLogsByProject(widget.projectId);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: const Text('Material Details'),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
+          tooltip: 'Back',
           onPressed: () => Navigator.pop(context),
         ),
         titleTextStyle: const TextStyle(
@@ -329,7 +330,7 @@ class _MaterialGroupCardState extends State<_MaterialGroupCard> {
           // Expanded Details (Variants)
           if (_expanded)
             Container(
-              color: Colors.grey[50],
+              color: AppColors.scaffoldBackground,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

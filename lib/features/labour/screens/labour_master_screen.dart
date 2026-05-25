@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_colors.dart';
 import '../providers/labour_provider.dart';
 import '../data/models/labour_model.dart';
 
@@ -18,6 +19,7 @@ class LabourMasterScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
             onPressed: () => ref.invalidate(masterLabourProvider),
           ),
         ],
@@ -38,13 +40,29 @@ class LabourMasterScreen extends ConsumerWidget {
               return ListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.shade200),
+                  side: BorderSide(color: AppColors.border),
                 ),
                 title: Text(labour.name),
                 subtitle: labour.phone != null ? Text(labour.phone!) : null,
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) async {
                     if (value == 'delete') {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Confirm Delete'),
+                          content: const Text('Are you sure? This action cannot be undone.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
                       await ref
                           .read(labourRepositoryProvider)
                           .deleteLabour(labour.id);

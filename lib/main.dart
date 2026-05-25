@@ -1,6 +1,7 @@
 import 'package:clivi_management/core/config/app_lifecycle_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/config/env.dart';
 import 'core/config/supabase_client.dart';
 import 'core/providers/global_realtime_sync_provider.dart';
@@ -34,6 +35,12 @@ void main() async {
     // Initialize Supabase
     await SupabaseConfig.initialize();
 
+    // Pre-load Google Fonts to prevent runtime download lag
+    GoogleFonts.pendingFonts([
+      GoogleFonts.poppins(),
+      GoogleFonts.inter(),
+    ]);
+
     // Run the app
     runApp(ProviderScope(child: CliviManagementApp()));
   } catch (e, stackTrace) {
@@ -52,6 +59,8 @@ void main() async {
 /// Main application widget
 class CliviManagementApp extends ConsumerWidget {
   const CliviManagementApp({super.key});
+
+  static final _theme = AppTheme.lightTheme;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,7 +81,7 @@ class CliviManagementApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Clivi Management',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: _theme,
       themeMode: ThemeMode.light,
       routerConfig: router,
     );

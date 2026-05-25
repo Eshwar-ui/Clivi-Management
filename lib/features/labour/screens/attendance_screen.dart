@@ -42,6 +42,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
@@ -60,6 +61,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month),
+            tooltip: 'Pick date',
             onPressed: _pickDate,
           ),
         ],
@@ -83,7 +85,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+          Icon(Icons.people_outline, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           const Text('No active workers'),
           const SizedBox(height: 8),
@@ -357,7 +359,7 @@ class _AttendanceCard extends StatelessWidget {
                   if (labour.skillType != null)
                     Text(
                       labour.skillType!,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                 ],
               ),

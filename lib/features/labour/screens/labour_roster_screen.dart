@@ -26,6 +26,7 @@ class LabourRosterScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text('Labour - $projectName'),
@@ -70,7 +71,7 @@ class LabourRosterScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+          Icon(Icons.people_outline, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
           Text(
             'No workers added yet',

@@ -34,7 +34,6 @@ class MetricCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         onTap: onTap,

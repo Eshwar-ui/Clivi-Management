@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive.dart';
-import '../../../core/widgets/custom_app_bar.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -31,24 +30,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
     _tabController.addListener(_handleTabSelection);
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedFilterDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedFilterDate = picked;
-      });
-    }
-  }
-
   void _handleTabSelection() {
-    if (_tabController.indexIsChanging) {
-      setState(() {});
-    }
+    if (_tabController.indexIsChanging) setState(() {});
   }
 
   bool get _showCompletedTab => _tabController.index == 1;
@@ -57,6 +40,16 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedFilterDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) setState(() => _selectedFilterDate = picked);
   }
 
   @override
@@ -68,244 +61,294 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
 
     final billsAsync = ref.watch(dashboardBillsCombinedProvider(isSiteManager));
     final billsData = billsAsync.valueOrNull ?? const <BillModel>[];
-    final pendingCount = billsData
-        .where((bill) => !bill.status.isCompleted)
-        .length;
-    final completedCount = billsData
-        .where((bill) => bill.status.isCompleted)
-        .length;
+    final pendingCount =
+        billsData.where((b) => !b.status.isCompleted).length;
+    final completedCount =
+        billsData.where((b) => b.status.isCompleted).length;
 
     return Scaffold(
-      floatingActionButton: isSiteManager
-          ? FloatingActionButton(
-              onPressed: () => context.push('/bills/create'),
-              child: const Icon(Icons.add),
-            )
-          : isAdmin
-          ? FloatingActionButton(
-              child: Icon(Icons.playlist_add_check_circle_outlined),
-              onPressed: () => context.push('/bills/approval-queue'),
-            )
-          : null,
+      backgroundColor: AppColors.scaffoldBackground,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final r = R(Size(constraints.maxWidth, constraints.maxHeight));
 
-      appBar: CustomAppBar(
-        title: Text(
-          'Raise',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        showBackButton: false,
-        constrainContent: true,
-        actions: [_buildDateFilterButton()],
-
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEF2F8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: TabBar(
-                indicatorSize: TabBarIndicatorSize.tab,
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+          return SafeArea(
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    r.isDesktop ? 32 : 20,
+                    r.isDesktop ? 28 : 16,
+                    r.isDesktop ? 32 : 20,
+                    0,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: r.maxContentWidth),
+                      child: _buildHeader(
+                        context,
+                        isAdmin: isAdmin,
+                        isSiteManager: isSiteManager,
+                        pendingCount: pendingCount,
+                        completedCount: completedCount,
+                      ),
+                    ),
+                  ),
                 ),
-                labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.textSecondary,
-                dividerColor: Colors.transparent,
-                tabs: [
-                  _buildTab('Pending', pendingCount),
-                  _buildTab('Completed', completedCount),
-                ],
-              ),
+                const SizedBox(height: 16),
+
+                // Content
+                Expanded(
+                  child: billsAsync.when(
+                    data: (bills) {
+                      final filtered = bills.where((bill) {
+                        bool matchesDate = true;
+                        if (_selectedFilterDate != null) {
+                          matchesDate =
+                              bill.billDate.year ==
+                                      _selectedFilterDate!.year &&
+                                  bill.billDate.month ==
+                                      _selectedFilterDate!.month &&
+                                  bill.billDate.day ==
+                                      _selectedFilterDate!.day;
+                        }
+                        return _showCompletedTab
+                            ? bill.status.isCompleted && matchesDate
+                            : !bill.status.isCompleted && matchesDate;
+                      }).toList()
+                        ..sort(
+                            (a, b) => b.billDate.compareTo(a.billDate));
+
+                      return _buildBillList(
+                        bills: filtered,
+                        isAdmin: isAdmin,
+                        isSiteManager: isSiteManager,
+                        r: r,
+                      );
+                    },
+                    loading: () =>
+                        const LoadingWidget(message: 'Loading bills...'),
+                    error: (err, _) => AppErrorWidget(
+                      message: err.toString(),
+                      onRetry: _refreshBillData,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
-      body: billsAsync.when(
-        data: (bills) {
-          final filteredBills = bills.where((bill) {
-            bool matchesDate = true;
-            if (_selectedFilterDate != null) {
-              matchesDate =
-                  bill.billDate.year == _selectedFilterDate!.year &&
-                  bill.billDate.month == _selectedFilterDate!.month &&
-                  bill.billDate.day == _selectedFilterDate!.day;
-            }
-
-            if (_showCompletedTab) {
-              return bill.status.isCompleted && matchesDate;
-            }
-            return !bill.status.isCompleted && matchesDate;
-          }).toList()..sort((a, b) => b.billDate.compareTo(a.billDate));
-
-          return _buildBillList(
-            bills: filteredBills,
-            isAdmin: isAdmin,
-            isSiteManager: isSiteManager,
           );
         },
-        loading: () => const LoadingWidget(message: 'Loading bills...'),
-        error: (err, stack) =>
-            AppErrorWidget(message: err.toString(), onRetry: _refreshBillData),
       ),
     );
   }
 
-  Widget _buildTab(String label, int count) {
-    return Tab(child: Text('$label($count)'));
-  }
+  // ── Header ──
 
-  Widget _buildDateFilterButton() {
-    return InkWell(
-      onTap: _pickDate,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildHeader(
+    BuildContext context, {
+    required bool isAdmin,
+    required bool isSiteManager,
+    required int pendingCount,
+    required int completedCount,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title + actions
+        Row(
           children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              size: 16,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(width: 8),
             Text(
-              _selectedFilterDate != null
-                  ? DateFormat('dd-MM-yyyy').format(_selectedFilterDate!)
-                  : 'Select Date',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              'Bills',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
             ),
-            if (_selectedFilterDate != null) ...[
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => setState(() => _selectedFilterDate = null),
-                child: Icon(
-                  Icons.close,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
+            const Spacer(),
+            // Date filter
+            _DateFilterChip(
+              selectedDate: _selectedFilterDate,
+              onTap: _pickDate,
+              onClear: () => setState(() => _selectedFilterDate = null),
+            ),
+            if (isSiteManager) ...[
+              const SizedBox(width: 10),
+              _HeaderButton(
+                icon: Icons.add_rounded,
+                label: 'New Bill',
+                filled: true,
+                onTap: () => context.push('/bills/create'),
+              ),
+            ],
+            if (isAdmin) ...[
+              const SizedBox(width: 10),
+              _HeaderButton(
+                icon: Icons.checklist_rounded,
+                label: 'Approvals',
+                filled: true,
+                onTap: () => context.push('/bills/approval-queue'),
               ),
             ],
           ],
         ),
-      ),
+        const SizedBox(height: 16),
+
+        // Tab bar
+        Container(
+          height: 42,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: TabBar(
+            controller: _tabController,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            labelColor: AppColors.textPrimary,
+            unselectedLabelColor: AppColors.textSecondary,
+            dividerColor: Colors.transparent,
+            labelStyle: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w500),
+            padding: const EdgeInsets.all(3),
+            tabs: [
+              Tab(
+                child: Text('Pending  $pendingCount'),
+              ),
+              Tab(
+                child: Text('Completed  $completedCount'),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
+
+  // ── Bill List ──
 
   Widget _buildBillList({
     required List<BillModel> bills,
     required bool isAdmin,
     required bool isSiteManager,
+    required R r,
   }) {
     if (bills.isEmpty) {
       return Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 64,
-              color: AppColors.textSecondary,
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(Icons.receipt_long_outlined,
+                  size: 28, color: AppColors.textHint),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               _showCompletedTab ? 'No completed bills' : 'No pending bills',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
       );
     }
 
-    final groupedBills = <String, List<BillModel>>{};
+    final grouped = <String, List<BillModel>>{};
     for (final bill in bills) {
-      final dateKey = _getDateKey(bill.billDate);
-      groupedBills.putIfAbsent(dateKey, () => []);
-      groupedBills[dateKey]!.add(bill);
+      final key = _getDateKey(bill.billDate);
+      grouped.putIfAbsent(key, () => []);
+      grouped[key]!.add(bill);
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final r = R(Size(constraints.maxWidth, constraints.maxHeight));
-        final columns = r.w >= 1180
-            ? 3
-            : r.w >= 760
+    final columns = r.w >= 1180
+        ? 3
+        : r.w >= 760
             ? 2
             : 1;
 
-        return Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: r.maxContentWidth),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: groupedBills.length,
-              itemBuilder: (context, index) {
-                final dateKey = groupedBills.keys.elementAt(index);
-                final dateBills = groupedBills[dateKey]!;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        dateKey.toUpperCase(),
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    if (columns == 1)
-                      ...dateBills.map(
-                        (bill) => _buildBillCard(
-                          bill,
-                          isAdmin: isAdmin,
-                          isSiteManager: isSiteManager,
-                        ),
-                      )
-                    else
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: dateBills.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          mainAxisExtent: 238,
-                        ),
-                        itemBuilder: (context, billIndex) => _buildBillCard(
-                          dateBills[billIndex],
-                          isAdmin: isAdmin,
-                          isSiteManager: isSiteManager,
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                  ],
-                );
-              },
-            ),
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(
+            horizontal: r.isDesktop ? 32 : 20,
+            vertical: 8,
           ),
-        );
-      },
+          itemCount: grouped.length,
+          itemBuilder: (context, index) {
+            final dateKey = grouped.keys.elementAt(index);
+            final dateBills = grouped[dateKey]!;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 10),
+                  child: Text(
+                    dateKey.toUpperCase(),
+                    style: TextStyle(
+                      color: AppColors.textHint,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                if (columns == 1)
+                  ...dateBills.map(
+                    (bill) => _buildBillCard(
+                      bill,
+                      isAdmin: isAdmin,
+                      isSiteManager: isSiteManager,
+                    ),
+                  )
+                else
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: dateBills.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      mainAxisExtent: 190,
+                    ),
+                    itemBuilder: (context, i) => _buildBillCard(
+                      dateBills[i],
+                      isAdmin: isAdmin,
+                      isSiteManager: isSiteManager,
+                    ),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -355,6 +398,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
     ref.invalidate(paginatedPendingBillsProvider);
   }
 
+  // ── Dialogs (unchanged logic) ──
+
   Future<void> _showEditBillDialog(BillModel bill) async {
     final titleController = TextEditingController(text: bill.title);
     final amountController = TextEditingController(
@@ -402,9 +447,10 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                         'vendor_name': vendorController.text.trim().isEmpty
                             ? null
                             : vendorController.text.trim(),
-                        'description': descriptionController.text.trim().isEmpty
-                            ? null
-                            : descriptionController.text.trim(),
+                        'description':
+                            descriptionController.text.trim().isEmpty
+                                ? null
+                                : descriptionController.text.trim(),
                         'payment_type': selectedPaymentType.value,
                         'payment_status': selectedPaymentStatus.value,
                         'bill_date': selectedBillDate
@@ -413,11 +459,6 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                             .first,
                       },
                     );
-                // Use sheetContext.mounted for modal state, outer mounted for
-                // ScaffoldMessenger — prevents setState on a disposed widget
-                // when the outer screen is popped while the save is in flight.
-                // sheetContext.mounted guards the modal setState;
-                // this.mounted + this.context guards the outer Scaffold snackbar.
                 if (sheetContext.mounted) {
                   setModalState(() => isSaving = false);
                 }
@@ -439,9 +480,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     final errorMessage = state.hasError
                         ? state.error.toString()
                         : 'Failed to update bill';
-                    ScaffoldMessenger.of(
-                      this.context,
-                    ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                    ScaffoldMessenger.of(this.context)
+                        .showSnackBar(SnackBar(content: Text(errorMessage)));
                   }
                 }
               }
@@ -460,9 +500,10 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     children: [
                       Text(
                         'Edit Bill',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 14),
                       TextField(
@@ -491,18 +532,14 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                           prefixIcon: Icon(Icons.category_outlined),
                         ),
                         items: BillType.values
-                            .map(
-                              (type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type.label),
-                              ),
-                            )
+                            .map((t) => DropdownMenuItem(
+                                value: t, child: Text(t.label)))
                             .toList(),
                         onChanged: isSaving
                             ? null
-                            : (value) {
-                                if (value != null) {
-                                  setModalState(() => selectedType = value);
+                            : (v) {
+                                if (v != null) {
+                                  setModalState(() => selectedType = v);
                                 }
                               },
                       ),
@@ -514,20 +551,15 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                           prefixIcon: Icon(Icons.pending_actions_outlined),
                         ),
                         items: PaymentStatus.values
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status.label),
-                              ),
-                            )
+                            .map((s) => DropdownMenuItem(
+                                value: s, child: Text(s.label)))
                             .toList(),
                         onChanged: isSaving
                             ? null
-                            : (value) {
-                                if (value != null) {
+                            : (v) {
+                                if (v != null) {
                                   setModalState(
-                                    () => selectedPaymentStatus = value,
-                                  );
+                                      () => selectedPaymentStatus = v);
                                 }
                               },
                       ),
@@ -536,25 +568,19 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                         initialValue: selectedPaymentType,
                         decoration: const InputDecoration(
                           labelText: 'Payment Type',
-                          prefixIcon: Icon(
-                            Icons.account_balance_wallet_outlined,
-                          ),
+                          prefixIcon:
+                              Icon(Icons.account_balance_wallet_outlined),
                         ),
                         items: PaymentType.values
-                            .map(
-                              (paymentType) => DropdownMenuItem(
-                                value: paymentType,
-                                child: Text(paymentType.label),
-                              ),
-                            )
+                            .map((p) => DropdownMenuItem(
+                                value: p, child: Text(p.label)))
                             .toList(),
                         onChanged: isSaving
                             ? null
-                            : (value) {
-                                if (value != null) {
+                            : (v) {
+                                if (v != null) {
                                   setModalState(
-                                    () => selectedPaymentType = value,
-                                  );
+                                      () => selectedPaymentType = v);
                                 }
                               },
                       ),
@@ -567,14 +593,12 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                                   context: context,
                                   initialDate: selectedBillDate,
                                   firstDate: DateTime(2020),
-                                  lastDate: DateTime.now().add(
-                                    const Duration(days: 365),
-                                  ),
+                                  lastDate: DateTime.now()
+                                      .add(const Duration(days: 365)),
                                 );
                                 if (picked != null) {
                                   setModalState(
-                                    () => selectedBillDate = picked,
-                                  );
+                                      () => selectedBillDate = picked);
                                 }
                               },
                         child: InputDecorator(
@@ -582,9 +606,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                             labelText: 'Bill Date',
                             prefixIcon: Icon(Icons.calendar_today_outlined),
                           ),
-                          child: Text(
-                            DateFormat('dd-MM-yyyy').format(selectedBillDate),
-                          ),
+                          child: Text(DateFormat('dd-MM-yyyy')
+                              .format(selectedBillDate)),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -614,8 +637,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                                      strokeWidth: 2),
                                 )
                               : const Text('Save Changes'),
                         ),
@@ -629,7 +651,6 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
         },
       );
     } finally {
-      // Dispose controllers regardless of how the sheet is dismissed
       titleController.dispose();
       amountController.dispose();
       vendorController.dispose();
@@ -659,20 +680,16 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
 
     if (shouldDelete != true || !mounted) return;
 
-    final success = await ref
-        .read(billControllerProvider.notifier)
-        .deleteBill(bill.id);
+    final success =
+        await ref.read(billControllerProvider.notifier).deleteBill(bill.id);
     if (!mounted) return;
 
-    if (success) {
-      _refreshBillData();
-    }
+    if (success) _refreshBillData();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          success ? 'Bill deleted successfully' : 'Failed to delete bill',
-        ),
+            success ? 'Bill deleted successfully' : 'Failed to delete bill'),
       ),
     );
   }
@@ -697,22 +714,16 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     paymentStatus: selectedPaymentStatus,
                     markCompleted: markCompleted,
                   );
-              // Use sheetContext.mounted for modal state, outer mounted for
-              // ScaffoldMessenger — prevents setState on a disposed widget
-              // when the outer screen is popped while the save is in flight.
-              // sheetContext.mounted guards the modal setState;
-              // this.mounted + this.context guards the outer Scaffold snackbar.
               if (sheetContext.mounted) {
                 setModalState(() => isSaving = false);
               }
               if (success) {
                 _refreshBillData();
-                if (sheetContext.mounted) {
-                  Navigator.of(sheetContext).pop();
-                }
+                if (sheetContext.mounted) Navigator.of(sheetContext).pop();
                 if (mounted) {
                   ScaffoldMessenger.of(this.context).showSnackBar(
-                    const SnackBar(content: Text('Bill updated successfully')),
+                    const SnackBar(
+                        content: Text('Bill updated successfully')),
                   );
                 }
               } else {
@@ -721,9 +732,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                   final errorMessage = state.hasError
                       ? state.error.toString()
                       : 'Failed to update bill';
-                  ScaffoldMessenger.of(
-                    this.context,
-                  ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                  ScaffoldMessenger.of(this.context)
+                      .showSnackBar(SnackBar(content: Text(errorMessage)));
                 }
               }
             }
@@ -741,16 +751,18 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                 children: [
                   Text(
                     'Approve Bill',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     bill.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<PaymentStatus>(
@@ -761,29 +773,24 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     ),
                     items: const [
                       DropdownMenuItem(
-                        value: PaymentStatus.needToPay,
-                        child: Text('Pending'),
-                      ),
+                          value: PaymentStatus.needToPay,
+                          child: Text('Pending')),
                       DropdownMenuItem(
-                        value: PaymentStatus.advance,
-                        child: Text('Will Pay'),
-                      ),
+                          value: PaymentStatus.advance,
+                          child: Text('Will Pay')),
                       DropdownMenuItem(
-                        value: PaymentStatus.halfPaid,
-                        child: Text('Half Paid'),
-                      ),
+                          value: PaymentStatus.halfPaid,
+                          child: Text('Half Paid')),
                       DropdownMenuItem(
-                        value: PaymentStatus.fullPaid,
-                        child: Text('Paid'),
-                      ),
+                          value: PaymentStatus.fullPaid,
+                          child: Text('Paid')),
                     ],
                     onChanged: isSaving
                         ? null
-                        : (value) {
-                            if (value != null) {
+                        : (v) {
+                            if (v != null) {
                               setModalState(
-                                () => selectedPaymentStatus = value,
-                              );
+                                  () => selectedPaymentStatus = v);
                             }
                           },
                   ),
@@ -792,12 +799,11 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                     value: markCompleted,
                     onChanged: isSaving
                         ? null
-                        : (value) => setModalState(() => markCompleted = value),
+                        : (v) => setModalState(() => markCompleted = v),
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Mark as Completed'),
                     subtitle: const Text(
-                      'Completed bills move to site manager Completed tab',
-                    ),
+                        'Completed bills move to Completed tab'),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -808,7 +814,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2),
                             )
                           : const Text('Save Update'),
                     ),
@@ -822,6 +829,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
     );
   }
 }
+
+// ── Bill Card ──
 
 class _BillCard extends StatelessWidget {
   final BillModel bill;
@@ -840,168 +849,121 @@ class _BillCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 360;
+    final isCompleted = bill.status.isCompleted;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            DateFormat('dd-MM-yyyy').format(bill.billDate),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: AppColors.borderDark.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top: date + amount
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined,
+                        size: 13, color: AppColors.textHint),
+                    const SizedBox(width: 5),
+                    Text(
+                      DateFormat('dd MMM yyyy').format(bill.billDate),
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textHint),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '₹${bill.amount.toStringAsFixed(0)}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Title
+                Text(
+                  bill.title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      Text(
-                        '₹${bill.amount.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: isNarrow ? 24 : 30,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+
+                // Raised by
+                if (bill.raisedByName != null ||
+                    bill.createdByName != null ||
+                    bill.vendorName != null)
                   Text(
-                    bill.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 10),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Payment Type : ',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    bill.raisedByName ??
+                        bill.createdByName ??
+                        bill.vendorName ??
+                        '',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
-                        TextSpan(
-                          text: bill.paymentStatus.label,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Raised By : ',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        TextSpan(
-                          text:
-                              bill.raisedByName ??
-                              bill.createdByName ??
-                              bill.vendorName ??
-                              'Staff',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _StatusChip(
-                              label: bill.status.isCompleted
-                                  ? 'Completed'
-                                  : 'Pending',
-                              color: bill.status.isCompleted
-                                  ? AppColors.success
-                                  : AppColors.warning,
-                            ),
-                            _StatusChip(
-                              label: bill.paymentStatus.label,
-                              color: AppColors.info,
-                            ),
-                          ],
-                        ),
+                const SizedBox(height: 12),
+
+                // Bottom: chips + menu
+                Row(
+                  children: [
+                    _StatusChip(
+                      label: isCompleted ? 'Completed' : 'Pending',
+                      color: isCompleted
+                          ? AppColors.success
+                          : AppColors.warning,
+                    ),
+                    const SizedBox(width: 8),
+                    _StatusChip(
+                      label: bill.paymentStatus.label,
+                      color: AppColors.info,
+                    ),
+                    const Spacer(),
+                    if (canEdit || canDelete)
+                      PopupMenuButton<_BillMenuAction>(
+                        icon: Icon(Icons.more_horiz_rounded,
+                            color: AppColors.textHint, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onSelected: onMenuAction,
+                        itemBuilder: (_) {
+                          final items = <PopupMenuEntry<_BillMenuAction>>[];
+                          if (canEdit) {
+                            items.add(const PopupMenuItem(
+                                value: _BillMenuAction.edit,
+                                child: Text('Edit')));
+                          }
+                          if (canDelete) {
+                            items.add(const PopupMenuItem(
+                                value: _BillMenuAction.delete,
+                                child: Text('Delete')));
+                          }
+                          return items;
+                        },
                       ),
-                      if (canEdit || canDelete)
-                        PopupMenuButton<_BillMenuAction>(
-                          icon: Icon(
-                            Icons.more_vert,
-                            color: AppColors.textSecondary,
-                          ),
-                          onSelected: onMenuAction,
-                          itemBuilder: (context) {
-                            final items = <PopupMenuEntry<_BillMenuAction>>[];
-                            if (canEdit) {
-                              items.add(
-                                const PopupMenuItem(
-                                  value: _BillMenuAction.edit,
-                                  child: Text('Edit'),
-                                ),
-                              );
-                            }
-                            if (canDelete) {
-                              items.add(
-                                const PopupMenuItem(
-                                  value: _BillMenuAction.delete,
-                                  child: Text('Delete'),
-                                ),
-                              );
-                            }
-                            return items;
-                          },
-                        ),
-                      if (onTap != null)
-                        Icon(
-                          Icons.chevron_right,
-                          color: AppColors.textSecondary,
-                        ),
-                    ],
-                  ),
-                ],
-              );
-            },
+                    if (onTap != null)
+                      Icon(Icons.chevron_right_rounded,
+                          color: AppColors.textHint, size: 20),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1010,6 +972,8 @@ class _BillCard extends StatelessWidget {
 }
 
 enum _BillMenuAction { edit, delete }
+
+// ── Shared Widgets ──
 
 class _StatusChip extends StatelessWidget {
   final String label;
@@ -1020,17 +984,132 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         label,
         style: TextStyle(
           fontSize: 11,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _DateFilterChip extends StatelessWidget {
+  final DateTime? selectedDate;
+  final VoidCallback onTap;
+  final VoidCallback onClear;
+
+  const _DateFilterChip({
+    required this.selectedDate,
+    required this.onTap,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selectedDate != null
+                  ? AppColors.primary
+                  : AppColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.calendar_today_outlined,
+                  size: 15, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                selectedDate != null
+                    ? DateFormat('dd MMM').format(selectedDate!)
+                    : 'Date',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selectedDate != null
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                ),
+              ),
+              if (selectedDate != null) ...[
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: onClear,
+                  child: Icon(Icons.close_rounded,
+                      size: 15, color: AppColors.textSecondary),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool filled;
+  final VoidCallback onTap;
+
+  const _HeaderButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: filled ? AppColors.primary : Colors.white,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: filled ? null : Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  size: 17,
+                  color: filled ? Colors.white : AppColors.textPrimary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: filled ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

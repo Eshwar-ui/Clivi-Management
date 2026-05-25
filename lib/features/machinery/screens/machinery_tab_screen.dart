@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../providers/machinery_provider.dart';
 import '../data/models/machinery_model.dart';
 import '../data/models/machinery_log_model.dart';
@@ -20,10 +21,10 @@ class MachineryTabScreen extends ConsumerWidget {
     final dateRange = ref.watch(projectDateRangeProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.scaffoldBackground,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogMachinerySheet(context, projectId),
-        backgroundColor: const Color(0xFF1E293B), // Dark Navy from design
+        backgroundColor: AppColors.sidebarBackground, // Dark Navy from design
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
@@ -64,7 +65,7 @@ class MachineryTabScreen extends ConsumerWidget {
                               return Theme(
                                 data: Theme.of(context).copyWith(
                                   colorScheme: ColorScheme.light(
-                                    primary: const Color(0xFF1E293B),
+                                    primary: AppColors.sidebarBackground,
                                     onPrimary: Colors.white,
                                     onSurface: Colors.black,
                                   ),
@@ -85,29 +86,29 @@ class MachineryTabScreen extends ConsumerWidget {
                         ),
                         side: BorderSide(
                           color: isFiltered
-                              ? const Color(0xFF1E293B)
-                              : Colors.grey.shade300,
+                              ? AppColors.sidebarBackground
+                              : AppColors.borderDark,
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 0,
                         ),
                         backgroundColor: isFiltered
-                            ? const Color(0xFF1E293B).withValues(alpha: 0.05)
+                            ? AppColors.sidebarBackground.withValues(alpha: 0.05)
                             : Colors.transparent,
                       ),
                       icon: Icon(
                         isFiltered ? Icons.clear : Icons.date_range,
                         size: 16,
                         color: isFiltered
-                            ? const Color(0xFF1E293B)
+                            ? AppColors.sidebarBackground
                             : Colors.black,
                       ),
                       label: Text(
                         isFiltered ? 'Clear Filter' : 'Select Date',
                         style: TextStyle(
                           color: isFiltered
-                              ? const Color(0xFF1E293B)
+                              ? AppColors.sidebarBackground
                               : Colors.black,
                         ),
                       ),
@@ -156,7 +157,7 @@ class MachineryTabScreen extends ConsumerWidget {
                         Icon(
                           Icons.construction,
                           size: 64,
-                          color: Colors.grey[300],
+                          color: AppColors.borderDark,
                         ),
                         const SizedBox(height: 16),
                         const Text(
@@ -296,13 +297,14 @@ class _MachineryCard extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       log.registrationNo ?? 'No Registration',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
+                tooltip: 'Delete log',
                 onPressed: () async {
                   final noteController = TextEditingController();
                   final confirmed = await showDialog<bool>(
@@ -455,7 +457,7 @@ class _DetailItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.grey[400]),
+        Icon(icon, size: 14, color: AppColors.textHint),
         const SizedBox(width: 6),
         Expanded(
           child: Column(
@@ -465,7 +467,7 @@ class _DetailItem extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.grey[500],
+                  color: AppColors.textHint,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -574,17 +576,18 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                       const SizedBox(height: 4),
                       Text(
                         'Add data to the site ledger',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                     ],
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
+                    tooltip: 'Close',
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.grey[100],
+                        color: AppColors.surfaceVariant,
                       ),
                       child: const Icon(Icons.close, size: 20),
                     ),
@@ -598,7 +601,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -812,7 +815,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                   children: [
                     Text(
                       _isTimeBased ? 'Execution Hours' : 'Difference',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                     Text(
                       _isTimeBased
@@ -833,7 +836,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: AppColors.sidebarBackground,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -987,13 +990,6 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           return;
         }
 
-        debugPrint('[MACHINERY LOG] Logging time-based...');
-        debugPrint('[MACHINERY LOG] Machine: ${_selectedMachine!.name}');
-        debugPrint(
-          '[MACHINERY LOG] Start: ${_startTime!.format(context)}, End: ${_endTime!.format(context)}',
-        );
-        debugPrint('[MACHINERY LOG] Duration: $_calculatedDuration hrs');
-
         success = await controller.logTimeBased(
           projectId: widget.projectId,
           machineryId: _selectedMachine!.id,
@@ -1015,10 +1011,6 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           return;
         }
 
-        debugPrint('[MACHINERY LOG] Logging reading-based...');
-        debugPrint('[MACHINERY LOG] Machine: ${_selectedMachine!.name}');
-        debugPrint('[MACHINERY LOG] Start: $start, End: $end');
-
         success = await controller.logUsage(
           projectId: widget.projectId,
           machineryId: _selectedMachine!.id,
@@ -1028,8 +1020,6 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           endReading: end,
         );
       }
-
-      debugPrint('[MACHINERY LOG] Success: $success');
 
       if (mounted) {
         setState(() => _isLoading = false);
@@ -1052,9 +1042,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           );
         }
       }
-    } catch (e, stackTrace) {
-      debugPrint('[MACHINERY LOG ERROR] $e');
-      debugPrint('[MACHINERY LOG STACK] $stackTrace');
+    } catch (e, _) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

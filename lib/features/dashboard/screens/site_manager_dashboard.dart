@@ -22,7 +22,7 @@ class SiteManagerDashboard extends ConsumerWidget {
     final projectsState = ref.watch(activeProjectsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: _buildAppBar(context, profile),
       body: SafeArea(
         child: RefreshIndicator(

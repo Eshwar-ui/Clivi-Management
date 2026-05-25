@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/utils/validators.dart';
 import '../models/stock_item.dart';
@@ -148,22 +147,6 @@ class StockRepository {
     String? activity,
     String? notes,
   }) async {
-    // Debug: Log all input parameters
-    debugPrint('=== logMaterialInward DEBUG ===');
-    debugPrint('projectId: $projectId');
-    debugPrint('stockItemName: $stockItemName');
-    debugPrint(
-      'stockItemGrade: $stockItemGrade (isNull: ${stockItemGrade == null})',
-    );
-    debugPrint('stockItemUnit: $stockItemUnit');
-    debugPrint('supplierId: $supplierId');
-    debugPrint('quantity: $quantity');
-    debugPrint('billAmount: $billAmount');
-    debugPrint('paymentType: $paymentType');
-    debugPrint('activity: $activity');
-    debugPrint('notes: $notes');
-    debugPrint('================================');
-
     validateProjectId(projectId);
     if (supplierId.isEmpty) {
       throw Exception('Supplier ID is required. Vendor must be selected.');
@@ -182,19 +165,7 @@ class StockRepository {
       'p_notes': notes,
     };
 
-    debugPrint('RPC params: $params');
-
-    try {
-      final result = await _client.rpc('receive_material', params: params);
-      debugPrint('RPC Success! Result: $result');
-    } catch (e, stackTrace) {
-      debugPrint('=== RPC ERROR ===');
-      debugPrint('Error Type: ${e.runtimeType}');
-      debugPrint('Error: $e');
-      debugPrint('Stack Trace: $stackTrace');
-      debugPrint('=================');
-      rethrow;
-    }
+    await _client.rpc('receive_material', params: params);
   }
 
   /// Log material outward (consumed)

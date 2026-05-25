@@ -50,12 +50,13 @@ class _ProjectOperationsScreenState
     final projectName = state.project?.name ?? 'Project';
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
+          tooltip: 'Back',
           onPressed: () => context.pop(),
         ),
         title: Column(
@@ -115,11 +116,11 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: AppColors.scaffoldBackground,
       floatingActionButton: ElevatedButton.icon(
         onPressed: () => _showLogMaterialSheet(context),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.sidebarBackground,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -190,7 +191,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                         side: BorderSide(
                           color: isFiltered
                               ? AppColors.primary
-                              : Colors.grey.shade300,
+                              : AppColors.borderDark,
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -265,7 +266,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                       const SizedBox(height: 4),
                       Text(
                         'Choose operation type',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                     ],
                   ),
@@ -275,7 +276,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.grey[100],
+                        color: AppColors.surfaceVariant,
                       ),
                       child: const Icon(Icons.close, size: 20),
                     ),
@@ -410,7 +411,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade200),
+            side: BorderSide(color: AppColors.border),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -446,7 +447,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
                     TableRow(
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey.shade300),
+                          bottom: BorderSide(color: AppColors.borderDark),
                         ),
                       ),
                       children: const [
@@ -663,7 +664,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppColors.border),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -878,7 +879,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                       ),
                       Text(
                         DateFormat('dd MMM yyyy, hh:mm a').format(log.loggedAt),
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                     ],
                   ),
@@ -888,7 +889,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.grey[100],
+                        color: AppColors.surfaceVariant,
                       ),
                       child: const Icon(Icons.close, size: 20),
                     ),
@@ -988,7 +989,7 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[400]),
+          Icon(icon, size: 20, color: AppColors.textHint),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -996,7 +997,7 @@ class _DetailRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1004,7 +1005,7 @@ class _DetailRow extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: valueColor ?? Colors.black,
+                    color: valueColor ?? AppColors.textPrimary,
                   ),
                 ),
               ],
