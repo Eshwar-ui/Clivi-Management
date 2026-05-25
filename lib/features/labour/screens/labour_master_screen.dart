@@ -47,6 +47,22 @@ class LabourMasterScreen extends ConsumerWidget {
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) async {
                     if (value == 'delete') {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Confirm Delete'),
+                          content: const Text('Are you sure? This action cannot be undone.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
                       await ref
                           .read(labourRepositoryProvider)
                           .deleteLabour(labour.id);

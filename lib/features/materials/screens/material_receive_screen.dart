@@ -162,9 +162,10 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
           const SnackBar(content: Text('Materials received successfully')),
         );
 
-        // Refresh the logs and summary providers instantly
+        // Refresh the logs, stock, and material master providers
         ref.invalidate(materialLogsProvider(pid));
         ref.invalidate(stockBalanceProvider(pid));
+        ref.invalidate(allMaterialsProvider);
 
         if (widget.isEmbedded) {
           Navigator.pop(context); // Close the bottom sheet

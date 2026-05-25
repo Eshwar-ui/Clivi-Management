@@ -257,10 +257,31 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) {
                       final blueprint = state.extra as Blueprint?;
                       if (blueprint == null) {
-                        return const Scaffold(
+                        return Scaffold(
+                          appBar: AppBar(
+                            title: const Text('Blueprint'),
+                            elevation: 0,
+                          ),
                           body: Center(
-                            child: Text(
-                              'Error: Blueprint data not provided. Please navigate from the files list.',
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.description_outlined,
+                                    size: 48, color: AppColors.textHint),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Blueprint data not available',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Please navigate from the files list',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
@@ -375,7 +396,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'materials/stock',
                 name: 'material-stock',
-                builder: (context, state) => const StockLedgerScreen(),
+                builder: (context, state) {
+                  final projectId = state.pathParameters['id']!;
+                  return StockLedgerScreen(projectId: projectId);
+                },
               ),
               GoRoute(
                 path: 'materials/receipt/:receiptId',
