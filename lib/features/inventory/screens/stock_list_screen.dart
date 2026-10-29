@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../data/models/stock_item_model.dart';
 import '../providers/inventory_provider.dart';
@@ -39,7 +40,10 @@ class StockListScreen extends ConsumerWidget {
       ),
       body: stockItemsAsync.when(
         loading: () => const LoadingWidget(message: 'Loading stock...'),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load stock items',
+          onRetry: () => ref.invalidate(stockItemsProvider(projectId)),
+        ),
         data: (items) => items.isEmpty
             ? _buildEmptyState(context)
             : _buildStockList(context, ref, items),

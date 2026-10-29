@@ -207,7 +207,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen>
             controller: _tabController,
             indicatorSize: TabBarIndicatorSize.tab,
             indicator: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(8),
               boxShadow: const [
                 BoxShadow(
@@ -854,17 +854,19 @@ class _BillCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: AppColors.borderDark.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+                BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1015,7 +1017,7 @@ class _DateFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
@@ -1081,7 +1083,7 @@ class _HeaderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: filled ? AppColors.primary : Colors.white,
+      color: filled ? AppColors.primary : AppColors.surface,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
@@ -1098,14 +1100,14 @@ class _HeaderButton extends StatelessWidget {
             children: [
               Icon(icon,
                   size: 17,
-                  color: filled ? Colors.white : AppColors.textPrimary),
+                  color: filled ? AppColors.textOnPrimary : AppColors.textPrimary),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: filled ? Colors.white : AppColors.textPrimary,
+                  color: filled ? AppColors.textOnPrimary : AppColors.textPrimary,
                 ),
               ),
             ],

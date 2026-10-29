@@ -59,11 +59,10 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           ),
           title: Text(
             projectState.project?.name ?? 'Project Details',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -100,7 +99,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: r.maxContentWidth),
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: r.pad.copyWith(bottom: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -358,9 +357,12 @@ class _HeroSection extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -372,12 +374,11 @@ class _HeroSection extends StatelessWidget {
             children: [
               Text(
                 'ASSIGNED SITE MANAGERS',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 1.2,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 1.2,
+                    ),
               ),
               if (isAdmin)
                 InkWell(
@@ -403,11 +404,10 @@ class _HeroSection extends StatelessWidget {
             assignedManagers.isEmpty
                 ? 'Not Assigned'
                 : '${assignedManagers.length} Assigned',
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -415,10 +415,10 @@ class _HeroSection extends StatelessWidget {
           if (assignedManagers.isEmpty)
             Text(
               'No site manager assigned yet',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
             )
           else
             Wrap(
@@ -590,9 +590,8 @@ class _AssignedManagerChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F6FF),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDDE4FF)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -625,8 +624,7 @@ class _ModuleNavigation extends StatelessWidget {
         title: 'Blueprints',
         subtitle: 'Project documents / drawings',
         icon: Icons.description_outlined,
-        color: const Color(0xFFE8F0FE),
-        iconColor: const Color(0xFF1967D2),
+        iconColor: AppColors.primary,
         onTap: () => context.goNamed(
           'project-blueprints',
           pathParameters: {'id': projectId},
@@ -636,8 +634,7 @@ class _ModuleNavigation extends StatelessWidget {
         title: 'Operations',
         subtitle: 'Consumption and expenses',
         icon: Icons.engineering_outlined,
-        color: const Color(0xFFE3F2FD),
-        iconColor: const Color(0xFF1565C0),
+        iconColor: AppColors.primaryVariant,
         onTap: () => context.goNamed(
           'project-operations',
           pathParameters: {'id': projectId},
@@ -647,8 +644,7 @@ class _ModuleNavigation extends StatelessWidget {
         title: 'Reports / Insights',
         subtitle: 'Bills and reports',
         icon: Icons.analytics_outlined,
-        color: const Color(0xFFF3E5F5),
-        iconColor: const Color(0xFF7B1FA2),
+        iconColor: AppColors.superAdmin,
         onTap: () => context.goNamed(
           'project-reports',
           pathParameters: {'id': projectId},
@@ -692,7 +688,6 @@ class _ModuleNavCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Color color;
   final Color iconColor;
   final VoidCallback onTap;
 
@@ -700,7 +695,6 @@ class _ModuleNavCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.color,
     required this.iconColor,
     required this.onTap,
   });
@@ -708,26 +702,31 @@ class _ModuleNavCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            boxShadow: [
+              BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+              BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: color,
+                    color: iconColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  alignment: Alignment.center,
                   child: Icon(icon, color: iconColor, size: 24),
                 ),
                 const SizedBox(width: 16),
@@ -737,25 +736,23 @@ class _ModuleNavCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
               ],
             ),
           ),

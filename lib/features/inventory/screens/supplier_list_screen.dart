@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../data/models/supplier_model.dart';
 import '../providers/inventory_provider.dart';
@@ -73,7 +74,10 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
       ),
       body: suppliersAsync.when(
         loading: () => const LoadingWidget(message: 'Loading suppliers...'),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load suppliers',
+          onRetry: () => ref.invalidate(suppliersProvider),
+        ),
         data: (suppliers) {
           final filtered = _searchQuery.isEmpty
               ? suppliers
@@ -632,7 +636,7 @@ class _SupplierFormSheetState extends State<_SupplierFormSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(const SnackBar(content: Text('Failed to save supplier. Please try again.')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

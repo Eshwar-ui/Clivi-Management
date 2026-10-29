@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
 import '../providers/machinery_provider.dart';
 
 
@@ -57,7 +59,7 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
                 ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _pickDate,
-                tileColor: Colors.grey.withValues(alpha: 0.05),
+                tileColor: AppColors.surfaceVariant,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -85,7 +87,7 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
                       v == null ? 'Please select machinery' : null,
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error loading machinery: $e'),
+                error: (e, _) => InlineErrorWidget(message: 'Failed to load machinery list'),
               ),
               const SizedBox(height: 16),
 
@@ -125,7 +127,7 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
                   padding: EdgeInsets.only(top: 8.0),
                   child: Text(
                     'End time must be after Start time',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: AppColors.error),
                   ),
                 ),
 
@@ -188,7 +190,7 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
         decoration: InputDecoration(labelText: label),
         child: Text(
           time?.format(context) ?? 'Select',
-          style: time == null ? const TextStyle(color: Colors.grey) : null,
+          style: time == null ? const TextStyle(color: AppColors.textHint) : null,
         ),
       ),
     );
@@ -248,7 +250,7 @@ class _MachineryLogScreenState extends ConsumerState<MachineryLogScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to log usage! Check console logs.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }

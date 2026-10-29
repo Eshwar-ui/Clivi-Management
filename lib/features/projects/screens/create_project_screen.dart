@@ -269,7 +269,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       context: context,
       initialDate: _startDate ?? DateTime.now(),
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
     );
     if (date != null) {
       setState(() {
@@ -314,11 +314,12 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 640),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     if (_errorMessage != null) ...[
                       InlineErrorWidget(message: _errorMessage!),
                       const SizedBox(height: 16),
@@ -371,7 +372,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       decoration: InputDecoration(
                         hintText: 'Select project type',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: AppColors.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -447,7 +448,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                           horizontal: 16,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppColors.border),
                         ),
@@ -472,7 +473,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       decoration: InputDecoration(
                         hintText: 'Tell About the Project ...',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: AppColors.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -502,7 +503,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                       onPressed: _handleSubmit,
                       isLoading: _isLoading,
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -541,7 +543,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -575,7 +577,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           decoration: InputDecoration(
             hintText: 'dd-MM-yyyy',
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -606,9 +608,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        // border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [

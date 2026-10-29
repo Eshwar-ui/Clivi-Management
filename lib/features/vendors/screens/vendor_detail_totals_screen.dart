@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/vendor_analytics_provider.dart';
 import '../data/models/vendor_summary_models.dart';
 
@@ -24,8 +26,9 @@ class VendorDetailTotalsScreen extends ConsumerWidget {
       body: totalsAsync.when(
         data: (rows) {
           if (rows.isEmpty) {
-            return const Center(
-              child: Text('No material data for this vendor yet'),
+            return const EmptyStateWidget(
+              message: 'No material data for this vendor yet',
+              icon: Icons.inventory_2_outlined,
             );
           }
 
@@ -75,8 +78,13 @@ class VendorDetailTotalsScreen extends ConsumerWidget {
             itemCount: byMaterial.length,
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const LoadingWidget(message: 'Loading vendor totals...'),
+        error: (e, _) => AppErrorWidget(
+          message: 'Failed to load vendor totals',
+          onRetry: () => ref.invalidate(
+            vendorMaterialTotalsProvider(VendorTotalsRequest(vendorId)),
+          ),
+        ),
       ),
     );
   }

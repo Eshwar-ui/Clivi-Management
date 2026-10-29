@@ -124,7 +124,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
             const Spacer(),
             if (isAdmin) ...[
               Material(
-                color: Colors.white,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
                   onTap: () => _showFilterSheet(context),
@@ -134,7 +134,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     height: 40,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.border),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+                        BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+                      ],
                     ),
                     child: Icon(
                       Icons.tune_rounded,
@@ -161,13 +164,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.add_rounded,
-                            size: 18, color: Colors.white),
+                            size: 18, color: AppColors.textOnPrimary),
                         if (r.isDesktop) ...[
                           const SizedBox(width: 6),
                           const Text(
                             'New Project',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textOnPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -225,7 +228,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.surface,
                   ),
                   onChanged: (value) {
                     setState(() {});
@@ -290,11 +293,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       );
     }
 
-    final columns = r.w >= 1180
-        ? 3
-        : r.w >= 760
-            ? 2
-            : 1;
+    final columns = r.columns(mobile: 1, tablet: 2, desktop: 3);
 
     return RefreshIndicator(
       onRefresh: () => ref.read(projectListProvider.notifier).refresh(),
@@ -383,28 +382,48 @@ class _ProjectCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusColor = project.status.color;
     final progressColor = _getProgressColor(project.progress);
+    final avatarColor = _getAvatarColor(project.name);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: AppColors.borderDark.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+                BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top row: status + type badges
+                // Top row: letter avatar + status + type badges
                 Row(
                   children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: avatarColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        project.name.isNotEmpty ? project.name[0].toUpperCase() : '?',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: avatarColor,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     _Badge(
                       label: project.status.displayName,
                       color: statusColor,
@@ -436,6 +455,7 @@ class _ProjectCard extends StatelessWidget {
                   project.name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -459,14 +479,15 @@ class _ProjectCard extends StatelessWidget {
                 Row(
                   children: [
                     if (project.location != null) ...[
-                      Icon(Icons.location_on_outlined,
+                      const Icon(Icons.location_on_outlined,
                           size: 14, color: AppColors.textHint),
                       const SizedBox(width: 3),
                       Flexible(
                         child: Text(
                           project.location!,
-                          style: TextStyle(
-                              fontSize: 12, color: AppColors.textHint),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textHint,
+                              ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -474,25 +495,27 @@ class _ProjectCard extends StatelessWidget {
                       const SizedBox(width: 12),
                     ],
                     if (project.startDate != null) ...[
-                      Icon(Icons.calendar_today_outlined,
+                      const Icon(Icons.calendar_today_outlined,
                           size: 12, color: AppColors.textHint),
                       const SizedBox(width: 3),
                       Text(
                         DateFormat('MMM d, yy').format(project.startDate!),
-                        style: TextStyle(
-                            fontSize: 12, color: AppColors.textHint),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textHint,
+                            ),
                       ),
                     ],
                     if (project.assignments != null &&
                         project.assignments!.isNotEmpty) ...[
                       const Spacer(),
-                      Icon(Icons.people_outline_rounded,
+                      const Icon(Icons.people_outline_rounded,
                           size: 14, color: AppColors.textHint),
                       const SizedBox(width: 3),
                       Text(
                         '${project.assignments!.length}',
-                        style: TextStyle(
-                            fontSize: 12, color: AppColors.textHint),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textHint,
+                            ),
                       ),
                     ],
                   ],
@@ -548,6 +571,12 @@ class _ProjectCard extends StatelessWidget {
     if (progress < 50) return AppColors.warning;
     if (progress < 75) return AppColors.info;
     return AppColors.success;
+  }
+
+  Color _getAvatarColor(String name) {
+    if (name.isEmpty) return AppColors.primary;
+    final colors = AppColors.chartColors;
+    return colors[name.codeUnitAt(0) % colors.length];
   }
 }
 

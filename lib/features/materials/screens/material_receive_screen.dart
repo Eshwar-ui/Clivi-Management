@@ -4,6 +4,7 @@ import 'package:clivi_management/core/config/supabase_client.dart' show logger;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/error_widget.dart';
 import '../providers/master_data_provider.dart';
 import '../providers/stock_provider.dart';
 import '../data/models/material_grade_model.dart';
@@ -203,7 +204,7 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
                 if (!widget.isEmbedded) ...[
                   const Text(
                     'Add data to the site ledger',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -268,12 +269,12 @@ class _MaterialReceiveScreenState extends ConsumerState<MaterialReceiveScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.download_rounded,
-                    color: Colors.green,
+                    color: AppColors.success,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -526,7 +527,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -537,7 +538,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
               Align(
                 alignment: Alignment.centerRight,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
+                  icon: const Icon(Icons.close, color: AppColors.textHint),
                   onPressed: widget.onRemove,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -553,7 +554,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                 hintText: '-- Select Material from Master List --',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(8)),
-                  borderSide: BorderSide(color: Colors.grey),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 12,
@@ -592,7 +593,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                 hintText: 'Select predefined grade',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(8)),
-                  borderSide: BorderSide(color: Colors.grey),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 12,
@@ -635,7 +636,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                       labelText: 'Unit',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(8)),
-                        borderSide: BorderSide(color: Colors.grey),
+                        borderSide: BorderSide(color: AppColors.border),
                       ),
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12,
@@ -661,7 +662,7 @@ class _EntryCardState extends ConsumerState<_EntryCard> {
                 .watch(suppliersProvider)
                 .when(
                   loading: () => const LinearProgressIndicator(),
-                  error: (e, _) => Text('Error loading suppliers: $e'),
+                  error: (e, _) => const InlineErrorWidget(message: 'Failed to load suppliers'),
                   data: (suppliers) {
                     // Filter suppliers by the selected material name/category.
                     // A supplier with no category or matching category is shown.

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../../../features/auth/data/models/user_profile_model.dart';
 import '../../../features/auth/providers/auth_repository_provider.dart';
 import '../../../features/projects/data/models/project_model.dart';
@@ -105,19 +107,19 @@ class _SiteManagerManagementScreenState
     final siteManagersAsync = ref.watch(siteManagersProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1C1E)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
         title: const Text(
           'Site managers',
           style: TextStyle(
-            color: Color(0xFF1A1C1E),
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w800,
             fontSize: 24,
           ),
@@ -149,17 +151,17 @@ class _SiteManagerManagementScreenState
                       decoration: InputDecoration(
                         hintText: 'Search by name, email or phone…',
                         hintStyle: const TextStyle(
-                          color: Color(0xFF9CA3AF),
+                          color: AppColors.textHint,
                           fontSize: 14,
                         ),
                         prefixIcon: const Icon(
                           Icons.search,
-                          color: Color(0xFF9CA3AF),
+                          color: AppColors.textHint,
                         ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear,
-                                    color: Color(0xFF9CA3AF), size: 18),
+                                    color: AppColors.textHint, size: 18),
                                 onPressed: () {
                                   _searchController.clear();
                                   setState(() => _searchQuery = '');
@@ -187,7 +189,7 @@ class _SiteManagerManagementScreenState
                             ? 'Total Staff ${siteManagers.length}'
                             : '${filtered.length} of ${siteManagers.length} staff',
                         style: const TextStyle(
-                          color: Color(0xFF1A1C1E),
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                         ),
@@ -205,18 +207,18 @@ class _SiteManagerManagementScreenState
                         icon: const Icon(
                           Icons.add,
                           size: 18,
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                         ),
                         label: const Text(
                           'Add Staff',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textOnPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
+                          backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -284,7 +286,7 @@ class _SiteManagerManagementScreenState
                             builder: (context) => AlertDialog(
                               title: const Text(
                                 'Delete Manager',
-                                style: TextStyle(color: Colors.red),
+                                style: TextStyle(color: AppColors.error),
                               ),
                               content: const Text(
                                 'Are you sure you want to delete this manager? This action cannot be undone.',
@@ -298,11 +300,11 @@ class _SiteManagerManagementScreenState
                                 ElevatedButton(
                                   onPressed: () => Navigator.pop(context, true),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
+                                    backgroundColor: AppColors.error,
                                   ),
                                   child: const Text(
                                     'Delete',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: AppColors.textOnPrimary),
                                   ),
                                 ),
                               ],
@@ -347,8 +349,11 @@ class _SiteManagerManagementScreenState
             ),
           );
         }, // end data
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        loading: () => const LoadingWidget(message: 'Loading site managers...'),
+        error: (error, stack) => AppErrorWidget(
+          message: 'Failed to load site managers',
+          onRetry: () => ref.invalidate(siteManagersProvider),
+        ),
       ),
     );
   }
@@ -373,16 +378,9 @@ class _StaffCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppColors.cardShadow,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -394,14 +392,14 @@ class _StaffCard extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: const Color(0xFF2563EB),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               alignment: Alignment.center,
               child: Text(
                 _getInitials(manager.fullName),
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
                 ),
@@ -417,7 +415,7 @@ class _StaffCard extends StatelessWidget {
                   Text(
                     manager.fullName ?? 'Unknown',
                     style: const TextStyle(
-                      color: Color(0xFF1A1C1E),
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                     ),
@@ -426,7 +424,7 @@ class _StaffCard extends StatelessWidget {
                   Text(
                     manager.position ?? 'Site Manager',
                     style: const TextStyle(
-                      color: Color(0xFF2563EB), // Blue text for position
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
@@ -436,7 +434,7 @@ class _StaffCard extends StatelessWidget {
                     const Text(
                       'Projects:',
                       style: TextStyle(
-                        color: Color(0xFF6B7280),
+                        color: AppColors.textSecondary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -454,12 +452,12 @@ class _StaffCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppColors.scaffoldBackground,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: Text(
                             p.name,
                             style: const TextStyle(
-                              color: Color(0xFF4B5563),
+                              color: AppColors.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -472,7 +470,7 @@ class _StaffCard extends StatelessWidget {
                     const Text(
                       'No projects assigned',
                       style: TextStyle(
-                        color: Color(0xFF9CA3AF),
+                        color: AppColors.textHint,
                         fontSize: 12,
                         fontStyle: FontStyle.italic,
                       ),
@@ -494,13 +492,13 @@ class _StaffCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
+                      color: AppColors.surfaceVariant,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: const Icon(
                       Icons.edit_outlined,
-                      color: Color(0xFF1A1C1E),
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -513,13 +511,13 @@ class _StaffCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
+                      color: AppColors.error.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFFEE2E2)),
+                      border: Border.all(color: AppColors.error.withValues(alpha: 0.1)),
                     ),
                     child: const Icon(
                       Icons.delete_outline,
-                      color: Color(0xFFEF4444),
+                      color: AppColors.error,
                       size: 20,
                     ),
                   ),

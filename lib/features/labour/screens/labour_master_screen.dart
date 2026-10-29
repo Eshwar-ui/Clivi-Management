@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/labour_provider.dart';
 import '../data/models/labour_model.dart';
 
@@ -25,11 +27,17 @@ class LabourMasterScreen extends ConsumerWidget {
         ],
       ),
       body: labourAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const LoadingWidget(message: 'Loading workers...'),
+        error: (e, _) => AppErrorWidget(
+          message: 'Failed to load workers',
+          onRetry: () => ref.invalidate(masterLabourProvider),
+        ),
         data: (list) {
           if (list.isEmpty) {
-            return const Center(child: Text('No workers in master list'));
+            return const EmptyStateWidget(
+              message: 'No workers in master list',
+              icon: Icons.people_outline,
+            );
           }
           return ListView.separated(
             padding: const EdgeInsets.all(16),

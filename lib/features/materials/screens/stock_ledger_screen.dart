@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/stock_provider.dart';
 
 class StockLedgerScreen extends ConsumerWidget {
@@ -29,52 +31,16 @@ class StockLedgerScreen extends ConsumerWidget {
         ),
       ),
       body: balanceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 48, color: AppColors.error),
-              const SizedBox(height: 12),
-              Text('Failed to load stock',
-                  style: TextStyle(color: AppColors.textSecondary)),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () =>
-                    ref.invalidate(stockBalanceProvider(projectId!)),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        loading: () => const LoadingWidget(message: 'Loading stock ledger...'),
+        error: (e, _) => AppErrorWidget(
+          message: 'Failed to load stock data',
+          onRetry: () => ref.invalidate(stockBalanceProvider(projectId!)),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(Icons.inventory_2_outlined,
-                        size: 28, color: AppColors.textHint),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'No stock records yet',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+            return const EmptyStateWidget(
+              message: 'No stock records yet',
+              icon: Icons.inventory_2_outlined,
             );
           }
 
@@ -143,7 +109,7 @@ class _StockCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border:
             Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),

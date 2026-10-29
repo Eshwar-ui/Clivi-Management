@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/auth_repository_provider.dart';
 import '../../auth/data/models/user_profile_model.dart';
@@ -49,7 +50,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: profile == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingWidget(message: 'Loading profile...')
           : LayoutBuilder(
               builder: (context, constraints) {
                 final r = R(Size(constraints.maxWidth, constraints.maxHeight));
@@ -147,7 +148,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           CircleAvatar(
             radius: 36,
-            backgroundColor: Colors.white.withValues(alpha: 0.15),
+            backgroundColor: AppColors.textOnPrimary.withValues(alpha: 0.15),
             backgroundImage: profile.avatarUrl != null
                 ? NetworkImage(profile.avatarUrl!)
                 : null,
@@ -157,7 +158,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: AppColors.textOnPrimary,
                     ),
                   )
                 : null,
@@ -171,7 +172,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   profile.fullName ?? 'User',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: AppColors.textOnPrimary,
                       ),
                 ),
                 const SizedBox(height: 4),
@@ -179,7 +180,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Text(
                     profile.email!,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: AppColors.textOnPrimary.withValues(alpha: 0.7),
                       fontSize: 13,
                     ),
                   ),
@@ -198,7 +199,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -207,13 +208,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(width: 12),
                       Icon(Icons.calendar_today_outlined,
                           size: 12,
-                          color: Colors.white.withValues(alpha: 0.5)),
+                          color: AppColors.textOnPrimary.withValues(alpha: 0.5)),
                       const SizedBox(width: 4),
                       Text(
                         'Joined ${DateFormat('MMM yyyy').format(profile.createdAt!)}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: AppColors.textOnPrimary.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
@@ -223,7 +224,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           Material(
-            color: Colors.white.withValues(alpha: 0.12),
+            color: AppColors.textOnPrimary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
               onTap: () => _showEditSheet(context),
@@ -231,7 +232,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: const Padding(
                 padding: EdgeInsets.all(10),
                 child:
-                    Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                    Icon(Icons.edit_outlined, size: 18, color: AppColors.textOnPrimary),
               ),
             ),
           ),
@@ -348,10 +349,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         children: [
@@ -456,10 +459,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           return Container(
             margin: EdgeInsets.only(
                 top: MediaQuery.of(ctx).viewPadding.top + 40),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
               borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(20)),
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -530,7 +533,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: AppColors.textOnPrimary,
                                   ),
                                 )
                               : const Text('Save Changes'),
@@ -611,10 +614,12 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -627,6 +632,7 @@ class _SectionCard extends StatelessWidget {
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
               ),
             ],

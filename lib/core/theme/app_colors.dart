@@ -41,10 +41,10 @@ class AppColors {
   static const Color infoDark = Color(0xFF2563EB);
 
   // Neutral Colors
-  static const Color background = Color(0xFFF8FAFC);
+  static const Color background = Color(0xFFEFF3F8);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceVariant = Color(0xFFF1F5F9);
-  static const Color scaffoldBackground = Color(0xFFF8FAFC);
+  static const Color scaffoldBackground = Color(0xFFEFF3F8);
 
   // Text Colors
   static const Color textPrimary = Color(0xFF0F172A);

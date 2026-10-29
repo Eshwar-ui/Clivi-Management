@@ -139,9 +139,12 @@ class _AdminApprovalQueueScreenState
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         children: [
@@ -407,72 +410,79 @@ class _ApprovalQueueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    bill.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  bill.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                 ),
-                Text(
-                  '₹${bill.amount.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${bill.projectName ?? '-'}  |  ${DateFormat('dd MMM yyyy').format(bill.billDate)}',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Raised By: ${bill.vendorName ?? bill.createdByName ?? bill.raisedBy ?? '-'}',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _StatusPill(
-                  label: bill.status.isCompleted ? 'Completed' : 'Pending',
-                  color: bill.status.isCompleted
-                      ? AppColors.success
-                      : AppColors.warning,
+              Text(
+                '₹${bill.amount.toStringAsFixed(0)}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${bill.projectName ?? '-'}  |  ${DateFormat('dd MMM yyyy').format(bill.billDate)}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
                 ),
-                const SizedBox(width: 8),
-                _StatusPill(
-                  label: bill.paymentStatus.label,
-                  color: AppColors.info,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Raised By: ${bill.vendorName ?? bill.createdByName ?? bill.raisedBy ?? '-'}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
-                const Spacer(),
-                if (onReview != null)
-                  OutlinedButton.icon(
-                    onPressed: onReview,
-                    icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('Review'),
-                  ),
-              ],
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _StatusPill(
+                label: bill.status.isCompleted ? 'Completed' : 'Pending',
+                color: bill.status.isCompleted
+                    ? AppColors.success
+                    : AppColors.warning,
+              ),
+              const SizedBox(width: 8),
+              _StatusPill(
+                label: bill.paymentStatus.label,
+                color: AppColors.info,
+              ),
+              const Spacer(),
+              if (onReview != null)
+                OutlinedButton.icon(
+                  onPressed: onReview,
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Review'),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

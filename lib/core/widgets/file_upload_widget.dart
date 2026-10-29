@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import '../theme/app_colors.dart';
 import '../utils/file_utils.dart'; // Import created in previous step
 
 class FileUploadWidget extends StatefulWidget {
@@ -54,12 +55,13 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
         ],
         InkWell(
           onTap: _pickFile,
+          borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
+              border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(8),
-              color: Colors.grey.shade50,
+              color: AppColors.surfaceVariant,
             ),
             child: Row(
               children: [
@@ -73,8 +75,8 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
                         _selectedFileName ?? 'Select file to upload',
                         style: TextStyle(
                           color: _selectedFileName != null
-                              ? Colors.black
-                              : Colors.grey,
+                              ? AppColors.textPrimary
+                              : AppColors.textHint,
                           fontWeight: _selectedFileName != null
                               ? FontWeight.bold
                               : FontWeight.normal,

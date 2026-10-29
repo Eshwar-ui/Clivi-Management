@@ -105,21 +105,21 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
         title: const Text(
           'Add Manager',
           style: TextStyle(
-            color: Color(0xFF1A1C1E),
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1C1E)),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
       ),
@@ -223,7 +223,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                         _isPasswordVisible
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: const Color(0xFF6B7280),
+                        color: AppColors.textSecondary,
                       ),
                       onPressed: () => setState(
                         () => _isPasswordVisible = !_isPasswordVisible,
@@ -253,7 +253,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                         _isConfirmPasswordVisible
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: const Color(0xFF6B7280),
+                        color: AppColors.textSecondary,
                       ),
                       onPressed: () => setState(
                         () => _isConfirmPasswordVisible =
@@ -308,18 +308,18 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleCreateSiteManager,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
+                      backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const CircularProgressIndicator(color: AppColors.textOnPrimary)
                         : const Text(
                             'Create Account',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textOnPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -340,7 +340,7 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF1A1C1E),
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w700,
           fontSize: 14,
         ),
@@ -352,24 +352,24 @@ class _AddSiteManagerScreenState extends ConsumerState<AddSiteManagerScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(
-        color: Color(0xFF9CA3AF),
+        color: AppColors.textHint,
         fontWeight: FontWeight.w400,
         fontSize: 14,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+        borderSide: const BorderSide(color: AppColors.surfaceVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+        borderSide: const BorderSide(color: AppColors.surfaceVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

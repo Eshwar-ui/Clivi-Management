@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive_scaffold.dart';
 
+import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../data/models/stock_item_model.dart';
 import '../data/models/material_log_model.dart';
@@ -151,13 +152,7 @@ class _SupplierPicker extends ConsumerWidget {
         height: 56,
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
-      error: (e, _) => Row(
-        children: [
-          const Icon(Icons.warning, color: Colors.orange),
-          const SizedBox(width: 8),
-          Expanded(child: Text('Failed to load vendors: $e')),
-        ],
-      ),
+      error: (e, _) => const InlineErrorWidget(message: 'Failed to load vendors'),
       data: (suppliers) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -273,7 +268,12 @@ class _LogListTab extends ConsumerWidget {
 
     return logsAsync.when(
       loading: () => const LoadingWidget(message: 'Loading logs...'),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) => AppErrorWidget(
+        message: 'Failed to load material logs',
+        onRetry: () => logType == LogType.inward
+            ? ref.invalidate(inwardLogsProvider(projectId))
+            : ref.invalidate(outwardLogsProvider(projectId)),
+      ),
       data: (logs) => logs.isEmpty
           ? _buildEmptyState(context)
           : _buildLogList(context, ref, logs),
@@ -366,16 +366,16 @@ class _MaterialLogCard extends ConsumerWidget {
                   ),
                   decoration: BoxDecoration(
                     color: log.logType == LogType.inward
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : Colors.orange.withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.2)
+                        : AppColors.warning.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     log.logType.displayName,
                     style: TextStyle(
                       color: log.logType == LogType.inward
-                          ? Colors.green
-                          : Colors.orange,
+                          ? AppColors.success
+                          : AppColors.warning,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -399,7 +399,7 @@ class _MaterialLogCard extends ConsumerWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
                   tooltip: 'Delete log',
                   onPressed: () async {
                     final noteController = TextEditingController();
@@ -438,7 +438,7 @@ class _MaterialLogCard extends ConsumerWidget {
                             },
                             child: const Text(
                               'Delete',
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: AppColors.error),
                             ),
                           ),
                         ],
@@ -464,7 +464,7 @@ class _MaterialLogCard extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.construction, size: 16, color: Colors.grey),
+                  const Icon(Icons.construction, size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     log.activity!,
@@ -800,7 +800,7 @@ class _AddLogBottomSheetState extends ConsumerState<_AddLogBottomSheet> {
     } catch (e) {
       if (mounted) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save log entry. Please try again.')));
         }
       }
     } finally {

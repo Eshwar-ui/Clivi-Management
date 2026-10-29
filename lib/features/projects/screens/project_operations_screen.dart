@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/project_provider.dart';
 import '../../materials/providers/stock_provider.dart';
 import 'package:intl/intl.dart';
@@ -52,10 +54,10 @@ class _ProjectOperationsScreenState
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           tooltip: 'Back',
           onPressed: () => context.pop(),
         ),
@@ -65,7 +67,7 @@ class _ProjectOperationsScreenState
             Text(
               projectName,
               style: const TextStyle(
-                color: Colors.black,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -121,7 +123,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
         onPressed: () => _showLogMaterialSheet(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.sidebarBackground,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.textOnPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           elevation: 4,
@@ -145,7 +147,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 Consumer(
@@ -170,8 +172,8 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                                 data: Theme.of(context).copyWith(
                                   colorScheme: ColorScheme.light(
                                     primary: AppColors.primary,
-                                    onPrimary: Colors.white,
-                                    onSurface: Colors.black,
+                                    onPrimary: AppColors.textOnPrimary,
+                                    onSurface: AppColors.textPrimary,
                                   ),
                                 ),
                                 child: child!,
@@ -204,12 +206,12 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                       icon: Icon(
                         isFiltered ? Icons.clear : Icons.date_range,
                         size: 16,
-                        color: isFiltered ? AppColors.primary : Colors.black,
+                        color: isFiltered ? AppColors.primary : AppColors.textPrimary,
                       ),
                       label: Text(
                         isFiltered ? 'Clear Filter' : 'Select Date',
                         style: TextStyle(
-                          color: isFiltered ? AppColors.primary : Colors.black,
+                          color: isFiltered ? AppColors.primary : AppColors.textPrimary,
                         ),
                       ),
                     );
@@ -234,7 +236,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
       builder: (ctx) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -310,7 +312,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                     builder: (modalCtx) => Container(
                       height: MediaQuery.of(context).size.height * 0.9,
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(24),
                           topRight: Radius.circular(24),
@@ -348,7 +350,7 @@ class _MaterialsTabState extends ConsumerState<_MaterialsTab> {
                     builder: (modalCtx) => Container(
                       height: MediaQuery.of(context).size.height * 0.9,
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(24),
                           topRight: Radius.circular(24),
@@ -456,7 +458,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
                           child: Text(
                             'Item',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -467,7 +469,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
                           child: Text(
                             'Received',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -479,7 +481,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
                           child: Text(
                             'Used',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -491,7 +493,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
                           child: Text(
                             'Remaining',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -525,13 +527,14 @@ class _MaterialSummaryHeader extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: CircularProgressIndicator(),
-        ),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: LoadingWidget(message: 'Loading material summary...'),
       ),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (err, _) => AppErrorWidget(
+        message: 'Failed to load material summary',
+        onRetry: () => ref.invalidate(stockBalanceProvider(projectId)),
+      ),
     );
   }
 
@@ -569,7 +572,7 @@ class _MaterialSummaryHeader extends ConsumerWidget {
           padding: const EdgeInsets.only(top: 12.0),
           child: Text(
             '${rec.toStringAsFixed(1)}\n$unit',
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
             textAlign: TextAlign.right,
           ),
         ),
@@ -635,14 +638,11 @@ class _MaterialsHistoryList extends ConsumerWidget {
         }
 
         if (displayLogs.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Text(
-                'No material logs found',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
+          return EmptyStateWidget(
+            message: dateRange != null
+                ? 'No material logs found for the selected date range.'
+                : 'No material logs yet.\nStart by logging a material receive or consume.',
+            icon: Icons.inventory_2_outlined,
           );
         }
 
@@ -662,15 +662,11 @@ class _MaterialsHistoryList extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+                    BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
                   ],
                 ),
                 child: Row(
@@ -720,7 +716,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                                 width: 6,
                                 height: 6,
                                 decoration: const BoxDecoration(
-                                  color: Colors.grey,
+                                  color: AppColors.textSecondary,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -731,7 +727,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                                       ? (log.supplier?.name ?? 'Unknown Vendor')
                                       : (log.activity ?? 'Consumption'),
                                   style: const TextStyle(
-                                    color: Colors.grey,
+                                    color: AppColors.textSecondary,
                                     fontSize: 13,
                                   ),
                                   maxLines: 1,
@@ -806,7 +802,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                               TextSpan(
                                 text: log.stockItem?.unit ?? '',
                                 style: const TextStyle(
-                                  color: Colors.grey,
+                                  color: AppColors.textSecondary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -818,7 +814,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                         Text(
                           DateFormat('MMM dd').format(log.loggedAt),
                           style: const TextStyle(
-                            color: Colors.grey,
+                            color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -831,8 +827,11 @@ class _MaterialsHistoryList extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      loading: () => const LoadingWidget(message: 'Loading material logs...'),
+      error: (err, stack) => AppErrorWidget(
+        message: 'Failed to load material logs',
+        onRetry: () => ref.invalidate(materialLogsProvider(projectId)),
+      ),
     );
   }
 
@@ -848,7 +847,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
       builder: (ctx) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -953,7 +952,7 @@ class _MaterialsHistoryList extends ConsumerWidget {
                   'Notes',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),

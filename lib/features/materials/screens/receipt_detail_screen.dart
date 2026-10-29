@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../data/models/material_receipt_model.dart';
 import '../providers/repository_providers.dart';
 
@@ -30,24 +32,10 @@ class ReceiptDetailScreen extends ConsumerWidget {
         ),
       ),
       body: receiptAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 48, color: AppColors.error),
-              const SizedBox(height: 12),
-              Text('Failed to load receipt',
-                  style: TextStyle(color: AppColors.textSecondary)),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () =>
-                    ref.invalidate(_receiptDetailProvider(receiptId)),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        loading: () => const LoadingWidget(message: 'Loading receipt details...'),
+        error: (e, _) => AppErrorWidget(
+          message: 'Failed to load receipt',
+          onRetry: () => ref.invalidate(_receiptDetailProvider(receiptId)),
         ),
         data: (receipt) => _ReceiptContent(receipt: receipt),
       ),

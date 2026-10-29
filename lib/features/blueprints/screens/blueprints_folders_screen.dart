@@ -2,6 +2,8 @@ import 'package:clivi_management/features/blueprints/widgets/folder_grid_tile.da
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -46,7 +48,7 @@ class BlueprintsFoldersScreen extends ConsumerWidget {
                   const Icon(
                     Icons.folder_off_outlined,
                     size: 60,
-                    color: Colors.grey,
+                    color: AppColors.textHint,
                   ),
                   const SizedBox(height: 16),
                   const Text('No blueprint folders found for this project.'),
@@ -63,18 +65,23 @@ class BlueprintsFoldersScreen extends ConsumerWidget {
             );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.9,
-            ),
-            itemCount: folders.length,
-            itemBuilder: (context, index) {
-              final folder = folders[index];
-              return FolderGridTile(folder: folder, projectId: projectId);
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final r = R(Size(constraints.maxWidth, constraints.maxHeight));
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: r.columns(mobile: 2, tablet: 3, desktop: 4),
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.9,
+                ),
+                itemCount: folders.length,
+                itemBuilder: (context, index) {
+                  final folder = folders[index];
+                  return FolderGridTile(folder: folder, projectId: projectId);
+                },
+              );
             },
           );
         },

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/machinery_provider.dart';
 import '../data/models/machinery_model.dart';
 import '../data/models/machinery_log_model.dart';
@@ -25,7 +27,7 @@ class MachineryTabScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogMachinerySheet(context, projectId),
         backgroundColor: AppColors.sidebarBackground, // Dark Navy from design
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: AppColors.textOnPrimary),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,7 +43,7 @@ class MachineryTabScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 Consumer(
@@ -66,8 +68,8 @@ class MachineryTabScreen extends ConsumerWidget {
                                 data: Theme.of(context).copyWith(
                                   colorScheme: ColorScheme.light(
                                     primary: AppColors.sidebarBackground,
-                                    onPrimary: Colors.white,
-                                    onSurface: Colors.black,
+                                    onPrimary: AppColors.textOnPrimary,
+                                    onSurface: AppColors.textPrimary,
                                   ),
                                 ),
                                 child: child!,
@@ -102,14 +104,14 @@ class MachineryTabScreen extends ConsumerWidget {
                         size: 16,
                         color: isFiltered
                             ? AppColors.sidebarBackground
-                            : Colors.black,
+                            : AppColors.textPrimary,
                       ),
                       label: Text(
                         isFiltered ? 'Clear Filter' : 'Select Date',
                         style: TextStyle(
                           color: isFiltered
                               ? AppColors.sidebarBackground
-                              : Colors.black,
+                              : AppColors.textPrimary,
                         ),
                       ),
                     );
@@ -150,22 +152,9 @@ class MachineryTabScreen extends ConsumerWidget {
                 }
 
                 if (displayLogs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.construction,
-                          size: 64,
-                          color: AppColors.borderDark,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No usage logged yet',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
+                  return const EmptyStateWidget(
+                    message: 'No usage logged yet.\nTap + to log machinery usage.',
+                    icon: Icons.construction,
                   );
                 }
                 return ListView.builder(
@@ -191,8 +180,11 @@ class MachineryTabScreen extends ConsumerWidget {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const LoadingWidget(message: 'Loading machinery logs...'),
+              error: (e, _) => AppErrorWidget(
+                message: 'Failed to load machinery logs',
+                onRetry: () => ref.invalidate(machineryLogsProvider(projectId)),
+              ),
             ),
           ),
         ],
@@ -210,12 +202,12 @@ class MachineryTabScreen extends ConsumerWidget {
   }
 
   Color _getColor(int index) {
-    final colors = [
-      Colors.blue,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.red,
+    const colors = [
+      AppColors.primary,
+      AppColors.warning,
+      AppColors.superAdmin,
+      AppColors.accent,
+      AppColors.error,
     ];
     return colors[index % colors.length];
   }
@@ -248,15 +240,9 @@ class _MachineryCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,7 +260,7 @@ class _MachineryCard extends ConsumerWidget {
                 ),
                 child: const Icon(
                   Icons.handyman_outlined,
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   size: 24,
                 ),
               ),
@@ -303,7 +289,7 @@ class _MachineryCard extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
                 tooltip: 'Delete log',
                 onPressed: () async {
                   final noteController = TextEditingController();
@@ -341,7 +327,7 @@ class _MachineryCard extends ConsumerWidget {
                           },
                           child: const Text(
                             'Delete',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(color: AppColors.error),
                           ),
                         ),
                       ],
@@ -477,7 +463,7 @@ class _DetailItem extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -539,7 +525,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
     // Only show content if we have sufficient height, otherwise scroll
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -627,7 +613,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: AppColors.textHint,
                 ),
               ),
               const SizedBox(height: 8),
@@ -665,7 +651,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                       },
                     ),
                     loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => Text('Error loading machines: $e'),
+                    error: (e, _) => const InlineErrorWidget(message: 'Failed to load machinery list'),
                   );
                 },
               ),
@@ -677,7 +663,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: AppColors.textHint,
                 ),
               ),
               const SizedBox(height: 8),
@@ -692,9 +678,9 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                       return Theme(
                         data: Theme.of(context).copyWith(
                           colorScheme: const ColorScheme.light(
-                            primary: Color(0xFF1E293B),
-                            onPrimary: Colors.white,
-                            onSurface: Colors.black,
+                            primary: AppColors.sidebarBackground,
+                            onPrimary: AppColors.textOnPrimary,
+                            onSurface: AppColors.textPrimary,
                           ),
                         ),
                         child: child!,
@@ -708,7 +694,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -721,7 +707,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                       const Icon(
                         Icons.date_range,
                         size: 18,
-                        color: Colors.grey,
+                        color: AppColors.textHint,
                       ),
                     ],
                   ),
@@ -736,7 +722,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: AppColors.textHint,
                 ),
               ),
               const SizedBox(height: 8),
@@ -744,7 +730,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                 controller: _activityController,
                 decoration: InputDecoration(
                   hintText: 'e.g. Excavation Phase 1',
-                  fillColor: const Color(0xFFF8FAFC),
+                  fillColor: AppColors.surfaceVariant,
                   filled: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -807,7 +793,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -842,10 +828,10 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const CircularProgressIndicator(color: AppColors.textOnPrimary)
                       : const Text(
                           'Confirm & Save Log',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(color: AppColors.textOnPrimary, fontSize: 16),
                         ),
                 ),
               ),
@@ -863,12 +849,12 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? AppColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: isSelected
-                ? [
+                ? const [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: AppColors.shadow,
                       blurRadius: 4,
                     ),
                   ]
@@ -880,7 +866,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 13,
-              color: isSelected ? Colors.black : Colors.grey,
+              color: isSelected ? AppColors.textPrimary : AppColors.textHint,
             ),
           ),
         ),
@@ -901,7 +887,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: Colors.grey,
+            color: AppColors.textHint,
           ),
         ),
         const SizedBox(height: 6),
@@ -916,7 +902,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -926,7 +912,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
                   time?.format(context) ?? '--:--',
                   style: const TextStyle(fontSize: 16),
                 ),
-                const Icon(Icons.access_time, size: 18, color: Colors.grey),
+                const Icon(Icons.access_time, size: 18, color: AppColors.textHint),
               ],
             ),
           ),
@@ -944,7 +930,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: Colors.grey,
+            color: AppColors.textHint,
           ),
         ),
         const SizedBox(height: 6),
@@ -952,7 +938,7 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: AppColors.surfaceVariant,
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1029,14 +1015,14 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Log saved successfully'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Failed to save log'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
               duration: Duration(seconds: 5),
             ),
           );
@@ -1046,10 +1032,10 @@ class _LogMachinerySheetState extends ConsumerState<_LogMachinerySheet> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
+          const SnackBar(
+            content: Text('Failed to log machinery. Please try again.'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 5),
           ),
         );
       }

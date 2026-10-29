@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class BulkEntryTable<T> extends StatelessWidget {
   final List<String> headers;
@@ -18,34 +19,42 @@ class BulkEntryTable<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final headerTextStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        ) ??
+        const TextStyle(fontWeight: FontWeight.bold);
+
     return Column(
       children: [
-        Table(
-          border: TableBorder.all(color: Colors.grey.shade300),
-          columnWidths: columnWidths,
-          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-          children: [
-            // Header Row
-            TableRow(
-              decoration: BoxDecoration(color: Colors.grey.shade100),
-              children: headers
-                  .map(
-                    (h) => Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        h,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Table(
+            border: TableBorder.all(color: AppColors.border),
+            columnWidths: columnWidths,
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: [
+              // Header Row
+              TableRow(
+                decoration: const BoxDecoration(color: AppColors.surfaceVariant),
+                children: headers
+                    .map(
+                      (h) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          h,
+                          style: headerTextStyle,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            // Data Rows
-            ...items.asMap().entries.map((entry) {
-              return rowBuilder(context, entry.value, entry.key);
-            }),
-          ],
+                    )
+                    .toList(),
+              ),
+              // Data Rows
+              ...items.asMap().entries.map((entry) {
+                return rowBuilder(context, entry.value, entry.key);
+              }),
+            ],
+          ),
         ),
         if (onAddRow != null)
           Padding(

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/error_widget.dart';
+import '../../../../core/widgets/loading_widget.dart';
 import '../providers/stock_provider.dart';
 import '../data/models/stock_item.dart';
-import '../data/models/material_log.dart';
 
 class MaterialsTabScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -19,47 +19,46 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stockAsync = ref
-        .watch(stockRepositoryProvider)
-        .getStockItemsByProject(widget.projectId);
-    final logsAsync = ref
-        .watch(stockRepositoryProvider)
-        .getMaterialLogsByProject(widget.projectId);
+    final stockAsync = ref.watch(stockItemsStreamProvider(widget.projectId));
+    final logsAsync = ref.watch(materialLogsProvider(widget.projectId));
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: const Text('Material Details'),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           tooltip: 'Back',
           onPressed: () => Navigator.pop(context),
         ),
         titleTextStyle: const TextStyle(
-          color: Colors.black,
+          color: AppColors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
       ),
-      body: FutureBuilder(
-        future: Future.wait([stockAsync, logsAsync]),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return AppErrorWidget(
-              message: 'Error loading data: ${snapshot.error}',
-            );
-          }
-
-          final stockItems = snapshot.data![0] as List<StockItem>;
-          final logs = snapshot.data![1] as List<MaterialLog>;
+      body: stockAsync.when(
+        loading: () => const LoadingWidget(message: 'Loading materials...'),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load materials',
+          onRetry: () => ref.invalidate(stockItemsStreamProvider(widget.projectId)),
+        ),
+        data: (stockItems) {
+          return logsAsync.when(
+            loading: () => const LoadingWidget(message: 'Loading logs...'),
+            error: (error, _) => AppErrorWidget(
+              message: 'Failed to load material logs',
+              onRetry: () => ref.invalidate(materialLogsProvider(widget.projectId)),
+            ),
+            data: (logs) {
 
           if (stockItems.isEmpty) {
-            return const Center(child: Text('No materials found'));
+            return const EmptyStateWidget(
+              message: 'No materials found for this project',
+              icon: Icons.inventory_2_outlined,
+            );
           }
 
           // 1. Group Logic
@@ -186,6 +185,8 @@ class _MaterialsTabScreenState extends ConsumerState<MaterialsTabScreen> {
               ),
             ],
           );
+            },
+          );
         },
       ),
     );
@@ -274,7 +275,7 @@ class _MaterialGroupCardState extends State<_MaterialGroupCard> {
                             Text(
                               '${widget.variants.length} Variants',
                               style: const TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.textSecondary,
                                 fontSize: 12,
                               ),
                             ),
@@ -294,7 +295,7 @@ class _MaterialGroupCardState extends State<_MaterialGroupCard> {
                           ),
                           const Text(
                             'Total Cost',
-                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                            style: TextStyle(fontSize: 10, color: AppColors.textHint),
                           ),
                         ],
                       ),
@@ -303,7 +304,7 @@ class _MaterialGroupCardState extends State<_MaterialGroupCard> {
                         _expanded
                             ? Icons.keyboard_arrow_up
                             : Icons.keyboard_arrow_down,
-                        color: Colors.grey,
+                        color: AppColors.textHint,
                       ),
                     ],
                   ),
@@ -342,7 +343,7 @@ class _MaterialGroupCardState extends State<_MaterialGroupCard> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                      color: AppColors.textHint,
                       letterSpacing: 1,
                     ),
                   ),

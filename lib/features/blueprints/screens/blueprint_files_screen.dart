@@ -65,7 +65,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
         ],
@@ -91,7 +91,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Blueprint deleted successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
       }
@@ -100,7 +100,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to delete blueprint: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -120,18 +120,18 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           projectName,
           style: const TextStyle(
-            color: Colors.black,
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -160,7 +160,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                   borderSide: BorderSide(color: AppColors.borderDark),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.surface,
               ),
               onChanged: (value) {
                 setState(() {
@@ -202,7 +202,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                               ? Icons.folder_off_outlined
                               : Icons.search_off,
                           size: 60,
-                          color: Colors.grey,
+                          color: AppColors.textHint,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -263,7 +263,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(width: 8),
@@ -300,7 +300,7 @@ class _BlueprintFilesScreenState extends ConsumerState<BlueprintFilesScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(width: 8),

@@ -13,17 +13,17 @@ class AppTextStyles {
   // ============================================================
 
   /// Primary font family for headings
-  static String get headingFontFamily => GoogleFonts.poppins().fontFamily!;
+  static final String headingFontFamily = GoogleFonts.poppins().fontFamily!;
 
   /// Secondary font family for body text
-  static String get bodyFontFamily => GoogleFonts.inter().fontFamily!;
+  static final String bodyFontFamily = GoogleFonts.inter().fontFamily!;
 
   // ============================================================
   // DISPLAY STYLES (Large titles)
   // ============================================================
 
   /// Display Large - 57px Bold
-  static TextStyle get displayLarge => GoogleFonts.poppins(
+  static final TextStyle displayLarge = GoogleFonts.poppins(
     fontSize: 57,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -32,7 +32,7 @@ class AppTextStyles {
   );
 
   /// Display Medium - 45px Bold
-  static TextStyle get displayMedium => GoogleFonts.poppins(
+  static final TextStyle displayMedium = GoogleFonts.poppins(
     fontSize: 45,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -40,7 +40,7 @@ class AppTextStyles {
   );
 
   /// Display Small - 36px Bold
-  static TextStyle get displaySmall => GoogleFonts.poppins(
+  static final TextStyle displaySmall = GoogleFonts.poppins(
     fontSize: 36,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -52,7 +52,7 @@ class AppTextStyles {
   // ============================================================
 
   /// Headline Large - 32px SemiBold
-  static TextStyle get headlineLarge => GoogleFonts.poppins(
+  static final TextStyle headlineLarge = GoogleFonts.poppins(
     fontSize: 32,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -60,7 +60,7 @@ class AppTextStyles {
   );
 
   /// Headline Medium - 28px SemiBold
-  static TextStyle get headlineMedium => GoogleFonts.poppins(
+  static final TextStyle headlineMedium = GoogleFonts.poppins(
     fontSize: 28,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -68,7 +68,7 @@ class AppTextStyles {
   );
 
   /// Headline Small - 24px SemiBold
-  static TextStyle get headlineSmall => GoogleFonts.poppins(
+  static final TextStyle headlineSmall = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
@@ -80,7 +80,7 @@ class AppTextStyles {
   // ============================================================
 
   /// Title Large - 22px Medium
-  static TextStyle get titleLarge => GoogleFonts.poppins(
+  static final TextStyle titleLarge = GoogleFonts.poppins(
     fontSize: 22,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
@@ -88,7 +88,7 @@ class AppTextStyles {
   );
 
   /// Title Medium - 16px Medium
-  static TextStyle get titleMedium => GoogleFonts.poppins(
+  static final TextStyle titleMedium = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
@@ -97,7 +97,7 @@ class AppTextStyles {
   );
 
   /// Title Small - 14px Medium
-  static TextStyle get titleSmall => GoogleFonts.poppins(
+  static final TextStyle titleSmall = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
@@ -110,7 +110,7 @@ class AppTextStyles {
   // ============================================================
 
   /// Body Large - 16px Regular
-  static TextStyle get bodyLarge => GoogleFonts.inter(
+  static final TextStyle bodyLarge = GoogleFonts.inter(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
@@ -119,7 +119,7 @@ class AppTextStyles {
   );
 
   /// Body Medium - 14px Regular
-  static TextStyle get bodyMedium => GoogleFonts.inter(
+  static final TextStyle bodyMedium = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
@@ -128,7 +128,7 @@ class AppTextStyles {
   );
 
   /// Body Small - 12px Regular
-  static TextStyle get bodySmall => GoogleFonts.inter(
+  static final TextStyle bodySmall = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
@@ -141,7 +141,7 @@ class AppTextStyles {
   // ============================================================
 
   /// Label Large - 14px Medium
-  static TextStyle get labelLarge => GoogleFonts.inter(
+  static final TextStyle labelLarge = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
@@ -150,7 +150,7 @@ class AppTextStyles {
   );
 
   /// Label Medium - 12px Medium
-  static TextStyle get labelMedium => GoogleFonts.inter(
+  static final TextStyle labelMedium = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
@@ -159,7 +159,7 @@ class AppTextStyles {
   );
 
   /// Label Small - 11px Medium
-  static TextStyle get labelSmall => GoogleFonts.inter(
+  static final TextStyle labelSmall = GoogleFonts.inter(
     fontSize: 11,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
@@ -172,7 +172,7 @@ class AppTextStyles {
   // ============================================================
 
   /// Button text style
-  static TextStyle get button => GoogleFonts.inter(
+  static final TextStyle button = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.25,
@@ -180,7 +180,7 @@ class AppTextStyles {
   );
 
   /// Caption text style
-  static TextStyle get caption => GoogleFonts.inter(
+  static final TextStyle caption = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
@@ -189,7 +189,7 @@ class AppTextStyles {
   );
 
   /// Overline text style
-  static TextStyle get overline => GoogleFonts.inter(
+  static final TextStyle overline = GoogleFonts.inter(
     fontSize: 10,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
@@ -198,7 +198,7 @@ class AppTextStyles {
   );
 
   /// Error text style
-  static TextStyle get error => GoogleFonts.inter(
+  static final TextStyle error = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.error,
@@ -207,7 +207,7 @@ class AppTextStyles {
   );
 
   /// Link text style
-  static TextStyle get link => GoogleFonts.inter(
+  static final TextStyle link = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.primary,
@@ -217,7 +217,7 @@ class AppTextStyles {
   );
 
   /// Price/Currency text style
-  static TextStyle get price => GoogleFonts.inter(
+  static final TextStyle price = GoogleFonts.inter(
     fontSize: 18,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -226,7 +226,7 @@ class AppTextStyles {
   );
 
   /// Badge text style
-  static TextStyle get badge => GoogleFonts.inter(
+  static final TextStyle badge = GoogleFonts.inter(
     fontSize: 10,
     fontWeight: FontWeight.w600,
     color: AppColors.textOnPrimary,

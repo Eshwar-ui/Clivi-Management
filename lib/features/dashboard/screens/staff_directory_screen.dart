@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 
 import '../../auth/providers/auth_repository_provider.dart';
@@ -36,20 +37,9 @@ class StaffDirectoryScreen extends ConsumerWidget {
       ),
       body: siteManagersAsync.when(
         loading: () => const LoadingWidget(message: 'Loading staff...'),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(siteManagersListProvider),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load staff directory',
+          onRetry: () => ref.invalidate(siteManagersListProvider),
         ),
         data: (managers) => managers.isEmpty
             ? _buildEmptyState(context)
@@ -136,11 +126,11 @@ class _StaffCard extends StatelessWidget {
             if (manager.phone != null)
               Row(
                 children: [
-                  const Icon(Icons.phone, size: 14, color: Colors.grey),
+                  const Icon(Icons.phone, size: 14, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     manager.phone!,
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -164,7 +154,7 @@ class _StaffCard extends StatelessWidget {
         ),
         trailing: manager.phone != null
             ? IconButton(
-                icon: const Icon(Icons.call, color: Colors.green),
+                icon: const Icon(Icons.call, color: AppColors.success),
                 onPressed: () => _makePhoneCall(context, manager.phone!),
               )
             : null,
@@ -188,7 +178,7 @@ class _StaffCard extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(const SnackBar(content: Text('Failed to make call. Please try again.')));
       }
     }
   }

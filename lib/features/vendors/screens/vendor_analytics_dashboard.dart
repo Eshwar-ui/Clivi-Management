@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/ui/responsive.dart';
 import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../data/models/vendor_summary_models.dart';
 import '../providers/vendor_analytics_provider.dart';
 import '../services/vendor_report_service.dart';
@@ -28,8 +30,11 @@ class VendorAnalyticsDashboard extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: vendorsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        loading: () => const LoadingWidget(message: 'Loading vendor analytics...'),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load vendor analytics',
+          onRetry: () => ref.invalidate(materialVendorAggregatesProvider(request)),
+        ),
         data: (vendors) {
           final sorted = [...vendors]
             ..sort(
@@ -758,8 +763,11 @@ class _SupplyDetailsScreenState extends ConsumerState<SupplyDetailsScreen> {
         showBackButton: true,
       ),
       body: projectsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const LoadingWidget(message: 'Loading supply details...'),
+        error: (e, _) => AppErrorWidget(
+          message: 'Failed to load supply details',
+          onRetry: () => ref.invalidate(vendorProjectAggregatesProvider(request)),
+        ),
         data: (projects) {
           if (projects.isEmpty) {
             return const Center(
@@ -906,9 +914,11 @@ class _ProjectSupplyHistoryScreenState
           ),
           Expanded(
             child: linesAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const LoadingWidget(message: 'Loading supply history...'),
+              error: (e, _) => AppErrorWidget(
+                message: 'Failed to load supply history',
+                onRetry: () => ref.invalidate(vendorProjectDailyLogsProvider(request)),
+              ),
               data: (lines) {
                 if (lines.isEmpty) {
                   return const Center(

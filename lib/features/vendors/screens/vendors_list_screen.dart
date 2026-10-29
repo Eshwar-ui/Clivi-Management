@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../../inventory/providers/inventory_provider.dart';
 import '../../inventory/data/models/supplier_model.dart';
 import '../providers/vendor_analytics_provider.dart';
@@ -80,7 +81,7 @@ class VendorsListScreen extends ConsumerWidget {
                   );
                 },
               ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LoadingWidget(message: 'Loading vendors...'),
         error: (e, _) => AppErrorWidget(
           message: 'Failed to load vendors. Please try again.',
           onRetry: () => ref.invalidate(vendorOverviewProvider),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/models/labour_model.dart';
@@ -68,7 +69,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       ),
       body: labourWithAttendance.when(
         loading: () => const LoadingWidget(message: 'Loading...'),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load attendance data',
+          onRetry: () => ref.invalidate(
+            labourWithAttendanceProvider((
+              projectId: widget.projectId,
+              date: _selectedDate,
+            )),
+          ),
+        ),
         data: (data) {
           if (data.isEmpty) {
             return _buildEmptyState();
@@ -81,17 +90,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.people_outline, size: 64, color: AppColors.textHint),
-          const SizedBox(height: 16),
-          const Text('No active workers'),
-          const SizedBox(height: 8),
-          const Text('Add workers to mark attendance'),
-        ],
-      ),
+    return const EmptyStateWidget(
+      message: 'No active workers.\nAdd workers to mark attendance.',
+      icon: Icons.people_outline,
     );
   }
 
@@ -230,7 +231,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(const SnackBar(content: Text('Failed to save attendance. Please try again.')));
       }
     } finally {
       setState(() => _isSaving = false);

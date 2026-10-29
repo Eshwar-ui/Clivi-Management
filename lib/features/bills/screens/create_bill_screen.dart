@@ -84,9 +84,9 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create bill. Please try again.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Failed to create bill. Please try again.'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -252,13 +252,13 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                           labelText: 'Vendor Name (Optional)',
                           prefixIcon: const Icon(Icons.store),
                           errorText: 'Could not load vendors',
-                          errorStyle: TextStyle(
-                            color: Colors.orange.shade700,
+                          errorStyle: const TextStyle(
+                            color: AppColors.warning,
                           ),
                         ),
-                        child: Text(
+                        child: const Text(
                           'Tap to retry',
-                          style: TextStyle(color: Colors.orange.shade700),
+                          style: TextStyle(color: AppColors.warning),
                         ),
                       ),
                     ),
@@ -305,9 +305,12 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                     const SizedBox(height: 24),
 
                     // Receipt Upload
-                    const Text(
+                    Text(
                       'Receipt (PDF)',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     FileUploadWidget(
@@ -325,7 +328,7 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.picture_as_pdf, color: Colors.red),
+                          const Icon(Icons.picture_as_pdf, color: AppColors.error),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -364,11 +367,11 @@ class _CreateBillScreenState extends ConsumerState<CreateBillScreen> {
                           : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.textOnPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: _isSubmitting || createBillState.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const CircularProgressIndicator(color: AppColors.textOnPrimary)
                           : const Text('ADD BILL'),
                     ),
                   ],

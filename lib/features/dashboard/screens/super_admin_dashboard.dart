@@ -135,7 +135,7 @@ class SuperAdminDashboard extends ConsumerWidget {
                   title: 'Stock',
                   description: 'Inventory management',
                   color: AppColors.secondary,
-                  onTap: () => context.push('/projects'),
+                  onTap: () => context.push('/master/materials'),
                 ),
                 _ModuleCard(
                   icon: Icons.architecture,

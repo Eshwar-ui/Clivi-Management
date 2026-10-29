@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/error_widget.dart';
+import '../../../../core/widgets/loading_widget.dart';
 import '../providers/stock_provider.dart';
 
 
@@ -99,7 +100,7 @@ class _MaterialConsumeScreenState extends ConsumerState<MaterialConsumeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(const SnackBar(content: Text('Failed to record consumption. Please try again.')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -124,17 +125,16 @@ class _MaterialConsumeScreenState extends ConsumerState<MaterialConsumeScreen> {
           );
         }
 
-        // Resolve the selected item object from the ID
-        _currentStockItem = null;
+        // Resolve the selected item object from the ID (read-only, no mutation)
+        Map<String, dynamic>? resolvedStockItem;
         if (_selectedStockItemId != null) {
-          try {
-            _currentStockItem = availableItems.firstWhere(
-              (item) => item['item_id'] == _selectedStockItemId,
-            );
-          } catch (e) {
-            // Item might have disappeared or has 0 stock now
-          }
+          final matches = availableItems.where(
+            (item) => item['item_id'] == _selectedStockItemId,
+          );
+          resolvedStockItem = matches.isNotEmpty ? matches.first : null;
         }
+        // Keep _currentStockItem in sync for use by _submit()
+        _currentStockItem = resolvedStockItem;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -144,7 +144,7 @@ class _MaterialConsumeScreenState extends ConsumerState<MaterialConsumeScreen> {
               children: [
                 DropdownButtonFormField<String>(
                   isExpanded: true,
-                  initialValue: _currentStockItem != null
+                  initialValue: resolvedStockItem != null
                       ? _selectedStockItemId
                       : null,
                   decoration: const InputDecoration(
@@ -171,13 +171,13 @@ class _MaterialConsumeScreenState extends ConsumerState<MaterialConsumeScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                if (_currentStockItem != null) ...[
+                if (resolvedStockItem != null) ...[
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
-                        'Available: ${_currentStockItem!['current_stock']} ${_currentStockItem!['unit']}',
+                        'Available: ${resolvedStockItem['current_stock']} ${resolvedStockItem['unit']}',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -227,7 +227,7 @@ class _MaterialConsumeScreenState extends ConsumerState<MaterialConsumeScreen> {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const LoadingWidget(message: 'Loading stock items...'),
       error: (err, stack) => AppErrorWidget(
         message: 'Failed to load materials. Please try again.',
         onRetry: () =>
@@ -245,10 +245,10 @@ class _MaterialConsumeScreenState extends ConsumerState<MaterialConsumeScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
+                    color: AppColors.warning.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.upload_rounded, color: Colors.orange),
+                  child: const Icon(Icons.upload_rounded, color: AppColors.warning),
                 ),
                 const SizedBox(width: 12),
                 const Text(

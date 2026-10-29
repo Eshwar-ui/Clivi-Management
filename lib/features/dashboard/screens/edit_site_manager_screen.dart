@@ -187,7 +187,7 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
       builder: (context) => AlertDialog(
         title: const Text(
           'Delete Manager',
-          style: TextStyle(color: Colors.red),
+          style: TextStyle(color: AppColors.error),
         ),
         content: const Text(
           'Are you sure you want to delete this manager? This action cannot be undone.',
@@ -199,8 +199,8 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete', style: TextStyle(color: AppColors.textOnPrimary)),
           ),
         ],
       ),
@@ -250,15 +250,15 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
         title: const Text(
           'Edit Details',
           style: TextStyle(
-            color: Color(0xFF1A1C1E),
+            color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -270,13 +270,13 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1C1E)),
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
             onPressed: () => context.pop(),
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
             onPressed: _isLoading ? null : _handleDeleteSiteManager,
           ),
           const SizedBox(width: 8),
@@ -334,7 +334,7 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
                 TextFormField(
                   controller: _emailController,
                   readOnly: true,
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: AppColors.textSecondary),
                   decoration: _inputDecoration(
                     'rameshkumar@manager.com',
                   ).copyWith(fillColor: AppColors.surfaceVariant),
@@ -367,18 +367,18 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleUpdateSiteManager,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
+                      backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const CircularProgressIndicator(color: AppColors.textOnPrimary)
                         : const Text(
                             'Update Details',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textOnPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -399,7 +399,7 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF1A1C1E),
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w700,
           fontSize: 14,
         ),
@@ -411,24 +411,24 @@ class _EditSiteManagerScreenState extends ConsumerState<EditSiteManagerScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(
-        color: Color(0xFF1A1C1E),
-        fontWeight: FontWeight.w700,
+        color: AppColors.textHint,
+        fontWeight: FontWeight.w400,
         fontSize: 14,
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+        borderSide: const BorderSide(color: AppColors.surfaceVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFF3F4F6)),
+        borderSide: const BorderSide(color: AppColors.surfaceVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

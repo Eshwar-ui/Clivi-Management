@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/loading_widget.dart';
 import '../data/models/labour_model.dart';
 import '../providers/labour_provider.dart';
@@ -53,7 +54,10 @@ class LabourRosterScreen extends ConsumerWidget {
       ),
       body: labourAsync.when(
         loading: () => const LoadingWidget(message: 'Loading workers...'),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) => AppErrorWidget(
+          message: 'Failed to load workers',
+          onRetry: () => ref.invalidate(projectLabourProvider(projectId)),
+        ),
         data: (labourList) => labourList.isEmpty
             ? _buildEmptyState(context)
             : _buildLabourList(context, ref, labourList),
@@ -67,20 +71,9 @@ class LabourRosterScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.people_outline, size: 64, color: AppColors.textHint),
-          const SizedBox(height: 16),
-          Text(
-            'No workers added yet',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          const Text('Add workers to track attendance'),
-        ],
-      ),
+    return const EmptyStateWidget(
+      message: 'No workers added yet.\nAdd workers to track attendance.',
+      icon: Icons.people_outline,
     );
   }
 
@@ -552,7 +545,7 @@ class _AddLabourSheetState extends ConsumerState<_AddLabourSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(const SnackBar(content: Text('Failed to save worker. Please try again.')));
       }
     } finally {
       setState(() => _isLoading = false);

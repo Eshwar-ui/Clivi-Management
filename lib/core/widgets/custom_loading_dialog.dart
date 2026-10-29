@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/text_styles.dart';
 
 class CustomLoadingDialog extends StatefulWidget {
   final String message;
@@ -97,11 +98,7 @@ class _CustomLoadingDialogState extends State<CustomLoadingDialog>
               const SizedBox(height: 16),
               Text(
                 widget.message,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTextStyles.semiBold(AppTextStyles.titleMedium),
               ),
             ],
           ),

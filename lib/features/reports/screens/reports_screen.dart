@@ -286,7 +286,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ],
         const Spacer(),
         Material(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
             onTap: _isExporting ? null : () => _exportPdf(state),
@@ -357,7 +357,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color:
-                          isSelected ? Colors.white : Colors.transparent,
+                          isSelected ? AppColors.surface : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: isSelected
                           ? const [
@@ -416,10 +416,12 @@ class _FinancialHealthCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,10 +563,12 @@ class _ResourceSplitCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,11 +759,11 @@ class _VendorAnalyticsSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.storefront_outlined,
-                    color: Colors.white, size: 24),
+                    color: AppColors.textOnPrimary, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -769,7 +773,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
                     const Text(
                       'Vendor Analytics',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textOnPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -778,7 +782,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
                     Text(
                       'Payment tracking · Stock history · Credit limits',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: AppColors.textOnPrimary.withValues(alpha: 0.7),
                         fontSize: 12,
                       ),
                     ),
@@ -786,7 +790,7 @@ class _VendorAnalyticsSection extends StatelessWidget {
                 ),
               ),
               Icon(Icons.arrow_forward_ios_rounded,
-                  color: Colors.white.withValues(alpha: 0.5), size: 16),
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.5), size: 16),
             ],
           ),
         ),
@@ -826,7 +830,7 @@ class _VendorFilter extends StatelessWidget {
             borderSide: const BorderSide(color: AppColors.border),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.surface,
         ),
         style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
         items: [
@@ -1063,10 +1067,12 @@ class _ReportCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: AppColors.borderDark.withValues(alpha: 0.5)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(color: Color(0x05000000), blurRadius: 16, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

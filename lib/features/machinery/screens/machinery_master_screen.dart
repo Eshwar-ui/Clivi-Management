@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/machinery_provider.dart';
 import '../data/models/machinery_model.dart';
 
@@ -30,7 +32,10 @@ class MachineryMasterScreen extends ConsumerWidget {
       body: machineryListAsync.when(
         data: (machinery) {
           if (machinery.isEmpty) {
-            return const Center(child: Text('No machinery added yet.'));
+            return const EmptyStateWidget(
+              message: 'No machinery added yet.\nTap + to add your first equipment.',
+              icon: Icons.construction,
+            );
           }
           return ListView.builder(
             itemCount: machinery.length,
@@ -73,8 +78,11 @@ class MachineryMasterScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Error: $err')),
+        loading: () => const LoadingWidget(message: 'Loading machinery...'),
+        error: (err, st) => AppErrorWidget(
+          message: 'Failed to load machinery list',
+          onRetry: () => ref.invalidate(machineryListProvider),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showFormSheet(context, ref),

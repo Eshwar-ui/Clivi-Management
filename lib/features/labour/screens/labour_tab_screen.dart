@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/loading_widget.dart';
 import '../providers/labour_provider.dart';
 import '../data/models/daily_labour_log.dart';
 import '../data/models/labour_model.dart';
@@ -203,7 +204,7 @@ class LabourTabScreen extends ConsumerWidget {
                     },
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const LoadingWidget(message: 'Loading labor logs...'),
                 error: (err, _) => AppErrorWidget(
                   message: 'Failed to load labor logs. Please try again.',
                   onRetry: () =>
@@ -505,7 +506,7 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
               const SizedBox(height: 8),
               masterLabourAsync.when(
                 loading: () => const LinearProgressIndicator(),
-                error: (e, _) => Text('Error: $e'),
+                error: (e, _) => const InlineErrorWidget(message: 'Failed to load workers'),
                 data: (list) => SearchableDropdownWithCreate<LabourModel>(
                   label: 'Select or Add',
                   items: list,
@@ -761,10 +762,10 @@ class _LogLaborSheetState extends ConsumerState<_LogLaborSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
+          const SnackBar(
+            content: Text('Failed to save labour log. Please try again.'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
+            duration: Duration(seconds: 5),
           ),
         );
       }

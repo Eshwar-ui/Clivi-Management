@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-
+import '../../../../core/widgets/error_widget.dart';
+import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../providers/master_data_provider.dart';
 import '../data/models/material_master_model.dart';
@@ -37,7 +38,10 @@ class MaterialMasterListScreen extends ConsumerWidget {
           .when(
             data: (materials) {
               if (materials.isEmpty) {
-                return const Center(child: Text('No master materials found.'));
+                return const EmptyStateWidget(
+                  message: 'No master materials found',
+                  icon: Icons.category_outlined,
+                );
               }
 
               return ListView.builder(
@@ -49,8 +53,11 @@ class MaterialMasterListScreen extends ConsumerWidget {
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error: $err')),
+            loading: () => const LoadingWidget(message: 'Loading materials...'),
+            error: (err, stack) => AppErrorWidget(
+              message: 'Failed to load materials',
+              onRetry: () => ref.invalidate(allMaterialsProvider),
+            ),
           ),
     );
   }
@@ -236,9 +243,8 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                       ),
                     ),
                   ),
-                  error: (err, stack) => Text(
-                    'Error loading grades: $err',
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  error: (err, stack) => InlineErrorWidget(
+                    message: 'Failed to load grades. Tap material to retry.',
                   ),
                 ),
           ),
@@ -292,7 +298,7 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
+                        const SnackBar(content: Text('Failed to delete grade. Please try again.')),
                       );
                     }
                   }
@@ -347,7 +353,7 @@ class _MaterialItemCardState extends ConsumerState<_MaterialItemCard> {
                       } catch (e) {
                         if (ctx.mounted) {
                           ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
+                            const SnackBar(content: Text('Failed to save grade. Please try again.')),
                           );
                         }
                       } finally {

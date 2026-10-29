@@ -28,7 +28,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final appBar = AppBar(
       toolbarHeight: kToolbarHeight,
-      backgroundColor: backgroundColor ?? Colors.white,
+      backgroundColor: backgroundColor ?? AppColors.surface,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
@@ -55,7 +55,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
           return AppBar(
             toolbarHeight: kToolbarHeight,
-            backgroundColor: backgroundColor ?? Colors.white,
+            backgroundColor: backgroundColor ?? AppColors.surface,
             elevation: 0,
             scrolledUnderElevation: 0,
             centerTitle: false,
@@ -124,7 +124,7 @@ class _CustomAppBarContent extends StatelessWidget {
                 height: 40,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.border.withValues(alpha: 0.5),
@@ -134,7 +134,11 @@ class _CustomAppBarContent extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                     color: AppColors.textPrimary,
                     padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.of(context).pop();
+                      }
+                    },
                   ),
                 ),
               ),
